@@ -1,7 +1,5 @@
 import React from "react";
 
-// src/pages/Budgets.jsx
-
 function Budgets() {
   return (
     <div>

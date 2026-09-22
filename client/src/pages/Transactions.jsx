@@ -1,7 +1,5 @@
 import React from "react";
 
-// src/pages/Transactions.jsx
-
 function Transactions() {
   return (
     <div>
