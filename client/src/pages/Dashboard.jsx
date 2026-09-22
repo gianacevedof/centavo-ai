@@ -1,8 +1,16 @@
 import React from "react";
-
-// src/pages/Dashboard.jsx
+import { useState, useEffect } from "react";
+import { getAccounts } from "../services/api";
 
 function Dashboard() {
+  const [accounts, setAccounts] = useState([]);
+
+  useEffect(() => {
+    getAccounts()
+      .then((data) => setAccounts(data))
+      .catch((err) => console.error("Failed to load accounts:", err));
+  }, []);
+
   return (
     <div>
       <header>
@@ -17,7 +25,12 @@ function Dashboard() {
       <section>
         <h2>Accounts</h2>
         <ul>
-          <li>Account placeholder</li>
+          {accounts.length === 0 && <li>No accounts yet</li>}
+          {accounts.map((acct) => (
+            <li key={acct.id}>
+              {acct.name} — ${acct.balance}
+            </li>
+          ))}
         </ul>
       </section>
 
