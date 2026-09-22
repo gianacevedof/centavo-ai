@@ -19,11 +19,22 @@ const pool = mysql.createPool({
   },
 });
 
-try {
-  const [rows] = await pool.query("SELECT 1 + 1 AS result");
-  console.log("Estamos conectados");
-} catch (e) {
-  console.error("Error de conexion: ", e.message);
+async function getUser(id) {
+  const [rows] = await pool.query(
+    `
+      SELECT *
+      FROM users
+      WHERE id = ?
+    `,
+    [id],
+  );
+  return rows;
 }
+
+const [users] = await pool.query(`
+      SELECT * FROM users
+    `);
+
+console.log(users);
 
 export default pool;
