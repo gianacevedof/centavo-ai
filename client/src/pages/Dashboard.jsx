@@ -1,12 +1,13 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { getAccounts } from "../services/api";
+import { api } from "../services/api";
 
 function Dashboard() {
   const [accounts, setAccounts] = useState([]);
 
   useEffect(() => {
-    getAccounts()
+    api
+      .fetchAccounts()
       .then((data) => setAccounts(data))
       .catch((err) => console.error("Failed to load accounts:", err));
   }, []);
