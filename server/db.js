@@ -19,22 +19,6 @@ const pool = mysql.createPool({
   },
 });
 
-async function getUser(id) {
-  const [rows] = await pool.query(
-    `
-      SELECT *
-      FROM users
-      WHERE id = ?
-    `,
-    [id],
-  );
-  return rows;
-}
-
-const [users] = await pool.query(`
-      SELECT * FROM users
-    `);
-
-console.log(users);
+console.log("database online");
 
 export default pool;
