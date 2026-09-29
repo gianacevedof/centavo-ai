@@ -1,7 +1,10 @@
 const BASE_URL = "http://localhost:3000/api";
 
-async function request(endpoint, options = {}) {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+async function request(endpoint, { params = {}, options = {} } = {}) {
+  const queryString = new URLSearchParams(params).toString();
+  const url = queryString ? `${endpoint}?${queryString}` : endpoint;
+
+  const response = await fetch(`${BASE_URL}${url}`, {
     headers: {
       "Content-Type": "application/json",
       ...options.headers,
@@ -19,20 +22,24 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  // Health Check
   checkHealth: () => request("/health"),
-
-  // Accounts
-  fetchAccounts: () => request("/accounts"),
-  createAccount: (accountData) =>
+  fetchAccounts: (params) => request("/accounts", { params }),
+  createAccount: (accountData) => 
     request("/accounts", {
-      method: "POST",
-      body: JSON.stringify(accountData),
+      params: {},
+      options: {
+        method: "POST",
+        body: JSON.stringify(accountData),
+      },
     }),
-
-  // Transactions (Placeholders for now)
-  fetchTransactions: () => request("/transactions"),
-
-  // Budgets (Placeholders for now)
-  fetchBudgets: () => request("/budgets"),
+  fetchTransactions: (params) => request("/transactions", { params }),
+  createTransaction: (txData) => 
+    request("/transactions", {
+      params: {},
+      options: {
+        method: "POST",
+        body: JSON.stringify(txData),
+      },
+    }),
+  fetchBudgets: (params) => request("/budgets", { params }),
 };

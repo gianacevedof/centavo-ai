@@ -5,9 +5,16 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM accounts");
+    const { user_id } = req.query;
+    
+    if (!user_id) {
+      return res.status(400).json({ error: "user_id is required" });
+    }
+
+    const [rows] = await pool.query("SELECT * FROM accounts WHERE user_id = ?", [user_id]);
     res.status(200).json(rows);
   } catch (err) {
+    console.error("Account fetch error:", err);
     res.status(500).json({ error: "Failed to fetch accounts" });
   }
 });
