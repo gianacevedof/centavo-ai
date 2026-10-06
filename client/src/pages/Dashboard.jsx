@@ -13,11 +13,11 @@ function Dashboard() {
       setLoading(true);
       try {
         // Using a dummy user_id for now until auth is implemented
-        const userId = 8; 
-        
+        const userId = 3;
+
         const [accs, txs, bgs] = await Promise.all([
           api.fetchAccounts({ user_id: userId }),
-          api.fetchTransactions({ user_id: userId, limit: 5 }), 
+          api.fetchTransactions({ user_id: userId, limit: 5 }),
           api.fetchBudgets({ user_id: userId }),
         ]);
 
@@ -34,7 +34,10 @@ function Dashboard() {
     loadDashboardData();
   }, []);
 
-  const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(acc.balance || 0), 0);
+  const totalBalance = accounts.reduce(
+    (sum, acc) => sum + parseFloat(acc.balance || 0),
+    0,
+  );
 
   if (loading) return <div className="loading">Loading dashboard...</div>;
 
@@ -81,9 +84,14 @@ function Dashboard() {
           {transactions.length === 0 && <li>No recent transactions</li>}
           {transactions.map((tx) => (
             <li key={tx.id} className="transaction-item">
-              <span>{tx.date} - {tx.note || "No note"}</span>
-              <span className={tx.type === "expense" ? "text-red" : "text-green"}>
-                {tx.type === "expense" ? "-" : "+"}${parseFloat(tx.amount).toFixed(2)}
+              <span>
+                {tx.date} - {tx.note || "No note"}
+              </span>
+              <span
+                className={tx.type === "expense" ? "text-red" : "text-green"}
+              >
+                {tx.type === "expense" ? "-" : "+"}$
+                {parseFloat(tx.amount).toFixed(2)}
               </span>
             </li>
           ))}

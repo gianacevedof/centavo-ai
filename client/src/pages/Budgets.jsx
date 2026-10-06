@@ -10,7 +10,7 @@ function Budgets() {
       setLoading(true);
       try {
         // Using a dummy user_id for now until auth is implemented
-        const data = await api.fetchBudgets({ user_id: 8 });
+        const data = await api.fetchBudgets({ user_id: 3 });
         setBudgets(data);
       } catch (err) {
         console.error("Failed to load budgets:", err);
@@ -34,7 +34,12 @@ function Budgets() {
         <h2>Monthly Budgets</h2>
         <div className="budget-summary">
           <p>Total Budgeted</p>
-          <p>${budgets.reduce((sum, b) => sum + parseFloat(b.monthly_limit), 0).toFixed(2)}</p>
+          <p>
+            $
+            {budgets
+              .reduce((sum, b) => sum + parseFloat(b.monthly_limit), 0)
+              .toFixed(2)}
+          </p>
         </div>
         <div className="budget-list">
           {budgets.length === 0 ? (
