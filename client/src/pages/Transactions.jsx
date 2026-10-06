@@ -4,7 +4,7 @@ import { api } from "../services/api";
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const [filters, setFilters] = useState({
-    user_id: 8,
+    user_id: 3,
     category: "",
     account: "",
     limit: 50,
@@ -18,7 +18,7 @@ function Transactions() {
     account_id: "",
     date: new Date().toISOString().split("T")[0],
     note: "",
-    type: "expense"
+    type: "expense",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,7 +44,7 @@ function Transactions() {
   };
 
   const clearFilters = () => {
-    setFilters({ user_id: 8, category: "", account: "", limit: 50 });
+    setFilters({ user_id: 3, category: "", account: "", limit: 50 });
   };
 
   const handleInputChange = (e) => {
@@ -58,7 +58,7 @@ function Transactions() {
     try {
       await api.createTransaction({
         ...formData,
-        user_id: 8,
+        user_id: 3,
         amount: parseFloat(formData.amount),
       });
       // Reset form
@@ -68,10 +68,10 @@ function Transactions() {
         account_id: "",
         date: new Date().toISOString().split("T")[0],
         note: "",
-        type: "expense"
+        type: "expense",
       });
       // Refresh list
-      await loadTransactions(); 
+      await loadTransactions();
     } catch (err) {
       alert(err.message);
     } finally {
@@ -112,18 +112,22 @@ function Transactions() {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Amount</label>
-            <input 
-              type="number" 
-              step="0.01" 
-              name="amount" 
-              value={formData.amount} 
-              onChange={handleInputChange} 
-              required 
+            <input
+              type="number"
+              step="0.01"
+              name="amount"
+              value={formData.amount}
+              onChange={handleInputChange}
+              required
             />
           </div>
           <div className="form-group">
             <label>Type</label>
-            <select name="type" value={formData.type} onChange={handleInputChange}>
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleInputChange}
+            >
               <option value="expense">Expense</option>
               <option value="income">Income</option>
               <option value="transfer">Transfer</option>
@@ -131,7 +135,12 @@ function Transactions() {
           </div>
           <div className="form-group">
             <label>Account</label>
-            <select name="account_id" value={formData.account_id} onChange={handleInputChange} required>
+            <select
+              name="account_id"
+              value={formData.account_id}
+              onChange={handleInputChange}
+              required
+            >
               <option value="">Select Account</option>
               <option value="28">Main Checking</option>
               <option value="29">Savings Account</option>
@@ -141,7 +150,11 @@ function Transactions() {
           </div>
           <div className="form-group">
             <label>Category</label>
-            <select name="category_id" value={formData.category_id} onChange={handleInputChange}>
+            <select
+              name="category_id"
+              value={formData.category_id}
+              onChange={handleInputChange}
+            >
               <option value="">No Category</option>
               <option value="1">Food</option>
               <option value="2">Transport</option>
@@ -150,21 +163,21 @@ function Transactions() {
           </div>
           <div className="form-group">
             <label>Date</label>
-            <input 
-              type="date" 
-              name="date" 
-              value={formData.date} 
-              onChange={handleInputChange} 
-              required 
+            <input
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={handleInputChange}
+              required
             />
           </div>
           <div className="form-group">
             <label>Note</label>
-            <input 
-              type="text" 
-              name="note" 
-              value={formData.note} 
-              onChange={handleInputChange} 
+            <input
+              type="text"
+              name="note"
+              value={formData.note}
+              onChange={handleInputChange}
             />
           </div>
           <button type="submit" disabled={isSubmitting}>
@@ -174,14 +187,22 @@ function Transactions() {
       </section>
 
       <section className="filters-bar">
-        <select name="category" value={filters.category} onChange={handleFilterChange}>
+        <select
+          name="category"
+          value={filters.category}
+          onChange={handleFilterChange}
+        >
           <option value="">All Categories</option>
           <option value="1">Food</option>
           <option value="2">Transport</option>
           <option value="3">Dining</option>
         </select>
-        
-        <select name="account" value={filters.account} onChange={handleFilterChange}>
+
+        <select
+          name="account"
+          value={filters.account}
+          onChange={handleFilterChange}
+        >
           <option value="">All Accounts</option>
           <option value="28">Main Checking</option>
           <option value="29">Savings Account</option>
@@ -219,17 +240,24 @@ function Transactions() {
           <tbody>
             {transactions.length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ textAlign: "center" }}>No transactions found</td>
+                <td colSpan="5" style={{ textAlign: "center" }}>
+                  No transactions found
+                </td>
               </tr>
             ) : (
               transactions.map((tx) => (
                 <tr key={tx.id}>
                   <td>{tx.date}</td>
                   <td>{tx.note || "No note"}</td>
-                  <td>{tx.category_id}</td> 
+                  <td>{tx.category_id}</td>
                   <td>{tx.account_id}</td>
-                  <td className={tx.type === "expense" ? "text-red" : "text-green"}>
-                    {tx.type === "expense" ? "-" : "+"}${parseFloat(tx.amount).toFixed(2)}
+                  <td
+                    className={
+                      tx.type === "expense" ? "text-red" : "text-green"
+                    }
+                  >
+                    {tx.type === "expense" ? "-" : "+"}$
+                    {parseFloat(tx.amount).toFixed(2)}
                   </td>
                 </tr>
               ))
