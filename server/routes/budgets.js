@@ -7,14 +7,14 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const userId = req.query.user_id; // In a real app, this comes from req.user.id (JWT)
-    
+
     if (!userId) {
       return res.status(400).json({ error: "user_id is required" });
     }
 
     const [rows] = await pool.query(
       "SELECT b.*, c.name as category_name FROM budgets b JOIN categories c ON b.category_id = c.id WHERE b.user_id = ?",
-      [userId]
+      [userId],
     );
     res.status(200).json(rows);
   } catch (err) {
@@ -28,21 +28,25 @@ router.post("/", async (req, res) => {
   const { user_id, category_id, monthly_limit } = req.body;
 
   if (!user_id || !category_id || !monthly_limit) {
-    return res.status(400).json({ error: "user_id, category_id, and monthly_limit are required" });
+    return res
+      .status(400)
+      .json({ error: "user_id, category_id, and monthly_limit are required" });
   }
 
   try {
     const [result] = await pool.query(
       "INSERT INTO budgets (user_id, category_id, monthly_limit) VALUES (?, ?, ?)",
-      [user_id, category_id, monthly_limit]
+      [user_id, category_id, monthly_limit],
     );
-    res.status(201).json({ 
-      message: "Budget created successfully", 
-      budgetId: result.insertId 
+    res.status(201).json({
+      message: "Budget created successfully",
+      budgetId: result.insertId,
     });
   } catch (err) {
-    if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ error: "A budget already exists for this category" });
+    if (err.code === "ER_DUP_ENTRY") {
+      return res
+        .status(409)
+        .json({ error: "A budget already exists for this category" });
     }
     console.error("Budget creation error:", err);
     res.status(500).json({ error: "Failed to create budget" });
@@ -55,17 +59,21 @@ router.patch("/:id", async (req, res) => {
   const { monthly_limit, user_id } = req.body;
 
   if (!monthly_limit || !user_id) {
-    return res.status(400).json({ error: "monthly_limit and user_id are required" });
+    return res
+      .status(400)
+      .json({ error: "monthly_limit and user_id are required" });
   }
 
   try {
     const [result] = await pool.query(
       "UPDATE budgets SET monthly_limit = ? WHERE id = ? AND user_id = ?",
-      [monthly_limit, id, user_id]
+      [monthly_limit, id, user_id],
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Budget not found or unauthorized" });
+      return res
+        .status(404)
+        .json({ error: "Budget not found or unauthorized" });
     }
 
     res.status(200).json({ message: "Budget updated successfully" });
@@ -87,11 +95,13 @@ router.delete("/:id", async (req, res) => {
   try {
     const [result] = await pool.query(
       "DELETE FROM budgets WHERE id = ? AND user_id = ?",
-      [id, user_id]
+      [id, user_id],
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Budget not found or unauthorized" });
+      return res
+        .status(404)
+        .json({ error: "Budget not found or unauthorized" });
     }
 
     res.status(200).json({ message: "Budget deleted successfully" });
