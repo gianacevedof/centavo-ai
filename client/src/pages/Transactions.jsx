@@ -3,6 +3,8 @@ import { api } from "../services/api";
 
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [filters, setFilters] = useState({
     user_id: 3,
     category: "",
@@ -21,6 +23,25 @@ function Transactions() {
     type: "expense",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [aiInput, setAiInput] = useState("");
+  const [isParsing, setIsParsing] = useState(false);
+
+  useEffect(() => {
+    async function loadLookupData() {
+      try {
+        const [accs, cats] = await Promise.all([
+          api.fetchAccounts({ user_id: 3 }),
+          api.fetchCategories(),
+        ]);
+        setAccounts(accs);
+        setCategories(cats);
+      } catch (err) {
+        console.error("Failed to load lookup data:", err);
+      }
+    }
+
+    loadLookupData();
+  }, []);
 
   useEffect(() => {
     async function loadTransactions() {
@@ -92,6 +113,30 @@ function Transactions() {
     }
   }
 
+  const handleAiParse = async (e) => {
+    e.preventDefault();
+    if (!aiInput.trim()) return;
+
+    setIsParsing(true);
+    try {
+      const result = await api.parseAIInput(aiInput);
+      setFormData((prev) => ({
+        ...prev,
+        amount: result.amount || prev.amount,
+        category_id: result.category_id || prev.category_id,
+        account_id: result.account_id || prev.account_id,
+        date: result.date || prev.date,
+        note: result.note || prev.note,
+        type: result.type || prev.type,
+      }));
+      setAiInput("");
+    } catch (err) {
+      alert("AI could not parse that. Try being more specific!");
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
   const income = transactions
     .filter((t) => t.type === "income")
     .reduce((sum, t) => sum + parseFloat(t.amount), 0);
@@ -109,6 +154,18 @@ function Transactions() {
 
       <section className="add-transaction-form">
         <h2>Add Transaction</h2>
+        <form className="ai-prompt-bar" onSubmit={handleAiParse} style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+          <input
+            type="text"
+            placeholder="Try 'Spent $12 on lunch'..."
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+          />
+          <button type="submit" disabled={isParsing}>
+            {isParsing ? "Parsing..." : "AI Magic ✨"}
+          </button>
+        </form>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Amount</label>
@@ -135,18 +192,19 @@ function Transactions() {
           </div>
           <div className="form-group">
             <label>Account</label>
-            <select
-              name="account_id"
-              value={formData.account_id}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="">Select Account</option>
-              <option value="7">Main Checking</option>
-              <option value="8">Savings Account</option>
-              <option value="9">Personal Credit Card</option>
-              <option value="10">Cash Wallet</option>
-            </select>
+              <select
+                name="account_id"
+                value={formData.account_id}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="">Select Account</option>
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name}
+                  </option>
+                ))}
+              </select>
           </div>
           <div className="form-group">
             <label>Category</label>
@@ -156,10 +214,11 @@ function Transactions() {
               onChange={handleInputChange}
             >
               <option value="">No Category</option>
-              <option value="13">Groceries</option>
-              <option value="14">Dining Out</option>
-              <option value="16">Utilities</option>
-              <option value="18">Entertainment</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
             </select>
           </div>
           <div className="form-group">
@@ -194,10 +253,11 @@ function Transactions() {
           onChange={handleFilterChange}
         >
           <option value="">All Categories</option>
-          <option value="13">Groceries</option>
-          <option value="14">Dining Out</option>
-          <option value="16">Utilities</option>
-          <option value="18">Entertainment</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
         </select>
 
         <select
@@ -206,8 +266,11 @@ function Transactions() {
           onChange={handleFilterChange}
         >
           <option value="">All Accounts</option>
-          <option value="7">Main Checking</option>
-          <option value="8">Savings Account</option>
+          {accounts.map((acc) => (
+            <option key={acc.id} value={acc.id}>
+              {acc.name}
+            </option>
+          ))}
         </select>
 
         <button onClick={clearFilters}>Clear Filters</button>

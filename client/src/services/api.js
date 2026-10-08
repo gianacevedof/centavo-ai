@@ -33,7 +33,8 @@ export const api = {
       },
     }),
   fetchTransactions: (params) => request("/transactions", { params }),
-  createTransaction: (txData) => 
+  fetchCategories: () => request("/categories"),
+  createTransaction: (txData) =>
     request("/transactions", {
       params: {},
       options: {
@@ -42,4 +43,11 @@ export const api = {
       },
     }),
   fetchBudgets: (params) => request("/budgets", { params }),
+  parseAIInput: (text) =>
+    request("/ai/parse", {
+      options: {
+        method: "POST",
+        body: JSON.stringify({ text }),
+      },
+    }),
 };
