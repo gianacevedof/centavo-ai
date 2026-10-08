@@ -5,11 +5,16 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const { category, account, limit } = req.query;
-    
+    const { user_id, category, account, limit } = req.query;
+
     let query = "SELECT * FROM transactions";
     let queryParams = [];
     let whereClauses = [];
+
+    if (user_id) {
+      whereClauses.push("user_id = ?");
+      queryParams.push(user_id);
+    }
 
     if (category) {
       whereClauses.push("category_id = ?");
