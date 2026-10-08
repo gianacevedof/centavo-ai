@@ -33,8 +33,17 @@ function Transactions() {
           api.fetchAccounts({ user_id: 3 }),
           api.fetchCategories(),
         ]);
-        setAccounts(accs);
-        setCategories(cats);
+
+        // Deduplicate accounts and categories by name to prevent UI duplicates
+        const uniqueAccs = Array.from(
+          new Map(accs.map((a) => [a.name, a])).values(),
+        );
+        const uniqueCats = Array.from(
+          new Map(cats.map((c) => [c.name, c])).values(),
+        );
+
+        setAccounts(uniqueAccs);
+        setCategories(uniqueCats);
       } catch (err) {
         console.error("Failed to load lookup data:", err);
       }
@@ -131,7 +140,7 @@ function Transactions() {
       }));
       setAiInput("");
     } catch (err) {
-      alert("AI could not parse that. Try being more specific!");
+      alert(err.message);
     } finally {
       setIsParsing(false);
     }
@@ -154,13 +163,22 @@ function Transactions() {
 
       <section className="add-transaction-form">
         <h2>Add Transaction</h2>
-        <form className="ai-prompt-bar" onSubmit={handleAiParse} style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+        <form
+          className="ai-prompt-bar"
+          onSubmit={handleAiParse}
+          style={{ marginBottom: "20px", display: "flex", gap: "10px" }}
+        >
           <input
             type="text"
             placeholder="Try 'Spent $12 on lunch'..."
             value={aiInput}
             onChange={(e) => setAiInput(e.target.value)}
-            style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            style={{
+              flex: 1,
+              padding: "8px",
+              borderRadius: "4px",
+              border: "1px solid #ccc",
+            }}
           />
           <button type="submit" disabled={isParsing}>
             {isParsing ? "Parsing..." : "AI Magic ✨"}
@@ -192,19 +210,18 @@ function Transactions() {
           </div>
           <div className="form-group">
             <label>Account</label>
-              <select
-                name="account_id"
-                value={formData.account_id}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="">Select Account</option>
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.name}
-                  </option>
-                ))}
-              </select>
+            <select
+              name="account_id"
+              value={formData.account_id}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="">Select Account</option>
+              <option value="7">Main Checking</option>
+              <option value="8">Savings Account</option>
+              <option value="9">Personal Credit Card</option>
+              <option value="10">Cash Wallet</option>
+            </select>
           </div>
           <div className="form-group">
             <label>Category</label>
