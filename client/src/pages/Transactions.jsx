@@ -142,10 +142,10 @@ function Transactions() {
               required
             >
               <option value="">Select Account</option>
-              <option value="28">Main Checking</option>
-              <option value="29">Savings Account</option>
-              <option value="30">Visa Credit</option>
-              <option value="31">Cash Wallet</option>
+              <option value="7">Main Checking</option>
+              <option value="8">Savings Account</option>
+              <option value="9">Personal Credit Card</option>
+              <option value="10">Cash Wallet</option>
             </select>
           </div>
           <div className="form-group">
@@ -156,9 +156,10 @@ function Transactions() {
               onChange={handleInputChange}
             >
               <option value="">No Category</option>
-              <option value="1">Food</option>
-              <option value="2">Transport</option>
-              <option value="3">Dining</option>
+              <option value="13">Groceries</option>
+              <option value="14">Dining Out</option>
+              <option value="16">Utilities</option>
+              <option value="18">Entertainment</option>
             </select>
           </div>
           <div className="form-group">
@@ -193,9 +194,10 @@ function Transactions() {
           onChange={handleFilterChange}
         >
           <option value="">All Categories</option>
-          <option value="1">Food</option>
-          <option value="2">Transport</option>
-          <option value="3">Dining</option>
+          <option value="13">Groceries</option>
+          <option value="14">Dining Out</option>
+          <option value="16">Utilities</option>
+          <option value="18">Entertainment</option>
         </select>
 
         <select
@@ -204,8 +206,8 @@ function Transactions() {
           onChange={handleFilterChange}
         >
           <option value="">All Accounts</option>
-          <option value="28">Main Checking</option>
-          <option value="29">Savings Account</option>
+          <option value="7">Main Checking</option>
+          <option value="8">Savings Account</option>
         </select>
 
         <button onClick={clearFilters}>Clear Filters</button>
