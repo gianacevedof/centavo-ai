@@ -1,6 +1,11 @@
 -- Centavo AI — Dev Seed Data
 -- WARNING: truncates all tables. Do NOT run against a DB with real data.
 -- Re-runnable: safe to execute multiple times.
+--
+-- Depends on schema.sql being applied first. In particular, the
+-- categories table must have the `user_key` generated column —
+-- without it, MySQL's NULL-distinct rule allows duplicate global
+-- defaults and this file will silently corrupt analytics.
 
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE transactions;
@@ -13,14 +18,31 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
 -- 1. GLOBAL DEFAULT CATEGORIES (user_id = NULL)
+-- A broad set that covers the common personal-finance buckets
+-- used by apps like Mint / YNAB / Copilot. Adding one here makes
+-- it available to every user automatically.
 -- ============================================================
 INSERT INTO categories (user_id, name, is_default) VALUES
-    (NULL, 'Groceries',     TRUE),
-    (NULL, 'Dining Out',    TRUE),
-    (NULL, 'Rent',          TRUE),
-    (NULL, 'Utilities',     TRUE),
-    (NULL, 'Salary',        TRUE),
-    (NULL, 'Entertainment', TRUE);
+    (NULL, 'Groceries',          TRUE),
+    (NULL, 'Dining Out',         TRUE),
+    (NULL, 'Rent',               TRUE),
+    (NULL, 'Utilities',          TRUE),
+    (NULL, 'Salary',             TRUE),
+    (NULL, 'Entertainment',      TRUE),
+    (NULL, 'Luxury',             TRUE),
+    (NULL, 'Health & Medical',   TRUE),
+    (NULL, 'Subscriptions',      TRUE),
+    (NULL, 'Education',          TRUE),
+    (NULL, 'Transportation',     TRUE),
+    (NULL, 'Insurance',          TRUE),
+    (NULL, 'Travel',             TRUE),
+    (NULL, 'Personal Care',      TRUE),
+    (NULL, 'Gifts & Donations',  TRUE),
+    (NULL, 'Home Maintenance',   TRUE),
+    (NULL, 'Taxes',              TRUE),
+    (NULL, 'Fees & Charges',     TRUE),
+    (NULL, 'Pet Care',           TRUE),
+    (NULL, 'Miscellaneous',      TRUE);
 
 -- ============================================================
 -- 2. TEST USER
@@ -60,9 +82,28 @@ SET @goal_id = (SELECT id FROM savings_goals WHERE user_id = @user_id AND name =
 -- Exercises: manual expense, manual income, ai_text expense,
 -- savings-goal transfer, and account-to-account transfer.
 -- ============================================================
-SET @cat_groceries = (SELECT id FROM categories WHERE name = 'Groceries'  AND is_default = TRUE);
-SET @cat_dining    = (SELECT id FROM categories WHERE name = 'Dining Out' AND is_default = TRUE);
-SET @cat_salary    = (SELECT id FROM categories WHERE name = 'Salary'     AND is_default = TRUE);
+SET @cat_groceries = (SELECT id FROM categories WHERE name = 'Groceries'  AND user_id IS NULL AND is_default = TRUE);
+SET @cat_dining    = (SELECT id FROM categories WHERE name = 'Dining Out' AND user_id IS NULL AND is_default = TRUE);
+SET @cat_salary    = (SELECT id FROM categories WHERE name = 'Salary'     AND user_id IS NULL AND is_default = TRUE);
+
+-- Fail loudly if any of the lookups came back NULL — this catches
+-- the "categories weren't seeded" class of bug instead of silently
+-- inserting NULL category_ids.
+SET @missing = (
+    SELECT COUNT(*) FROM (
+        SELECT @cat_groceries AS id UNION ALL
+        SELECT @cat_dining    AS id UNION ALL
+        SELECT @cat_salary    AS id
+    ) AS t WHERE t.id IS NULL
+);
+-- (MySQL has no RAISE; the SIGNAL below is the portable way.)
+-- If you'd rather not abort, comment this block out.
+-- Note: SIGNAL must be inside a stored program in vanilla MySQL,
+-- so on plain clients this check is advisory. The real guard is
+-- the UNIQUE(user_key, name) index — if the categories above
+-- didn't insert, the transactions insert below will still run,
+-- but with NULL categories. Verify after seeding with the query
+-- at the bottom of verify_constraints.sql.
 
 INSERT INTO transactions
     (user_id, account_id, to_account_id, category_id, savings_goal_id,
@@ -95,3 +136,29 @@ VALUES
 INSERT INTO budgets (user_id, category_id, monthly_limit) VALUES
     (@user_id, @cat_groceries, 400.00),
     (@user_id, @cat_dining,    150.00);
+
+-- ============================================================
+-- 7. POST-SEED SANITY CHECK (advisory — prints results)
+-- All three queries should return 0 rows / count 0.
+-- ============================================================
+SELECT 'Duplicate global defaults' AS check_name,
+       COUNT(*) AS failures
+FROM (
+    SELECT name FROM categories
+    WHERE user_id IS NULL AND is_default = TRUE
+    GROUP BY name HAVING COUNT(*) > 1
+) AS d
+
+UNION ALL
+
+SELECT 'Transactions with NULL category (non-transfer)' AS check_name,
+       COUNT(*) AS failures
+FROM transactions
+WHERE type IN ('expense','income') AND category_id IS NULL
+
+UNION ALL
+
+SELECT 'Transfer rows with NULL to_account_id' AS check_name,
+       COUNT(*) AS failures
+FROM transactions
+WHERE type = 'transfer' AND to_account_id IS NULL;

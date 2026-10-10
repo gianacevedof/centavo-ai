@@ -7,8 +7,21 @@
 --   2. Deleting an account cascades to its transactions.
 --   3. Deleting a category is RESTRICTED — user must reassign first.
 --   4. Every transaction logs its source: 'manual' or 'ai_text'.
+--
+-- IMPORTANT: this file is the single source of truth. Do not ALTER
+-- live tables by hand — add migrations here and rebuild dev DBs.
 
 SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS budgets;
+DROP TABLE IF EXISTS savings_goals;
+DROP TABLE IF EXISTS accounts;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS users;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
 -- 1. USERS
@@ -41,9 +54,16 @@ CREATE TABLE accounts (
 -- ============================================================
 -- 3. CATEGORIES
 -- user_id NULL = system default, shared across all users.
--- MySQL treats NULL as distinct in unique indexes, so we use a
--- generated column (user_key) to enforce uniqueness across both
--- global defaults (user_key=0) and per-user categories.
+--
+-- MySQL treats NULL as distinct in unique indexes, so a plain
+-- UNIQUE(user_id, name) would allow infinite duplicate defaults.
+-- We use a generated column (user_key) so that NULL maps to 0
+-- and uniqueness is enforced across BOTH global defaults and
+-- per-user categories:
+--     (user_key, name) unique  =>  global defaults unique
+--                              =>  per-user categories unique
+--                              =>  users may shadow a global name
+--                                  with their own custom category
 -- ============================================================
 CREATE TABLE categories (
     id         INT AUTO_INCREMENT PRIMARY KEY,
