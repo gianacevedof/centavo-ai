@@ -1,16 +1,21 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import pool from "./db.js";
 import accountsRoutes from "./routes/accounts.js";
 import transactionsRoutes from "./routes/transactions.js";
 import budgetsRoutes from "./routes/budgets.js";
 import categoriesRoutes from "./routes/categories.js";
 import aiRoutes from "./routes/ai.js";
+import authRoutes from "./routes/auth.js";
 
 const app = express();
 
 app.use(cors());
+app.use(cookieParser());
 app.use(express.json());
+
+app.use("/api/auth", authRoutes);
 app.use("/api/accounts", accountsRoutes);
 app.use("/api/transactions", transactionsRoutes);
 app.use("/api/budgets", budgetsRoutes);

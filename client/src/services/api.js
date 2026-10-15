@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000/api";
+const BASE_URL = "/api";
 
 async function request(endpoint, { params = {}, options = {} } = {}) {
   const queryString = new URLSearchParams(params).toString();
@@ -9,13 +9,14 @@ async function request(endpoint, { params = {}, options = {} } = {}) {
       "Content-Type": "application/json",
       ...options.headers,
     },
+    credentials: "include",
     ...options,
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error?.message || data.error || "An error occurred");
+    throw new Error(data.message || data.error?.message || data.error || "An error occurred");
   }
 
   return data;
@@ -23,8 +24,28 @@ async function request(endpoint, { params = {}, options = {} } = {}) {
 
 export const api = {
   checkHealth: () => request("/health"),
+  signup: (userData) =>
+    request("/auth/signup", {
+      options: {
+        method: "POST",
+        body: JSON.stringify(userData),
+      },
+    }),
+  login: (credentials) =>
+    request("/auth/login", {
+      options: {
+        method: "POST",
+        body: JSON.stringify(credentials),
+      },
+    }),
+  logout: () =>
+    request("/auth/logout", {
+      options: {
+        method: "POST",
+      },
+    }),
   fetchAccounts: (params) => request("/accounts", { params }),
-  createAccount: (accountData) => 
+  createAccount: (accountData) =>
     request("/accounts", {
       params: {},
       options: {

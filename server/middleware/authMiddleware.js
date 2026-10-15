@@ -1,9 +1,9 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
 /**
  * Middleware to verify JWT from cookies and attach user identity to the request.
  */
-const authMiddleware = (req, res, next) => {
+export const authMiddleware = (req, res, next) => {
   const token = req.cookies.token;
 
   if (!token) {
@@ -18,5 +18,3 @@ const authMiddleware = (req, res, next) => {
     return res.status(401).json({ message: "Your session has expired. Please log in again." });
   }
 };
-
-module.exports = { authMiddleware };
