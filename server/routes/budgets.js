@@ -3,18 +3,14 @@ import pool from "../db.js";
 
 const router = express.Router();
 
-// GET /api/budgets - List all budgets for the user
+// GET /api/budgets - List all budgets for the logged-in user
 router.get("/", async (req, res) => {
   try {
-    const userId = req.query.user_id; // In a real app, this comes from req.user.id (JWT)
-
-    if (!userId) {
-      return res.status(400).json({ error: "user_id is required" });
-    }
+    const user_id = req.user.id;
 
     const [rows] = await pool.query(
       "SELECT b.*, c.name as category_name FROM budgets b JOIN categories c ON b.category_id = c.id WHERE b.user_id = ?",
-      [userId],
+      [user_id],
     );
     res.status(200).json(rows);
   } catch (err) {
@@ -25,12 +21,13 @@ router.get("/", async (req, res) => {
 
 // POST /api/budgets - Create a new budget
 router.post("/", async (req, res) => {
-  const { user_id, category_id, monthly_limit } = req.body;
+  const user_id = req.user.id;
+  const { category_id, monthly_limit } = req.body;
 
-  if (!user_id || !category_id || !monthly_limit) {
+  if (!category_id || !monthly_limit) {
     return res
       .status(400)
-      .json({ error: "user_id, category_id, and monthly_limit are required" });
+      .json({ error: "category_id and monthly_limit are required" });
   }
 
   try {
@@ -56,12 +53,11 @@ router.post("/", async (req, res) => {
 // PATCH /api/budgets/:id - Update budget limit
 router.patch("/:id", async (req, res) => {
   const { id } = req.params;
-  const { monthly_limit, user_id } = req.body;
+  const user_id = req.user.id;
+  const { monthly_limit } = req.body;
 
-  if (!monthly_limit || !user_id) {
-    return res
-      .status(400)
-      .json({ error: "monthly_limit and user_id are required" });
+  if (!monthly_limit) {
+    return res.status(400).json({ error: "monthly_limit is required" });
   }
 
   try {
@@ -86,11 +82,7 @@ router.patch("/:id", async (req, res) => {
 // DELETE /api/budgets/:id - Remove a budget
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
-  const { user_id } = req.body;
-
-  if (!user_id) {
-    return res.status(400).json({ error: "user_id is required" });
-  }
+  const user_id = req.user.id;
 
   try {
     const [result] = await pool.query(

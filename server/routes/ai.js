@@ -16,9 +16,10 @@ router.post("/parse", async (req, res) => {
   }
 
   try {
-    // User 3 is hardcoded for now (no auth yet)
+    const user_id = req.user.id;
     const [accounts] = await pool.query(
-      "SELECT id, name FROM accounts WHERE user_id = 3",
+      "SELECT id, name FROM accounts WHERE user_id = ?",
+      [user_id],
     );
     const [categories] = await pool.query("SELECT * FROM categories");
 

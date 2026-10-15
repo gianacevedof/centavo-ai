@@ -5,16 +5,13 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const { user_id, category, account, limit } = req.query;
+    const user_id = req.user.id;
+    const { category, account, limit } = req.query;
 
     let query = "SELECT * FROM transactions";
     let queryParams = [];
-    let whereClauses = [];
-
-    if (user_id) {
-      whereClauses.push("user_id = ?");
-      queryParams.push(user_id);
-    }
+    let whereClauses = ["user_id = ?"];
+    queryParams.push(user_id);
 
     if (category) {
       whereClauses.push("category_id = ?");
@@ -26,10 +23,7 @@ router.get("/", async (req, res) => {
       queryParams.push(account);
     }
 
-    if (whereClauses.length > 0) {
-      query += " WHERE " + whereClauses.join(" AND ");
-    }
-
+    query += " WHERE " + whereClauses.join(" AND ");
     query += " ORDER BY date DESC";
 
     if (limit) {
@@ -46,58 +40,77 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { user_id, account_id, to_account_id, category_id, type, amount, date, note, savings_goal_id } = req.body;
+  const user_id = req.user.id;
+  const {
+    account_id,
+    to_account_id,
+    category_id,
+    type,
+    amount,
+    date,
+    note,
+    savings_goal_id,
+  } = req.body;
 
-  // 1. Basic Validation
-  if (!user_id || !account_id || !type || !amount || !date) {
-    return res.status(400).json({ error: "Missing required fields: user_id, account_id, type, amount, or date" });
+  if (!account_id || !type || !amount || !date) {
+    return res
+      .status(400)
+      .json({
+        error: "Missing required fields: account_id, type, amount, or date",
+      });
   }
 
   if (type === "transfer" && !to_account_id) {
-    return res.status(400).json({ error: "to_account_id is required for transfers" });
+    return res
+      .status(400)
+      .json({ error: "to_account_id is required for transfers" });
   }
 
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
 
-    // 2. Handle Account Balance Updates
     if (type === "expense") {
-      // Decrease balance
       await connection.query(
         "UPDATE accounts SET balance = balance - ? WHERE id = ? AND user_id = ?",
-        [amount, account_id, user_id]
+        [amount, account_id, user_id],
       );
     } else if (type === "income") {
-      // Increase balance
       await connection.query(
         "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [amount, account_id, user_id]
+        [amount, account_id, user_id],
       );
     } else if (type === "transfer") {
-      // Subtract from source, add to destination
       await connection.query(
         "UPDATE accounts SET balance = balance - ? WHERE id = ? AND user_id = ?",
-        [amount, account_id, user_id]
+        [amount, account_id, user_id],
       );
       await connection.query(
         "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [amount, to_account_id, user_id]
+        [amount, to_account_id, user_id],
       );
     }
 
-    // 3. Record the Transaction
     const [result] = await connection.query(
       "INSERT INTO transactions (user_id, account_id, to_account_id, category_id, savings_goal_id, type, amount, date, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [user_id, account_id, to_account_id, category_id, savings_goal_id, type, amount, date, note]
+      [
+        user_id,
+        account_id,
+        to_account_id,
+        category_id,
+        savings_goal_id,
+        type,
+        amount,
+        date,
+        note,
+      ],
     );
 
     await connection.commit();
-    res.status(201).json({ 
-      message: "Transaction recorded successfully", 
-      transactionId: result.insertId 
+    res.status(201).json({
+      message: "Transaction recorded successfully",
+      transactionId: result.insertId,
     });
-
   } catch (err) {
     await connection.rollback();
     console.error("Transaction creation error:", err);
