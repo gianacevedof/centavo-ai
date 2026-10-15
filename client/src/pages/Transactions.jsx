@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { api } from "../services/api";
 
 function Transactions() {
@@ -6,7 +6,6 @@ function Transactions() {
   const [accounts, setAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filters, setFilters] = useState({
-    user_id: 3,
     category: "",
     account: "",
     limit: 50,
@@ -26,11 +25,12 @@ function Transactions() {
   const [aiInput, setAiInput] = useState("");
   const [isParsing, setIsParsing] = useState(false);
 
+  // Carga cuentas y categorías (una sola vez)
   useEffect(() => {
     async function loadLookupData() {
       try {
         const [accs, cats] = await Promise.all([
-          api.fetchAccounts({ user_id: 3 }),
+          api.fetchAccounts(),
           api.fetchCategories(),
         ]);
 
@@ -52,21 +52,22 @@ function Transactions() {
     loadLookupData();
   }, []);
 
-  useEffect(() => {
-    async function loadTransactions() {
-      setLoading(true);
-      try {
-        const data = await api.fetchTransactions(filters);
-        setTransactions(data);
-      } catch (err) {
-        console.error("Failed to load transactions:", err);
-      } finally {
-        setLoading(false);
-      }
+  // Función única para cargar transacciones
+  const loadTransactions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.fetchTransactions(filters);
+      setTransactions(data);
+    } catch (err) {
+      console.error("Failed to load transactions:", err);
+    } finally {
+      setLoading(false);
     }
-
-    loadTransactions();
   }, [filters]);
+
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -74,7 +75,7 @@ function Transactions() {
   };
 
   const clearFilters = () => {
-    setFilters({ user_id: 3, category: "", account: "", limit: 50 });
+    setFilters({ category: "", account: "", limit: 50 });
   };
 
   const handleInputChange = (e) => {
@@ -88,7 +89,6 @@ function Transactions() {
     try {
       await api.createTransaction({
         ...formData,
-        user_id: 3,
         amount: parseFloat(formData.amount),
       });
       // Reset form
@@ -108,19 +108,6 @@ function Transactions() {
       setIsSubmitting(false);
     }
   };
-
-  // I define this as a separate function to reuse it in useEffect and handleSubmit
-  async function loadTransactions() {
-    setLoading(true);
-    try {
-      const data = await api.fetchTransactions(filters);
-      setTransactions(data);
-    } catch (err) {
-      console.error("Failed to load transactions:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const handleAiParse = async (e) => {
     e.preventDefault();
@@ -217,10 +204,11 @@ function Transactions() {
               required
             >
               <option value="">Select Account</option>
-              <option value="7">Main Checking</option>
-              <option value="8">Savings Account</option>
-              <option value="9">Personal Credit Card</option>
-              <option value="10">Cash Wallet</option>
+              {accounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name}
+                </option>
+              ))}
             </select>
           </div>
           <div className="form-group">

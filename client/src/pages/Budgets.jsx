@@ -9,8 +9,7 @@ function Budgets() {
     async function loadBudgets() {
       setLoading(true);
       try {
-        // Using a dummy user_id for now until auth is implemented
-        const data = await api.fetchBudgets({ user_id: 3 });
+        const data = await api.fetchBudgets();
         setBudgets(data);
       } catch (err) {
         console.error("Failed to load budgets:", err);
