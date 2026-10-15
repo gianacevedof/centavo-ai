@@ -1,0 +1,281 @@
+/* pages/Dashboard/Dashboard.module.css */
+.grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.mainColumn { display: grid; gap: var(--space-lg); }
+.rightRail  { display: grid; gap: var(--space-lg); }
+
+/* ===== Hero card ===== */
+.hero {
+  background-color: var(--color-bg-hero);
+  color: var(--color-text-on-dark);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.heroTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.heroRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-xs);
+}
+
+.heroLabel {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-on-dark-muted);
+}
+
+.heroAmount {
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin: var(--space-md) 0 var(--space-sm);
+  letter-spacing: -0.02em;
+}
+
+.heroDelta {
+  font-size: var(--font-size-sm);
+  color: #8fd4b5;
+  margin: 0;
+}
+
+.paceToggle {
+  display: flex;
+  gap: 2px;
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 3px;
+  border-radius: var(--radius-full);
+}
+
+.paceButton {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: var(--color-text-on-dark-muted);
+  font-size: var(--font-size-xs);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.paceButtonActive {
+  background-color: var(--color-text-on-dark);
+  color: var(--color-bg-hero);
+  font-weight: 600;
+}
+
+/* ===== Accounts ===== */
+.accountList { list-style: none; margin: 0; padding: 0; }
+
+.accountRow {
+  display: grid;
+  grid-template-columns: 28px 1fr 1.5fr auto;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+}
+
+.accountIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-accent-soft);
+}
+
+.accountInfo { display: flex; flex-direction: column; }
+.accountName { font-size: var(--font-size-sm); font-weight: 500; }
+.accountMeta { font-size: var(--font-size-xs); color: var(--color-text-secondary); }
+
+.accountBalance {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Budgets ===== */
+.budgetList { list-style: none; margin: 0; padding: 0; }
+
+.budgetRow {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto auto;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  font-size: var(--font-size-sm);
+}
+
+.budgetName { font-weight: 500; }
+.budgetMeta { color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+.budgetStatus { font-size: var(--font-size-xs); font-weight: 600; }
+.budgetStatus.green { color: var(--color-green); }
+.budgetStatus.amber { color: var(--color-amber); }
+.budgetStatus.red   { color: var(--color-red); }
+
+/* ===== Transactions ===== */
+.txList { list-style: none; margin: 0; padding: 0; }
+
+.txRow {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+}
+
+.txAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent-soft);
+}
+
+.txInfo { display: flex; flex-direction: column; }
+.txNote { font-size: var(--font-size-sm); font-weight: 500; }
+.txCategory { font-size: var(--font-size-xs); color: var(--color-text-secondary); }
+
+.txAmountExpense { color: var(--color-text-primary); font-weight: 600; }
+.txAmountIncome  { color: var(--color-green); font-weight: 600; }
+
+/* ===== Right rail cards ===== */
+.planHealth {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.donut {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: conic-gradient(var(--color-green) 0 82%, #ecece7 82% 100%);
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.donut::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background-color: var(--color-bg-card);
+}
+
+.donutValue {
+  position: relative;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.planText {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* AI tips */
+.tipCard {
+  background-color: #fbf3e2;
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  font-size: var(--font-size-sm);
+}
+
+.tipCard strong { display: block; margin-bottom: var(--space-xs); }
+.tipCard p { margin: 0 0 var(--space-sm); color: #6b5638; line-height: 1.4; }
+
+.tipCardMuted { background-color: var(--color-accent-soft); }
+.tipCardMuted p { color: #3d5a4c; }
+
+.tipAction {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #6b5638;
+  font-weight: 600;
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+/* Review list */
+.reviewList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--font-size-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.reviewList li { color: var(--color-text-secondary); }
+
+/* Ask box */
+.askText {
+  font-size: var(--font-size-sm);
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.askInput {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background-color: #f5f4f1;
+  border-radius: var(--radius-full);
+  padding: 6px 6px 6px var(--space-md);
+}
+
+.askInput input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  outline: none;
+}
+
+.askInput button {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--color-primary);
+  color: white;
+  cursor: pointer;
+}
+
+.loading {
+  padding: var(--space-xl);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .accountRow { grid-template-columns: 28px 1fr auto; }
+  .accountRow > :nth-child(3) { display: none; } /* hide progress bar */
+  .budgetRow { grid-template-columns: 1fr auto; }
+  .budgetRow > :nth-child(2),
+  .budgetRow > :nth-child(3) { display: none; }
+  .heroAmount { font-size: 2rem; }
+}
