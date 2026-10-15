@@ -1,0 +1,19 @@
+/* components/ProgressBar/ProgressBar.module.css */
+.track {
+  height: 6px;
+  background-color: #ecece7;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  flex: 1;
+}
+
+.fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.green { background-color: var(--color-green); }
+.red   { background-color: var(--color-red); }
+.amber { background-color: var(--color-amber); }
+.blue  { background-color: #4a7fc4; }

@@ -1,0 +1,31 @@
+/* components/Card/Card.module.css */
+.card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.title {
+  font-size: var(--font-size-h2);
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.action {
+  background: none;
+  border: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+}
