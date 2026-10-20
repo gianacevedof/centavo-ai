@@ -1,0 +1,199 @@
+/* pages/Transactions.module.css */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* ===== Top Filter Bar ===== */
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-bg-card);
+  padding: 12px var(--space-md);
+  border-radius: var(--radius-lg);
+  border: 1px solid #e5e5e0;
+}
+
+.filtersGroup {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.filterSelect {
+  background-color: var(--color-bg-primary);
+  border: 1px solid #e5e5e0;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.clearBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+/* ===== Summary Grid ===== */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  border: 1px solid #e5e5e0;
+}
+
+.summaryCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 var(--space-lg);
+  border-right: 1px solid #e5e5e0;
+}
+
+.summaryCard:last-child {
+  border-right: none;
+}
+
+.summaryLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.textGreen { color: var(--color-green); font-size: 1.25rem; font-weight: 600; }
+.textPrimary { color: var(--color-text-primary); font-size: 1.25rem; font-weight: 600; }
+.textRed { color: var(--color-red); font-weight: 600; }
+.textPurple { color: #4a7fc4; font-size: 1.25rem; font-weight: 600; }
+
+/* ===== Data Table ===== */
+.tableCard {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table th {
+  padding: var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid #e5e5e0;
+}
+
+.table td {
+  padding: 14px var(--space-md);
+  border-bottom: 1px solid #f0f0eb;
+  font-size: var(--font-size-sm);
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background-color: #fafaf9;
+}
+
+.dateCell { color: var(--color-text-secondary); }
+.descCell { font-weight: 500; color: var(--color-text-primary); }
+.accountCell { color: var(--color-text-secondary); }
+.amountCell { font-variant-numeric: tabular-nums; }
+.textRight { text-align: right; }
+
+.categoryCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--space-xl) 0 !important;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Pagination ===== */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md);
+  border-top: 1px solid #e5e5e0;
+  background-color: var(--color-bg-card);
+}
+
+.pageInfo {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.pageButtons {
+  display: flex;
+  gap: 4px;
+}
+
+.pageBtn {
+  border: 1px solid #e5e5e0;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.pageBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageBtnActive {
+  background-color: #4a7fc4;
+  color: white;
+  border-color: #4a7fc4;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  .summaryCard {
+    border-right: none;
+    border-bottom: 1px solid #e5e5e0;
+    padding-bottom: var(--space-md);
+  }
+  .summaryCard:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .topBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-md);
+  }
+}

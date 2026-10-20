@@ -1,31 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
+// Note: Adjusted imports since this file is directly in /pages
 import { api } from "../services/api";
+import Layout from "../components/Layout/Layout";
+import Card from "../components/Card/Card";
+import styles from "./Transactions.module.css";
 
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [filters, setFilters] = useState({
-    category: "",
-    account: "",
-    limit: 50,
-  });
+  const [filters, setFilters] = useState({ category: "", account: "" });
   const [loading, setLoading] = useState(true);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    amount: "",
-    category_id: "",
-    account_id: "",
-    date: new Date().toISOString().split("T")[0],
-    note: "",
-    type: "expense",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [aiInput, setAiInput] = useState("");
-  const [isParsing, setIsParsing] = useState(false);
-
-  // Carga cuentas y categorías (una sola vez)
+  // Load accounts and categories for the filter dropdowns
   useEffect(() => {
     async function loadLookupData() {
       try {
@@ -33,26 +20,15 @@ function Transactions() {
           api.fetchAccounts(),
           api.fetchCategories(),
         ]);
-
-        // Deduplicate accounts and categories by name to prevent UI duplicates
-        const uniqueAccs = Array.from(
-          new Map(accs.map((a) => [a.name, a])).values(),
-        );
-        const uniqueCats = Array.from(
-          new Map(cats.map((c) => [c.name, c])).values(),
-        );
-
-        setAccounts(uniqueAccs);
-        setCategories(uniqueCats);
+        setAccounts(Array.from(new Map(accs.map((a) => [a.name, a])).values()));
+        setCategories(Array.from(new Map(cats.map((c) => [c.name, c])).values()));
       } catch (err) {
         console.error("Failed to load lookup data:", err);
       }
     }
-
     loadLookupData();
   }, []);
 
-  // Función única para cargar transacciones
   const loadTransactions = useCallback(async () => {
     setLoading(true);
     try {
@@ -74,63 +50,18 @@ function Transactions() {
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  const clearFilters = () => {
-    setFilters({ category: "", account: "", limit: 50 });
-  };
+  const clearFilters = () => setFilters({ category: "", account: "" });
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  // Helpers to map IDs to names
+  const getCategoryName = (id) => categories.find((c) => c.id === id)?.name || "Uncategorized";
+  const getAccountName = (id) => accounts.find((a) => a.id === id)?.name || "Unknown";
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      await api.createTransaction({
-        ...formData,
-        amount: parseFloat(formData.amount),
-      });
-      // Reset form
-      setFormData({
-        amount: "",
-        category_id: "",
-        account_id: "",
-        date: new Date().toISOString().split("T")[0],
-        note: "",
-        type: "expense",
-      });
-      // Refresh list
-      await loadTransactions();
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleAiParse = async (e) => {
-    e.preventDefault();
-    if (!aiInput.trim()) return;
-
-    setIsParsing(true);
-    try {
-      const result = await api.parseAIInput(aiInput);
-      setFormData((prev) => ({
-        ...prev,
-        amount: result.amount || prev.amount,
-        category_id: result.category_id || prev.category_id,
-        account_id: result.account_id || prev.account_id,
-        date: result.date || prev.date,
-        note: result.note || prev.note,
-        type: result.type || prev.type,
-      }));
-      setAiInput("");
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setIsParsing(false);
-    }
+  // Helper for category dots
+  const getCategoryColor = (name) => {
+    const colors = ["#c4453a", "#2d7a5f", "#d99a2b", "#4a7fc4", "#6b7280", "#8b5cf6"];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
   };
 
   const income = transactions
@@ -140,202 +71,103 @@ function Transactions() {
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
-  if (loading) return <div className="loading">Loading transactions...</div>;
-
   return (
-    <div className="transactions-page">
-      <header>
-        <h1>Transactions</h1>
-      </header>
-
-      <section className="add-transaction-form">
-        <h2>Add Transaction</h2>
-        <form
-          className="ai-prompt-bar"
-          onSubmit={handleAiParse}
-          style={{ marginBottom: "20px", display: "flex", gap: "10px" }}
-        >
-          <input
-            type="text"
-            placeholder="Try 'Spent $12 on lunch'..."
-            value={aiInput}
-            onChange={(e) => setAiInput(e.target.value)}
-            style={{
-              flex: 1,
-              padding: "8px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-            }}
-          />
-          <button type="submit" disabled={isParsing}>
-            {isParsing ? "Parsing..." : "AI Magic ✨"}
-          </button>
-        </form>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Amount</label>
-            <input
-              type="number"
-              step="0.01"
-              name="amount"
-              value={formData.amount}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Type</label>
-            <select
-              name="type"
-              value={formData.type}
-              onChange={handleInputChange}
-            >
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-              <option value="transfer">Transfer</option>
+    <Layout 
+      title="Transactions" 
+      subtitle="Tuesday, September 15 · Your plan is 82% on track"
+    >
+      <div className={styles.container}>
+        
+        {/* Top Filter Bar */}
+        <div className={styles.topBar}>
+          <div className={styles.filtersGroup}>
+            <select className={styles.filterSelect} name="date">
+              <option>Date Range</option>
+            </select>
+            <select className={styles.filterSelect} name="account" value={filters.account} onChange={handleFilterChange}>
+              <option value="">All Accounts</option>
+              {accounts.map((acc) => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+            </select>
+            <select className={styles.filterSelect} name="category" value={filters.category} onChange={handleFilterChange}>
+              <option value="">Categories</option>
+              {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
             </select>
           </div>
-          <div className="form-group">
-            <label>Account</label>
-            <select
-              name="account_id"
-              value={formData.account_id}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="">Select Account</option>
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Category</label>
-            <select
-              name="category_id"
-              value={formData.category_id}
-              onChange={handleInputChange}
-            >
-              <option value="">No Category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Date</label>
-            <input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Note</label>
-            <input
-              type="text"
-              name="note"
-              value={formData.note}
-              onChange={handleInputChange}
-            />
-          </div>
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Add Transaction"}
-          </button>
-        </form>
-      </section>
-
-      <section className="filters-bar">
-        <select
-          name="category"
-          value={filters.category}
-          onChange={handleFilterChange}
-        >
-          <option value="">All Categories</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          name="account"
-          value={filters.account}
-          onChange={handleFilterChange}
-        >
-          <option value="">All Accounts</option>
-          {accounts.map((acc) => (
-            <option key={acc.id} value={acc.id}>
-              {acc.name}
-            </option>
-          ))}
-        </select>
-
-        <button onClick={clearFilters}>Clear Filters</button>
-      </section>
-
-      <section className="summary-cards">
-        <div className="card">
-          <p>Period Income</p>
-          <p className="text-green">${income.toFixed(2)}</p>
+          <button className={styles.clearBtn} onClick={clearFilters}>Clear Filters</button>
         </div>
-        <div className="card">
-          <p>Period Expenses</p>
-          <p className="text-red">${expenses.toFixed(2)}</p>
-        </div>
-        <div className="card">
-          <p>Net Savings</p>
-          <p>${(income - expenses).toFixed(2)}</p>
-        </div>
-      </section>
 
-      <section className="transactions-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Description</th>
-              <th>Category</th>
-              <th>Account</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.length === 0 ? (
-              <tr>
-                <td colSpan="5" style={{ textAlign: "center" }}>
-                  No transactions found
-                </td>
-              </tr>
-            ) : (
-              transactions.map((tx) => (
-                <tr key={tx.id}>
-                  <td>{tx.date}</td>
-                  <td>{tx.note || "No note"}</td>
-                  <td>{tx.category_id}</td>
-                  <td>{tx.account_id}</td>
-                  <td
-                    className={
-                      tx.type === "expense" ? "text-red" : "text-green"
-                    }
-                  >
-                    {tx.type === "expense" ? "-" : "+"}$
-                    {parseFloat(tx.amount).toFixed(2)}
-                  </td>
+        {/* Summary Cards */}
+        <div className={styles.summaryGrid}>
+          <div className={styles.summaryCard}>
+            <span className={styles.summaryLabel}>Period Income</span>
+            <span className={styles.textGreen}>${income.toFixed(2)}</span>
+          </div>
+          <div className={styles.summaryCard}>
+            <span className={styles.summaryLabel}>Period Expenses</span>
+            <span className={styles.textPrimary}>${expenses.toFixed(2)}</span>
+          </div>
+          <div className={styles.summaryCard}>
+            <span className={styles.summaryLabel}>Net Savings</span>
+            <span className={styles.textPurple}>+${(income - expenses).toFixed(2)}</span>
+          </div>
+        </div>
+
+        {/* Data Table */}
+        <Card className={styles.tableCard}>
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description / Merchant</th>
+                  <th>Category</th>
+                  <th>Account</th>
+                  <th className={styles.textRight}>Amount</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </section>
-    </div>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan="5" className={styles.emptyState}>Loading transactions...</td></tr>
+                ) : transactions.length === 0 ? (
+                  <tr><td colSpan="5" className={styles.emptyState}>No transactions found</td></tr>
+                ) : (
+                  transactions.map((tx) => {
+                    const catName = getCategoryName(tx.category_id);
+                    return (
+                      <tr key={tx.id}>
+                        <td className={styles.dateCell}>{tx.date}</td>
+                        <td className={styles.descCell}>{tx.note || "No description"}</td>
+                        <td>
+                          <div className={styles.categoryCell}>
+                            <span className={styles.dot} style={{ backgroundColor: getCategoryColor(catName) }} />
+                            {catName}
+                          </div>
+                        </td>
+                        <td className={styles.accountCell}>{getAccountName(tx.account_id)}</td>
+                        <td className={`${styles.textRight} ${tx.type === "expense" ? styles.textRed : styles.textGreen} ${styles.amountCell}`}>
+                          {tx.type === "expense" ? "-" : "+"}${parseFloat(tx.amount).toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination Footer */}
+          <div className={styles.pagination}>
+            <span className={styles.pageInfo}>Showing 1-{transactions.length} of {transactions.length} transactions</span>
+            <div className={styles.pageButtons}>
+              <button className={styles.pageBtn} disabled>Prev</button>
+              <button className={`${styles.pageBtn} ${styles.pageBtnActive}`}>1</button>
+              <button className={styles.pageBtn}>2</button>
+              <button className={styles.pageBtn}>Next</button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </Layout>
   );
 }
 
