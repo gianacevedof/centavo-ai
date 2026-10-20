@@ -1,9 +1,9 @@
 // pages/Dashboard/Dashboard.jsx
 import { useState, useEffect } from "react";
-import { api } from "../../services/api";
-import Layout from "../../components/Layout/Layout";
-import Card from "../../components/Card/Card";
-import ProgressBar from "../../components/ProgressBar/ProgressBar";
+import { api } from "../services/api";
+import Layout from "../components/Layout/Layout";
+import Card from "../components/Card/Card";
+import ProgressBar from "../components/ProgressBar/ProgressBar";
 import styles from "./Dashboard.module.css";
 
 function greeting() {
@@ -44,7 +44,7 @@ function Dashboard() {
 
   const totalBalance = accounts.reduce(
     (sum, a) => sum + parseFloat(a.balance || 0),
-    0
+    0,
   );
 
   if (loading) {
@@ -89,7 +89,10 @@ function Dashboard() {
               </div>
             </div>
             <p className={styles.heroAmount}>
-              ${totalBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              $
+              {totalBalance.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+              })}
             </p>
             <p className={styles.heroDelta}>
               ↗ $1,240 this month · $30k by June 2027
@@ -102,7 +105,10 @@ function Dashboard() {
               {accounts.length === 0 && <li>No accounts yet</li>}
               {accounts.map((acc) => {
                 const balance = parseFloat(acc.balance || 0);
-                const max = Math.max(...accounts.map((a) => Math.abs(parseFloat(a.balance || 0))), 1);
+                const max = Math.max(
+                  ...accounts.map((a) => Math.abs(parseFloat(a.balance || 0))),
+                  1,
+                );
                 return (
                   <li key={acc.id} className={styles.accountRow}>
                     <div className={styles.accountIcon} />
@@ -139,7 +145,9 @@ function Dashboard() {
                 const tone = pct > 100 ? "red" : pct > 85 ? "amber" : "green";
                 return (
                   <li key={bg.id} className={styles.budgetRow}>
-                    <span className={styles.budgetName}>{bg.category_name}</span>
+                    <span className={styles.budgetName}>
+                      {bg.category_name}
+                    </span>
                     <ProgressBar value={spent} max={limit} tone={tone} />
                     <span className={styles.budgetMeta}>
                       ${spent.toFixed(0)} / ${limit.toFixed(0)}
@@ -172,11 +180,12 @@ function Dashboard() {
                     </div>
                     <span
                       className={
-                        isExpense ? styles.txAmountExpense : styles.txAmountIncome
+                        isExpense
+                          ? styles.txAmountExpense
+                          : styles.txAmountIncome
                       }
                     >
-                      {isExpense ? "−" : "+"}$
-                      {parseFloat(tx.amount).toFixed(2)}
+                      {isExpense ? "−" : "+"}${parseFloat(tx.amount).toFixed(2)}
                     </span>
                   </li>
                 );
@@ -203,12 +212,18 @@ function Dashboard() {
           <Card title="Centavo-ai tips" action="Updated">
             <div className={styles.tipCard}>
               <strong>Ease dining spend this week</strong>
-              <p>Spend $18 less per day to bring food & dining back on balance by Sunday.</p>
+              <p>
+                Spend $18 less per day to bring food & dining back on balance by
+                Sunday.
+              </p>
               <button className={styles.tipAction}>Adjust budget →</button>
             </div>
             <div className={`${styles.tipCard} ${styles.tipCardMuted}`}>
               <strong>Move your checking surplus</strong>
-              <p>Transfer $300 to Rainy day fund and reach your goal three weeks sooner.</p>
+              <p>
+                Transfer $300 to Rainy day fund and reach your goal three weeks
+                sooner.
+              </p>
               <button className={styles.tipAction}>Review transfer →</button>
             </div>
           </Card>
