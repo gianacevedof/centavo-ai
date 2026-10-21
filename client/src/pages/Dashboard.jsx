@@ -21,13 +21,11 @@ function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pace, setPace] = useState("moderate");
 
   useEffect(() => {
     async function load() {
       setLoading(true);
 
-      // 1. Check the session. If it's missing or expired, go to login.
       try {
         const { user: me } = await api.fetchMe();
         setUser(me);
@@ -36,7 +34,6 @@ function Dashboard() {
         return;
       }
 
-      // 2. Load the data. The server uses the logged-in user from the cookie.
       try {
         const [accs, txs, bgs] = await Promise.all([
           api.fetchAccounts(),
@@ -81,28 +78,11 @@ function Dashboard() {
       })}
     >
       <div className={styles.grid}>
-        {/* ===== MAIN COLUMN ===== */}
         <div className={styles.mainColumn}>
-          {/* Hero: Total balance */}
+          {/* Total balance (real) */}
           <section className={styles.hero}>
             <div className={styles.heroTop}>
               <span className={styles.heroLabel}>Total Balance</span>
-              <div className={styles.heroRight}>
-                <span className={styles.heroLabel}>Goal pace</span>
-                <div className={styles.paceToggle}>
-                  {["slow", "moderate", "fast"].map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setPace(p)}
-                      className={`${styles.paceButton} ${
-                        pace === p ? styles.paceButtonActive : ""
-                      }`}
-                    >
-                      {p.charAt(0).toUpperCase() + p.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
             <p className={styles.heroAmount}>
               $
@@ -110,13 +90,10 @@ function Dashboard() {
                 minimumFractionDigits: 2,
               })}
             </p>
-            <p className={styles.heroDelta}>
-              ↗ $1,240 this month · $30k by June 2027
-            </p>
           </section>
 
-          {/* Accounts */}
-          <Card title="Accounts" action="Click to edit goals">
+          {/* Accounts (real) */}
+          <Card title="Accounts">
             <ul className={styles.accountList}>
               {accounts.length === 0 && <li>No accounts yet</li>}
               {accounts.map((acc) => {
@@ -148,8 +125,8 @@ function Dashboard() {
             </ul>
           </Card>
 
-          {/* Budgets */}
-          <Card title="Budgets & goals" action="Monthly">
+          {/* Budgets (real) */}
+          <Card title="Budgets">
             <ul className={styles.budgetList}>
               {budgets.length === 0 && <li>No budgets set yet</li>}
               {budgets.map((bg) => {
@@ -177,8 +154,8 @@ function Dashboard() {
             </ul>
           </Card>
 
-          {/* Recent transactions */}
-          <Card title="Recent transactions" action="View all">
+          {/* Recent transactions (real) */}
+          <Card title="Recent transactions">
             <ul className={styles.txList}>
               {transactions.length === 0 && <li>No recent transactions</li>}
               {transactions.map((tx) => {
@@ -207,61 +184,6 @@ function Dashboard() {
                 );
               })}
             </ul>
-          </Card>
-        </div>
-
-        {/* ===== RIGHT RAIL ===== */}
-        <div className={styles.rightRail}>
-          {/* Plan health */}
-          <Card title="Plan health">
-            <div className={styles.planHealth}>
-              <div className={styles.donut}>
-                <span className={styles.donutValue}>82%</span>
-              </div>
-              <p className={styles.planText}>
-                You're within range on 7 of 9 monthly goals.
-              </p>
-            </div>
-          </Card>
-
-          {/* AI tips */}
-          <Card title="Centavo-ai tips" action="Updated">
-            <div className={styles.tipCard}>
-              <strong>Ease dining spend this week</strong>
-              <p>
-                Spend $18 less per day to bring food & dining back on balance by
-                Sunday.
-              </p>
-              <button className={styles.tipAction}>Adjust budget →</button>
-            </div>
-            <div className={`${styles.tipCard} ${styles.tipCardMuted}`}>
-              <strong>Move your checking surplus</strong>
-              <p>
-                Transfer $300 to Rainy day fund and reach your goal three weeks
-                sooner.
-              </p>
-              <button className={styles.tipAction}>Review transfer →</button>
-            </div>
-          </Card>
-
-          {/* Review & corrections */}
-          <Card title="Review & corrections" action="3 items">
-            <ul className={styles.reviewList}>
-              <li>⚠ Categorize Metro Energy</li>
-              <li>⚠ Confirm cash balance</li>
-              <li>⚠ Review shopping target</li>
-            </ul>
-          </Card>
-
-          {/* Ask Centavo-ai */}
-          <Card title="Ask Centavo-ai">
-            <p className={styles.askText}>
-              How can I get my shopping budget back on track?
-            </p>
-            <div className={styles.askInput}>
-              <input placeholder="Try 'forecast my year'" />
-              <button aria-label="Send">→</button>
-            </div>
           </Card>
         </div>
       </div>
