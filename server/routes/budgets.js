@@ -30,6 +30,14 @@ router.post("/", async (req, res) => {
       .json({ error: "category_id and monthly_limit are required" });
   }
 
+  const [cats] = await pool.query(
+    "SELECT id FROM categories WHERE id = ? AND (user_id IS NULL OR user_id = ?)",
+    [category_id, user_id],
+  );
+  if (cats.length === 0) {
+    return res.status(400).json({ error: "Invalid category" });
+  }
+
   try {
     const [result] = await pool.query(
       "INSERT INTO budgets (user_id, category_id, monthly_limit) VALUES (?, ?, ?)",

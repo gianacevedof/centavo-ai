@@ -3,28 +3,51 @@ import pool from "../db.js";
 
 const router = express.Router();
 
+// Checks that the account belongs to this user
+async function ownsAccount(accountId, userId) {
+  const [rows] = await pool.query(
+    "SELECT id FROM accounts WHERE id = ? AND user_id = ?",
+    [accountId, userId],
+  );
+  return rows.length > 0;
+}
+
+// Checks that the category is a default (user_id NULL) or belongs to this user
+async function canUseCategory(categoryId, userId) {
+  const [rows] = await pool.query(
+    "SELECT id FROM categories WHERE id = ? AND (user_id IS NULL OR user_id = ?)",
+    [categoryId, userId],
+  );
+  return rows.length > 0;
+}
+
 router.get("/", async (req, res) => {
   try {
     const user_id = req.user.id;
     const { category, account, limit } = req.query;
 
-    let query = "SELECT * FROM transactions";
+    let query = `
+      SELECT t.*, c.name AS category_name, a.name AS account_name
+      FROM transactions t
+      LEFT JOIN categories c ON t.category_id = c.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+    `;
     let queryParams = [];
-    let whereClauses = ["user_id = ?"];
+    let whereClauses = ["t.user_id = ?"];
     queryParams.push(user_id);
 
     if (category) {
-      whereClauses.push("category_id = ?");
+      whereClauses.push("t.category_id = ?");
       queryParams.push(category);
     }
 
     if (account) {
-      whereClauses.push("account_id = ?");
+      whereClauses.push("t.account_id = ?");
       queryParams.push(account);
     }
 
     query += " WHERE " + whereClauses.join(" AND ");
-    query += " ORDER BY date DESC";
+    query += " ORDER BY t.date DESC";
 
     if (limit) {
       query += " LIMIT ?";
@@ -53,17 +76,26 @@ router.post("/", async (req, res) => {
   } = req.body;
 
   if (!account_id || !type || !amount || !date) {
-    return res
-      .status(400)
-      .json({
-        error: "Missing required fields: account_id, type, amount, or date",
-      });
+    return res.status(400).json({
+      error: "Missing required fields: account_id, type, amount, or date",
+    });
   }
 
   if (type === "transfer" && !to_account_id) {
     return res
       .status(400)
       .json({ error: "to_account_id is required for transfers" });
+  }
+
+  // Ownership checks: every ID must belong to this user
+  if (!(await ownsAccount(account_id, user_id))) {
+    return res.status(400).json({ error: "Invalid account" });
+  }
+  if (to_account_id && !(await ownsAccount(to_account_id, user_id))) {
+    return res.status(400).json({ error: "Invalid destination account" });
+  }
+  if (category_id && !(await canUseCategory(category_id, user_id))) {
+    return res.status(400).json({ error: "Invalid category" });
   }
 
   const connection = await pool.getConnection();
