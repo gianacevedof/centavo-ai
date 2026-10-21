@@ -16,7 +16,9 @@ async function request(endpoint, { params = {}, options = {} } = {}) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || data.error?.message || data.error || "An error occurred");
+    throw new Error(
+      data.message || data.error?.message || data.error || "An error occurred",
+    );
   }
 
   return data;
@@ -44,6 +46,7 @@ export const api = {
         method: "POST",
       },
     }),
+  fetchMe: () => request("/auth/me"),
   fetchAccounts: (params) => request("/accounts", { params }),
   createAccount: (accountData) =>
     request("/accounts", {

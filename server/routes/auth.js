@@ -1,5 +1,6 @@
 import express from "express";
 import pool from "../db.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 import {
   hashPassword,
   verifyPassword,
@@ -139,6 +140,22 @@ router.post("/login", async (req, res) => {
 router.post("/logout", (req, res) => {
   res.clearCookie("token");
   res.status(200).json({ message: "Logged out successfully." });
+});
+
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, email, name FROM users WHERE id = ?",
+      [req.user.id],
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json({ user: rows[0] });
+  } catch (error) {
+    console.error("Me error:", error);
+    res.status(500).json({ message: "An internal server error occurred." });
+  }
 });
 
 export default router;

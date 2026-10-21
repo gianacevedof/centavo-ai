@@ -1,5 +1,6 @@
 // pages/Dashboard/Dashboard.jsx
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import Layout from "../components/Layout/Layout";
 import Card from "../components/Card/Card";
@@ -8,12 +9,14 @@ import styles from "./Dashboard.module.css";
 
 function greeting() {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return "Good Morning";
+  if (h < 18) return "Good Afternoon";
+  return "Good Evening";
 }
 
 function Dashboard() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [budgets, setBudgets] = useState([]);
@@ -23,12 +26,22 @@ function Dashboard() {
   useEffect(() => {
     async function load() {
       setLoading(true);
+
+      // 1. Check the session. If it's missing or expired, go to login.
       try {
-        const userId = 3; // TODO: replace with auth
+        const { user: me } = await api.fetchMe();
+        setUser(me);
+      } catch {
+        navigate("/login");
+        return;
+      }
+
+      // 2. Load the data. The server uses the logged-in user from the cookie.
+      try {
         const [accs, txs, bgs] = await Promise.all([
-          api.fetchAccounts({ user_id: userId }),
-          api.fetchTransactions({ user_id: userId, limit: 5 }),
-          api.fetchBudgets({ user_id: userId }),
+          api.fetchAccounts(),
+          api.fetchTransactions({ limit: 5 }),
+          api.fetchBudgets(),
         ]);
         setAccounts(accs);
         setTransactions(txs);
@@ -40,7 +53,10 @@ function Dashboard() {
       }
     }
     load();
-  }, []);
+  }, [navigate]);
+
+  const userName = (user) =>
+    user?.name ? user.name[0].toUpperCase() + user.name.substring(1) : "";
 
   const totalBalance = accounts.reduce(
     (sum, a) => sum + parseFloat(a.balance || 0),
@@ -57,7 +73,7 @@ function Dashboard() {
 
   return (
     <Layout
-      title={`${greeting()}, Giancarlo`}
+      title={`${greeting()}, ${userName(user)}`}
       subtitle={new Date().toLocaleDateString("en-US", {
         weekday: "long",
         month: "long",
