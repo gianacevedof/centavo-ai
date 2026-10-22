@@ -23,17 +23,12 @@ async function canUseCategory(categoryId, userId) {
   return rows.length > 0;
 }
 
-// Balance rules:
-// - Checking, savings, cash: balance is money you have.
-// - Credit card: balance is money you owe.
-// So money leaving a card adds to what you owe, and money arriving on a card reduces it.
+// Balance rules (same for every account type):
+// - Checking, savings, cash: positive balance = money you have.
+// - Credit card: negative balance = money you owe (e.g. -1240 = you owe 1240).
 // direction: "out" = money leaves the account, "in" = money arrives in the account.
-function balanceChange(accountType, direction, amount) {
-  const leavesHoldings = direction === "out";
-  if (accountType === "credit_card") {
-    return leavesHoldings ? amount : -amount;
-  }
-  return leavesHoldings ? -amount : amount;
+function balanceChange(direction, amount) {
+  return direction === "out" ? -amount : amount;
 }
 
 router.get("/", async (req, res) => {
@@ -160,22 +155,30 @@ router.post("/", async (req, res) => {
     if (type === "expense") {
       await connection.query(
         "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [balanceChange(source.type, "out", amt), account_id, user_id],
+        [balanceChange("out", amt), account_id, user_id],
       );
     } else if (type === "income") {
       await connection.query(
         "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [balanceChange(source.type, "in", amt), account_id, user_id],
+        [balanceChange("in", amt), account_id, user_id],
       );
     } else if (type === "transfer") {
       await connection.query(
         "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [balanceChange(source.type, "out", amt), account_id, user_id],
+        [balanceChange("out", amt), account_id, user_id],
       );
       await connection.query(
         "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [balanceChange(destination.type, "in", amt), to_account_id, user_id],
+        [balanceChange("in", amt), to_account_id, user_id],
       );
+    }
+
+    let transferCategoryId = null;
+    if (type === "transfer") {
+      const [catRows] = await connection.query(
+        "SELECT id FROM categories WHERE user_id IS NULL AND name = 'Transfer' LIMIT 1",
+      );
+      transferCategoryId = catRows.length > 0 ? catRows[0].id : null;
     }
 
     const [result] = await connection.query(
@@ -184,7 +187,7 @@ router.post("/", async (req, res) => {
         user_id,
         account_id,
         type === "transfer" ? to_account_id : null,
-        type === "transfer" ? null : category_id ?? null,
+        type === "transfer" ? transferCategoryId : category_id ?? null,
         savings_goal_id ?? null,
         type,
         amt,
