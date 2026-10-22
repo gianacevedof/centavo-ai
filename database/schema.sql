@@ -70,7 +70,7 @@ CREATE TABLE categories (
     user_id    INT NULL,
     name       VARCHAR(100) NOT NULL,
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
-    user_key   INT AS (IFNULL(user_id, 0)) STORED,
+    user_key   INT AS (IFNULL(user_id, 0)) VIRTUAL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_category_user_name (user_key, name),
     CONSTRAINT fk_categories_user
