@@ -9,10 +9,10 @@ import {
 
 const router = express.Router();
 
-// The user's accounts and the categories they can use (defaults + their own)
+// The user's accounts (with balances) and the categories they can use (defaults + their own)
 async function loadMappings(userId) {
   const [accounts] = await pool.query(
-    "SELECT id, name, type FROM accounts WHERE user_id = ?",
+    "SELECT id, name, type, balance FROM accounts WHERE user_id = ?",
     [userId],
   );
   const [categories] = await pool.query(
@@ -32,26 +32,34 @@ function todayInAppTimezone() {
   }).format(new Date());
 }
 
-// Which details are still missing, in the order we ask for them
+// Which details are still missing, in the order we ask for them.
+// Transfers need a "to" account and no category; other types need a category.
 function findMissing(d) {
   const missing = [];
   if (!(d.amount > 0)) missing.push("amount");
   if (!d.type) missing.push("type");
   if (d.account_id === null || d.account_id === undefined) missing.push("account");
-  if (d.category_id === null || d.category_id === undefined) missing.push("category");
+  if (d.type === "transfer") {
+    if (d.to_account_id === null || d.to_account_id === undefined) missing.push("to_account");
+  } else if (d.category_id === null || d.category_id === undefined) {
+    missing.push("category");
+  }
   if (!d.date) missing.push("date");
   return missing;
 }
 
 // One conversational question for the first missing detail
 function askFor(field, mappings) {
+  const accountNames = mappings.accounts.map((a) => a.name).join(", ");
   switch (field) {
     case "amount":
       return "How much was it?";
     case "type":
-      return "Was that money you spent, or money you received?";
+      return "Was that money you spent, or money you received? (Or a move between your accounts?)";
     case "account":
-      return `Which account was it on? (${mappings.accounts.map((a) => a.name).join(", ")})`;
+      return `Which account is it from? (${accountNames})`;
+    case "to_account":
+      return `Which account should the money go to? (${accountNames})`;
     case "category":
       return `What category should it go in? (${mappings.categories.map((c) => c.name).join(", ")})`;
     case "date":
@@ -74,11 +82,15 @@ function friendlyDate(iso) {
 
 // The read-back shown before saving
 function confirmTextFor(d, mappings) {
-  const account = mappings.accounts.find((a) => Number(a.id) === Number(d.account_id));
+  const name = (id) => mappings.accounts.find((a) => Number(a.id) === Number(id))?.name;
+  const when = friendlyDate(d.date);
+  if (d.type === "transfer") {
+    return `Thanks! Here's what I have: move $${d.amount.toFixed(2)} from ${name(d.account_id)} to ${name(d.to_account_id)}, ${when}. Should I save it?`;
+  }
   const category = mappings.categories.find((c) => Number(c.id) === Number(d.category_id));
   const kind = d.type === "income" ? "income" : "expense";
   const note = d.note ? ` for ${d.note}` : "";
-  return `Thanks! Here's what I have: ${kind} of $${d.amount.toFixed(2)}${note}, on ${account?.name}, category ${category?.name}, ${friendlyDate(d.date)}. Should I save it?`;
+  return `Thanks! Here's what I have: ${kind} of $${d.amount.toFixed(2)}${note}, on ${name(d.account_id)}, category ${category?.name}, ${when}. Should I save it?`;
 }
 
 // Keeps what the user already gave us. A new value from this message replaces the old one.
@@ -89,6 +101,7 @@ function mergeDraft(draft, parsed) {
     amount: pick(parsed.amount, draft.amount),
     type: pick(parsed.type, draft.type),
     account_id: pick(parsed.account_id, draft.account_id),
+    to_account_id: pick(parsed.to_account_id, draft.to_account_id),
     category_id: pick(parsed.category_id, draft.category_id),
     date: pick(parsed.date, draft.date),
     note: pick(parsed.note, draft.note),
@@ -125,10 +138,13 @@ router.post("/chat", async (req, res) => {
     // Waiting for yes/no on the read-back
     if (draft.awaiting === "confirm" && isShort(clean)) {
       if (YES.test(clean) && !/\d/.test(clean)) {
+        const isTransfer = draft.type === "transfer";
         const payload = {
           type: draft.type,
           account_id: Number(draft.account_id),
-          category_id: Number(draft.category_id),
+          ...(isTransfer
+            ? { to_account_id: Number(draft.to_account_id) }
+            : { category_id: Number(draft.category_id) }),
           amount: Number(draft.amount),
           date: draft.date,
           note: draft.note || null,
@@ -147,11 +163,6 @@ router.post("/chat", async (req, res) => {
     }
 
     const parsed = await parseTransaction(clean, mappings);
-    if (parsed.problems.includes("transfer_not_supported")) {
-      return res.status(422).json({
-        error: "Transfers aren't supported by the AI. Please use the manual form.",
-      });
-    }
 
     // Answering "yes" to "was it today?" means today
     const missingBefore = findMissing(draft);
@@ -159,10 +170,40 @@ router.post("/chat", async (req, res) => {
       parsed.date = todayInAppTimezone();
     }
 
+    // When the chat is asking for the "to" account, a bare account name answers that
+    if (missingBefore[0] === "to_account" && parsed.account_id !== null && parsed.to_account_id === null) {
+      parsed.to_account_id = parsed.account_id;
+      parsed.account_id = null;
+    }
+
     // Re-check the merged details against this user's accounts and categories
     const checked = validateParsedTransaction(mergeDraft(draft, parsed), mappings);
     const raw = draft.raw_text ? `${draft.raw_text} / ${clean}` : clean;
     const next = { ...checked, raw_text: raw };
+
+    // Catch problems now, before the read-back, so the user can fix them
+    const fromAccount = mappings.accounts.find((a) => Number(a.id) === Number(next.account_id));
+    if (next.type === "transfer" && fromAccount?.type === "credit_card") {
+      next.account_id = null;
+      return res.status(200).json({
+        status: "ask",
+        reply: `Transfers can't come from a credit card. Which account should the money come from? (${mappings.accounts
+          .filter((a) => a.type !== "credit_card")
+          .map((a) => a.name)
+          .join(", ")})`,
+        missing: ["account"],
+        draft: next,
+      });
+    }
+    if (next.type === "transfer" && fromAccount && next.amount > parseFloat(fromAccount.balance)) {
+      next.amount = null;
+      return res.status(200).json({
+        status: "ask",
+        reply: `${fromAccount.name} only has $${parseFloat(fromAccount.balance).toFixed(2)}. How much should I move?`,
+        missing: ["amount"],
+        draft: next,
+      });
+    }
 
     const missing = findMissing(next);
     if (missing.length > 0) {
@@ -190,7 +231,7 @@ router.post("/chat", async (req, res) => {
   }
 });
 
-// POST /api/ai/parse (unchanged from Oct 16)
+// POST /api/ai/parse (one-shot parse, no chat)
 router.post("/parse", async (req, res) => {
   const { text } = req.body;
 
@@ -204,13 +245,6 @@ router.post("/parse", async (req, res) => {
 
     const result = await parseTransaction(text, mappings);
 
-    if (result.problems.includes("transfer_not_supported")) {
-      return res.status(422).json({
-        error:
-          "Transfers aren't supported by the AI. Please use the manual form.",
-      });
-    }
-
     if (result.amount === null) {
       return res.status(422).json({
         error:
@@ -222,7 +256,11 @@ router.post("/parse", async (req, res) => {
     const missing = [];
     if (result.type === null) missing.push("type");
     if (result.account_id === null) missing.push("account");
-    if (result.category_id === null) missing.push("category");
+    if (result.type === "transfer") {
+      if (result.to_account_id === null) missing.push("to_account");
+    } else if (result.category_id === null) {
+      missing.push("category");
+    }
     if (result.date === null) missing.push("date");
 
     return res.status(200).json({ ...result, missing });

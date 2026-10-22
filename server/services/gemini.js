@@ -9,7 +9,7 @@ const getTimezone = () => process.env.APP_TIMEZONE || "America/New_York";
 const TIMEOUT_MS = 15000;
 const MAX_RETRIES = 2;
 const MAX_INPUT_CHARS = 500;
-const ALLOWED_TYPES = ["expense", "income"];
+const ALLOWED_TYPES = ["expense", "income", "transfer"];
 
 // ---------- Typed errors (route can use err.status) ----------
 export class AIParseError extends Error {
@@ -39,6 +39,7 @@ const RESPONSE_SCHEMA = {
     is_transfer: { type: Type.BOOLEAN },
     category_id: { type: Type.INTEGER, nullable: true },
     account_id: { type: Type.INTEGER, nullable: true },
+    to_account_id: { type: Type.INTEGER, nullable: true },
     date: { type: Type.STRING, nullable: true },
     note: { type: Type.STRING, nullable: true },
   },
@@ -48,6 +49,7 @@ const RESPONSE_SCHEMA = {
     "is_transfer",
     "category_id",
     "account_id",
+    "to_account_id",
     "date",
     "note",
   ],
@@ -94,9 +96,9 @@ Today is ${today.weekday}, ${today.date} (timezone: ${getTimezone()}).
 
 Rules:
 - amount: a positive number with no currency symbols. "$1,200" -> 1200, "20 bucks" -> 20, "1.5k" -> 1500. Use null if there is no amount.
-- type: "expense" or "income". Use null if unclear.
-- is_transfer: true ONLY if the user is moving money between their own accounts (for example "moved 200 from checking to savings"). In that case set type, category_id and account_id to null.
-- category_id and account_id: use ONLY IDs from the lists below. If nothing clearly fits, use null. Never invent an ID.
+- type: "expense", "income" or "transfer". Use null if unclear.
+- is_transfer: true ONLY if the user is moving money between their own accounts (for example "moved 200 from checking to savings"). In that case set type to "transfer", account_id to the account the money leaves, to_account_id to the account it goes to, and category_id to null.
+- category_id, account_id and to_account_id: use ONLY IDs from the lists below. If nothing clearly fits, use null. Never invent an ID.
 - date: YYYY-MM-DD. Work out relative dates ("yesterday", "last Friday", "today") from today's date and weekday above. If the user does not mention a date at all, use null.
 - If the message is only an account name or a category name (for example "Main Checking"), set that account_id or category_id and leave amount, type and date null.
 - note: a short description, 8 words max, or null.
@@ -178,18 +180,8 @@ export function validateParsedTransaction(
   const problems = [];
   const p = parsed && typeof parsed === "object" ? parsed : {};
 
-  // Transfers are not supported by the AI parser
-  if (p.is_transfer === true || String(p.type).toLowerCase() === "transfer") {
-    return {
-      amount: null,
-      type: null,
-      category_id: null,
-      account_id: null,
-      date: todayDate,
-      note: null,
-      problems: ["transfer_not_supported"],
-    };
-  }
+  const isTransfer =
+    p.is_transfer === true || String(p.type).toLowerCase() === "transfer";
 
   // amount
   let amount = p.amount ?? null;
@@ -207,6 +199,7 @@ export function validateParsedTransaction(
     problems.push("type");
     type = null;
   }
+  if (isTransfer) type = "transfer";
 
   // account_id (must exist in the user's accounts)
   let accountId = p.account_id ?? null;
@@ -222,8 +215,27 @@ export function validateParsedTransaction(
     }
   }
 
-  // category_id (must exist, and match the transaction type if both are known)
-  let categoryId = p.category_id ?? null;
+  // to_account_id (transfers only: must exist, and differ from the source account)
+  let toAccountId = null;
+  if (type === "transfer") {
+    const raw = p.to_account_id ?? null;
+    if (raw !== null) {
+      const ok = mappings.accounts.some((a) => Number(a.id) === Number(raw));
+      if (!ok) {
+        problems.push("to_account_id");
+      } else {
+        toAccountId = Number(raw);
+      }
+    }
+    if (toAccountId !== null && toAccountId === accountId) {
+      problems.push("to_account_id");
+      toAccountId = null;
+    }
+  }
+
+  // category_id (must exist, and match the transaction type if both are known).
+  // Transfers don't use a category: ai.js and the server handle them.
+  let categoryId = type === "transfer" ? null : p.category_id ?? null;
   if (categoryId !== null) {
     const cat = mappings.categories.find(
       (c) => Number(c.id) === Number(categoryId),
@@ -255,6 +267,7 @@ export function validateParsedTransaction(
     type,
     category_id: categoryId,
     account_id: accountId,
+    to_account_id: toAccountId,
     date,
     note,
     problems,
