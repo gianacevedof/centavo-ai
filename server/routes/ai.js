@@ -80,17 +80,23 @@ function friendlyDate(iso) {
   });
 }
 
+// Varied openers for the read-back so it doesn't repeat the same phrase
+const OPENERS = ["Here's what I have:", "Okay, so:", "Got it:", "Let me check:"];
+function opener() {
+  return OPENERS[Math.floor(Math.random() * OPENERS.length)];
+}
+
 // The read-back shown before saving
 function confirmTextFor(d, mappings) {
   const name = (id) => mappings.accounts.find((a) => Number(a.id) === Number(id))?.name;
   const when = friendlyDate(d.date);
   if (d.type === "transfer") {
-    return `Thanks! Here's what I have: move $${d.amount.toFixed(2)} from ${name(d.account_id)} to ${name(d.to_account_id)}, ${when}. Should I save it?`;
+    return `${opener()} move $${d.amount.toFixed(2)} from ${name(d.account_id)} to ${name(d.to_account_id)}, ${when}. Should I save it?`;
   }
   const category = mappings.categories.find((c) => Number(c.id) === Number(d.category_id));
   const kind = d.type === "income" ? "income" : "expense";
   const note = d.note ? ` for ${d.note}` : "";
-  return `Thanks! Here's what I have: ${kind} of $${d.amount.toFixed(2)}${note}, on ${name(d.account_id)}, category ${category?.name}, ${when}. Should I save it?`;
+  return `${opener()} ${kind} of $${d.amount.toFixed(2)}${note}, on ${name(d.account_id)}, category ${category?.name}, ${when}. Should I save it?`;
 }
 
 // Keeps what the user already gave us. A new value from this message replaces the old one.
@@ -164,6 +170,30 @@ router.post("/chat", async (req, res) => {
 
     const parsed = await parseTransaction(clean, mappings);
 
+    // Same account on both sides (or an invalid destination): ask again and drop the destination
+    if (parsed.problems.includes("to_account_id")) {
+      const from = parsed.account_id ?? draft.account_id ?? null;
+      const retry = {
+        ...draft,
+        type: "transfer",
+        account_id: from,
+        to_account_id: null,
+        amount: parsed.amount ?? draft.amount ?? null,
+        date: draft.date ?? parsed.date ?? null,
+        raw_text: draft.raw_text ? `${draft.raw_text} / ${clean}` : clean,
+      };
+      delete retry.awaiting;
+      return res.status(200).json({
+        status: "ask",
+        reply: `Those need to be two different accounts. Which account should the money go to? (${mappings.accounts
+          .filter((a) => Number(a.id) !== Number(from))
+          .map((a) => a.name)
+          .join(", ")})`,
+        missing: ["to_account"],
+        draft: retry,
+      });
+    }
+
     // Answering "yes" to "was it today?" means today
     const missingBefore = findMissing(draft);
     if (missingBefore[0] === "date" && YES.test(clean) && isShort(clean)) {
@@ -174,6 +204,12 @@ router.post("/chat", async (req, res) => {
     if (missingBefore[0] === "to_account" && parsed.account_id !== null && parsed.to_account_id === null) {
       parsed.to_account_id = parsed.account_id;
       parsed.account_id = null;
+    }
+
+    // A message that names a transfer's accounts replaces the old ones, even if it names only one
+    if (parsed.type === "transfer" || draft.type === "transfer") {
+      if (parsed.account_id !== null) draft.account_id = null;
+      if (parsed.to_account_id !== null) draft.to_account_id = null;
     }
 
     // Re-check the merged details against this user's accounts and categories

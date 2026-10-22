@@ -97,7 +97,7 @@ Today is ${today.weekday}, ${today.date} (timezone: ${getTimezone()}).
 Rules:
 - amount: a positive number with no currency symbols. "$1,200" -> 1200, "20 bucks" -> 20, "1.5k" -> 1500. Use null if there is no amount.
 - type: "expense", "income" or "transfer". Use null if unclear.
-- is_transfer: true ONLY if the user is moving money between their own accounts (for example "moved 200 from checking to savings"). In that case set type to "transfer", account_id to the account the money leaves, to_account_id to the account it goes to, and category_id to null.
+- is_transfer: true ONLY if the user is moving money between their own accounts (for example "moved 200 from checking to savings"). In that case set type to "transfer", account_id to the account the money leaves, to_account_id to the account it goes to, and category_id to null. Set to_account_id ONLY if the message names a destination account; never guess one. If only one account is named, leave to_account_id null.
 - category_id, account_id and to_account_id: use ONLY IDs from the lists below. If nothing clearly fits, use null. Never invent an ID.
 - date: YYYY-MM-DD. Work out relative dates ("yesterday", "last Friday", "today") from today's date and weekday above. If the user does not mention a date at all, use null.
 - If the message is only an account name or a category name (for example "Main Checking"), set that account_id or category_id and leave amount, type and date null.
