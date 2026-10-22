@@ -3,6 +3,8 @@ import pool from "../db.js";
 
 const router = express.Router();
 
+const VALID_TYPES = ["expense", "income", "transfer"];
+
 // Checks that the account belongs to this user
 async function ownsAccount(accountId, userId) {
   const [rows] = await pool.query(
@@ -19,6 +21,19 @@ async function canUseCategory(categoryId, userId) {
     [categoryId, userId],
   );
   return rows.length > 0;
+}
+
+// Balance rules:
+// - Checking, savings, cash: balance is money you have.
+// - Credit card: balance is money you owe.
+// So money leaving a card adds to what you owe, and money arriving on a card reduces it.
+// direction: "out" = money leaves the account, "in" = money arrives in the account.
+function balanceChange(accountType, direction, amount) {
+  const leavesHoldings = direction === "out";
+  if (accountType === "credit_card") {
+    return leavesHoldings ? amount : -amount;
+  }
+  return leavesHoldings ? -amount : amount;
 }
 
 router.get("/", async (req, res) => {
@@ -81,17 +96,33 @@ router.post("/", async (req, res) => {
     });
   }
 
-  if (type === "transfer" && !to_account_id) {
-    return res
-      .status(400)
-      .json({ error: "to_account_id is required for transfers" });
+  if (!VALID_TYPES.includes(type)) {
+    return res.status(400).json({ error: "Invalid transaction type" });
+  }
+
+  const amt = Number(amount);
+  if (!Number.isFinite(amt) || amt <= 0) {
+    return res.status(400).json({ error: "Amount must be greater than 0" });
+  }
+
+  if (type === "transfer") {
+    if (!to_account_id) {
+      return res
+        .status(400)
+        .json({ error: "to_account_id is required for transfers" });
+    }
+    if (Number(to_account_id) === Number(account_id)) {
+      return res
+        .status(400)
+        .json({ error: "Transfers need two different accounts" });
+    }
   }
 
   // Ownership checks: every ID must belong to this user
   if (!(await ownsAccount(account_id, user_id))) {
     return res.status(400).json({ error: "Invalid account" });
   }
-  if (to_account_id && !(await ownsAccount(to_account_id, user_id))) {
+  if (type === "transfer" && !(await ownsAccount(to_account_id, user_id))) {
     return res.status(400).json({ error: "Invalid destination account" });
   }
   if (category_id && !(await canUseCategory(category_id, user_id))) {
@@ -102,24 +133,48 @@ router.post("/", async (req, res) => {
   try {
     await connection.beginTransaction();
 
+    // Lock the account rows so two requests can't both spend the same money
+    const accountIds = type === "transfer" ? [account_id, to_account_id] : [account_id];
+    const [accountRows] = await connection.query(
+      "SELECT id, type, balance FROM accounts WHERE id IN (?) AND user_id = ? FOR UPDATE",
+      [accountIds, user_id],
+    );
+    const accounts = new Map(accountRows.map((a) => [Number(a.id), a]));
+    const source = accounts.get(Number(account_id));
+    const destination =
+      type === "transfer" ? accounts.get(Number(to_account_id)) : null;
+
+    if (type === "transfer") {
+      if (source.type === "credit_card") {
+        await connection.rollback();
+        return res
+          .status(400)
+          .json({ error: "Transfers can't come from a credit card" });
+      }
+      if (Number(source.balance) < amt) {
+        await connection.rollback();
+        return res.status(400).json({ error: "Insufficient funds in source account" });
+      }
+    }
+
     if (type === "expense") {
       await connection.query(
-        "UPDATE accounts SET balance = balance - ? WHERE id = ? AND user_id = ?",
-        [amount, account_id, user_id],
+        "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
+        [balanceChange(source.type, "out", amt), account_id, user_id],
       );
     } else if (type === "income") {
       await connection.query(
         "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [amount, account_id, user_id],
+        [balanceChange(source.type, "in", amt), account_id, user_id],
       );
     } else if (type === "transfer") {
       await connection.query(
-        "UPDATE accounts SET balance = balance - ? WHERE id = ? AND user_id = ?",
-        [amount, account_id, user_id],
+        "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
+        [balanceChange(source.type, "out", amt), account_id, user_id],
       );
       await connection.query(
         "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [amount, to_account_id, user_id],
+        [balanceChange(destination.type, "in", amt), to_account_id, user_id],
       );
     }
 
@@ -128,13 +183,13 @@ router.post("/", async (req, res) => {
       [
         user_id,
         account_id,
-        to_account_id,
-        category_id,
-        savings_goal_id,
+        type === "transfer" ? to_account_id : null,
+        type === "transfer" ? null : category_id ?? null,
+        savings_goal_id ?? null,
         type,
-        amount,
+        amt,
         date,
-        note,
+        note ?? null,
       ],
     );
 
