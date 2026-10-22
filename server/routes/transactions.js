@@ -83,7 +83,16 @@ router.post("/", async (req, res) => {
     date,
     note,
     savings_goal_id,
+    source,
+    ai_input_text,
   } = req.body;
+
+  // Where the entry came from: typed in the manual form, or confirmed from the AI chat
+  const entrySource = source === "ai_text" ? "ai_text" : "manual";
+  const aiText =
+    entrySource === "ai_text" && typeof ai_input_text === "string"
+      ? ai_input_text.trim().slice(0, 2000) || null
+      : null;
 
   if (!account_id || !type || !amount || !date) {
     return res.status(400).json({
@@ -182,7 +191,7 @@ router.post("/", async (req, res) => {
     }
 
     const [result] = await connection.query(
-      "INSERT INTO transactions (user_id, account_id, to_account_id, category_id, savings_goal_id, type, amount, date, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO transactions (user_id, account_id, to_account_id, category_id, savings_goal_id, type, amount, date, note, source, ai_input_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         user_id,
         account_id,
@@ -193,6 +202,8 @@ router.post("/", async (req, res) => {
         amt,
         date,
         note ?? null,
+        entrySource,
+        aiText,
       ],
     );
 
