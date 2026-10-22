@@ -6,6 +6,7 @@ import Card from "../components/Card/Card";
 import styles from "./Transactions.module.css";
 
 const TRANSFER = "transfer";
+const PAGE_SIZE = 10;
 
 // Keeps the first row for each name (same behavior as before)
 function dedupeByName(list) {
@@ -38,6 +39,7 @@ function Transactions() {
   const [filters, setFilters] = useState({ category: "", account: "" });
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
+  const [page, setPage] = useState(1);
 
   // Add transaction modal state
   const [showForm, setShowForm] = useState(false);
@@ -87,9 +89,24 @@ function Transactions() {
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
+    setPage(1);
   };
 
-  const clearFilters = () => setFilters({ category: "", account: "" });
+  const clearFilters = () => {
+    setFilters({ category: "", account: "" });
+    setPage(1);
+  };
+
+  // Pagination (client-side: all rows are loaded, then split into pages)
+  const totalPages = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE));
+  const pageRows = transactions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const showingStart = transactions.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const showingEnd = Math.min(page * PAGE_SIZE, transactions.length);
+
+  // Keep the page number valid if the list gets shorter
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   // Helpers to map IDs to names
   const getCategoryName = (id) => categories.find((c) => c.id === id)?.name || "Uncategorized";
@@ -251,7 +268,7 @@ function Transactions() {
                 ) : transactions.length === 0 ? (
                   <tr><td colSpan="5" className={styles.emptyState}>No transactions found</td></tr>
                 ) : (
-                  transactions.map((tx) => {
+                  pageRows.map((tx) => {
                     const catName = getCategoryName(tx.category_id);
                     return (
                       <tr key={tx.id}>
@@ -277,12 +294,33 @@ function Transactions() {
 
           {/* Pagination Footer */}
           <div className={styles.pagination}>
-            <span className={styles.pageInfo}>Showing 1-{transactions.length} of {transactions.length} transactions</span>
+            <span className={styles.pageInfo}>
+              Showing {showingStart}-{showingEnd} of {transactions.length} transactions
+            </span>
             <div className={styles.pageButtons}>
-              <button className={styles.pageBtn} disabled>Prev</button>
-              <button className={`${styles.pageBtn} ${styles.pageBtnActive}`}>1</button>
-              <button className={styles.pageBtn}>2</button>
-              <button className={styles.pageBtn}>Next</button>
+              <button
+                className={styles.pageBtn}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                Prev
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  className={n === page ? `${styles.pageBtn} ${styles.pageBtnActive}` : styles.pageBtn}
+                  onClick={() => setPage(n)}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                className={styles.pageBtn}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+              >
+                Next
+              </button>
             </div>
           </div>
         </Card>
