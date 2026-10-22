@@ -1,4 +1,4 @@
-/* pages/Dashboard/Dashboard.module.css */
+/* pages/Overview/Overview.module.css */
 .grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -6,8 +6,14 @@
   align-items: start;
 }
 
-.mainColumn { display: grid; gap: var(--space-lg); }
-.rightRail  { display: grid; gap: var(--space-lg); }
+.mainColumn {
+  display: grid;
+  gap: var(--space-lg);
+}
+.rightRail {
+  display: grid;
+  gap: var(--space-lg);
+}
 
 /* ===== Hero card ===== */
 .hero {
@@ -77,7 +83,11 @@
 }
 
 /* ===== Accounts ===== */
-.accountList { list-style: none; margin: 0; padding: 0; }
+.accountList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
 
 .accountRow {
   display: grid;
@@ -94,9 +104,18 @@
   background-color: var(--color-accent-soft);
 }
 
-.accountInfo { display: flex; flex-direction: column; }
-.accountName { font-size: var(--font-size-sm); font-weight: 500; }
-.accountMeta { font-size: var(--font-size-xs); color: var(--color-text-secondary); }
+.accountInfo {
+  display: flex;
+  flex-direction: column;
+}
+.accountName {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+.accountMeta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
 
 .accountBalance {
   font-size: var(--font-size-sm);
@@ -105,7 +124,11 @@
 }
 
 /* ===== Budgets ===== */
-.budgetList { list-style: none; margin: 0; padding: 0; }
+.budgetList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
 
 .budgetRow {
   display: grid;
@@ -116,15 +139,33 @@
   font-size: var(--font-size-sm);
 }
 
-.budgetName { font-weight: 500; }
-.budgetMeta { color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
-.budgetStatus { font-size: var(--font-size-xs); font-weight: 600; }
-.budgetStatus.green { color: var(--color-green); }
-.budgetStatus.amber { color: var(--color-amber); }
-.budgetStatus.red   { color: var(--color-red); }
+.budgetName {
+  font-weight: 500;
+}
+.budgetMeta {
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.budgetStatus {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+.budgetStatus.green {
+  color: var(--color-green);
+}
+.budgetStatus.amber {
+  color: var(--color-amber);
+}
+.budgetStatus.red {
+  color: var(--color-red);
+}
 
 /* ===== Transactions ===== */
-.txList { list-style: none; margin: 0; padding: 0; }
+.txList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
 
 .txRow {
   display: grid;
@@ -141,12 +182,27 @@
   background-color: var(--color-accent-soft);
 }
 
-.txInfo { display: flex; flex-direction: column; }
-.txNote { font-size: var(--font-size-sm); font-weight: 500; }
-.txCategory { font-size: var(--font-size-xs); color: var(--color-text-secondary); }
+.txInfo {
+  display: flex;
+  flex-direction: column;
+}
+.txNote {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+.txCategory {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
 
-.txAmountExpense { color: var(--color-text-primary); font-weight: 600; }
-.txAmountIncome  { color: var(--color-green); font-weight: 600; }
+.txAmountExpense {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+.txAmountIncome {
+  color: var(--color-green);
+  font-weight: 600;
+}
 
 /* ===== Right rail cards ===== */
 .planHealth {
@@ -194,11 +250,22 @@
   font-size: var(--font-size-sm);
 }
 
-.tipCard strong { display: block; margin-bottom: var(--space-xs); }
-.tipCard p { margin: 0 0 var(--space-sm); color: #6b5638; line-height: 1.4; }
+.tipCard strong {
+  display: block;
+  margin-bottom: var(--space-xs);
+}
+.tipCard p {
+  margin: 0 0 var(--space-sm);
+  color: #6b5638;
+  line-height: 1.4;
+}
 
-.tipCardMuted { background-color: var(--color-accent-soft); }
-.tipCardMuted p { color: #3d5a4c; }
+.tipCardMuted {
+  background-color: var(--color-accent-soft);
+}
+.tipCardMuted p {
+  color: #3d5a4c;
+}
 
 .tipAction {
   background: none;
@@ -223,7 +290,9 @@
   gap: var(--space-sm);
 }
 
-.reviewList li { color: var(--color-text-secondary); }
+.reviewList li {
+  color: var(--color-text-secondary);
+}
 
 /* Ask box */
 .askText {
@@ -268,14 +337,26 @@
 
 /* ===== Responsive ===== */
 @media (max-width: 1024px) {
-  .grid { grid-template-columns: 1fr; }
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
-  .accountRow { grid-template-columns: 28px 1fr auto; }
-  .accountRow > :nth-child(3) { display: none; } /* hide progress bar */
-  .budgetRow { grid-template-columns: 1fr auto; }
+  .accountRow {
+    grid-template-columns: 28px 1fr auto;
+  }
+  .accountRow > :nth-child(3) {
+    display: none;
+  } /* hide progress bar */
+  .budgetRow {
+    grid-template-columns: 1fr auto;
+  }
   .budgetRow > :nth-child(2),
-  .budgetRow > :nth-child(3) { display: none; }
-  .heroAmount { font-size: 2rem; }
+  .budgetRow > :nth-child(3) {
+    display: none;
+  }
+  .heroAmount {
+    font-size: 2rem;
+  }
 }

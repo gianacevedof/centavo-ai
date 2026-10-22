@@ -1,13 +1,14 @@
 // components/Layout/Layout.jsx
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import styles from "./Layout.module.css";
 
 const NAV_ITEMS = [
-  { to: "/",            label: "Overview" },
-  { to: "/accounts",    label: "Accounts" },
-  { to: "/budgets",     label: "Budgets & Goals" },
-  { to: "/transactions",label: "Transactions" },
-  { to: "/trends",      label: "Trends" },
+  { to: "/", label: "Overview" },
+  // { to: "/accounts", label: "Accounts" },
+  { to: "/budgets", label: "Budgets & Goals" },
+  { to: "/transactions", label: "Transactions" },
+  // { to: "/trends", label: "Trends" },
+  { to: "/settings", label: "Settings" },
 ];
 
 export default function Layout({ children, title, subtitle }) {
@@ -26,7 +27,9 @@ export default function Layout({ children, title, subtitle }) {
               to={item.to}
               end={item.to === "/"}
               className={({ isActive }) =>
-                isActive ? `${styles.navItem} ${styles.navItemActive}` : styles.navItem
+                isActive
+                  ? `${styles.navItem} ${styles.navItemActive}`
+                  : styles.navItem
               }
             >
               {item.label}
@@ -59,7 +62,11 @@ export default function Layout({ children, title, subtitle }) {
             <button className={styles.reviewButton}>
               Review & corrections <span className={styles.reviewCount}>3</span>
             </button>
-            <div className={styles.avatar} aria-label="User avatar" />
+            <Link
+              to="/settings"
+              className={styles.avatar}
+              aria-label="Profile and settings"
+            />
           </div>
         </header>
 

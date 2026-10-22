@@ -16,9 +16,14 @@ async function request(endpoint, { params = {}, options = {} } = {}) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(
+    const err = new Error(
       data.message || data.error?.message || data.error || "An error occurred",
     );
+    // Keep the status and full response so callers can read extra fields
+    // (for example the transaction and budget counts on a 409).
+    err.status = response.status;
+    err.data = data;
+    throw err;
   }
 
   return data;
@@ -58,6 +63,21 @@ export const api = {
     }),
   fetchTransactions: (params) => request("/transactions", { params }),
   fetchCategories: () => request("/categories"),
+  createCategory: (name) =>
+    request("/categories", {
+      options: {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      },
+    }),
+  // No body = ask first (409 if in use). With { reassign_to } = delete for real.
+  deleteCategory: (id, body) =>
+    request(`/categories/${id}`, {
+      options: {
+        method: "DELETE",
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      },
+    }),
   createTransaction: (txData) =>
     request("/transactions", {
       params: {},

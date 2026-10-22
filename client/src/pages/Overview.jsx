@@ -1,11 +1,11 @@
-// pages/Dashboard/Dashboard.jsx
+// pages/Overview/Overview.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import Layout from "../components/Layout/Layout";
 import Card from "../components/Card/Card";
 import ProgressBar from "../components/ProgressBar/ProgressBar";
-import styles from "./Dashboard.module.css";
+import styles from "./Overview.module.css";
 
 function greeting() {
   const h = new Date().getHours();
@@ -14,7 +14,7 @@ function greeting() {
   return "Good Evening";
 }
 
-function Dashboard() {
+function Overview() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [accounts, setAccounts] = useState([]);
@@ -44,7 +44,7 @@ function Dashboard() {
         setTransactions(txs);
         setBudgets(bgs);
       } catch (err) {
-        console.error("Dashboard load error:", err);
+        console.error("Overview load error:", err);
       } finally {
         setLoading(false);
       }
@@ -62,8 +62,8 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <Layout title="Dashboard">
-        <div className={styles.loading}>Loading dashboard...</div>
+      <Layout title="Overview">
+        <div className={styles.loading}>Loading Overview...</div>
       </Layout>
     );
   }
@@ -191,4 +191,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default Overview;
