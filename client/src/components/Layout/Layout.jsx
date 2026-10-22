@@ -1,5 +1,6 @@
 // components/Layout/Layout.jsx
 import { NavLink, Link } from "react-router-dom";
+import ChatPanel from "../ChatPanel/ChatPanel";
 import styles from "./Layout.module.css";
 
 const NAV_ITEMS = [
@@ -71,6 +72,7 @@ export default function Layout({ children, title, subtitle }) {
         </header>
 
         <div className={styles.content}>{children}</div>
+        <ChatPanel />
       </main>
     </div>
   );

@@ -94,4 +94,11 @@ export const api = {
         body: JSON.stringify({ text }),
       },
     }),
+  chatAI: (text, draft) =>
+    request("/ai/chat", {
+      options: {
+        method: "POST",
+        body: JSON.stringify({ text, draft }),
+      },
+    }),
 };
