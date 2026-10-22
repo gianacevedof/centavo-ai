@@ -21,7 +21,10 @@ router.post("/parse", async (req, res) => {
       "SELECT id, name FROM accounts WHERE user_id = ?",
       [user_id],
     );
-    const [categories] = await pool.query("SELECT * FROM categories");
+    const [categories] = await pool.query(
+      "SELECT id, name FROM categories WHERE user_id IS NULL OR user_id = ?",
+      [user_id],
+    );
 
     const result = await parseTransaction(text, { accounts, categories });
 
@@ -40,8 +43,15 @@ router.post("/parse", async (req, res) => {
       });
     }
 
+    // Which details still need an answer from the user
+    const missing = [];
+    if (result.type === null) missing.push("type");
+    if (result.account_id === null) missing.push("account");
+    if (result.category_id === null) missing.push("category");
+    if (result.date === null) missing.push("date");
+
     // Success: nothing is saved yet, the UI shows a confirm step
-    return res.status(200).json(result);
+    return res.status(200).json({ ...result, missing });
   } catch (err) {
     if (err instanceof AIParseError || err instanceof AIUnavailableError) {
       return res.status(err.status).json({ error: err.message });
