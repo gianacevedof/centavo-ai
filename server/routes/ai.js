@@ -33,30 +33,22 @@ function findMissing(d) {
   return missing;
 }
 
-// One question for everything still missing, so the user can answer in one message
+// One question at a time: the first missing detail, in the order of findMissing
 function questionFor(missing, mappings) {
-  const asks = missing.map((field) => {
-    switch (field) {
-      case "amount":
-        return "how much it was";
-      case "type":
-        return "whether it was money you spent or money you received";
-      case "account":
-        return `which account it's for (${mappings.accounts.map((a) => a.name).join(", ")})`;
-      case "category":
-        return `which category it goes in (${mappings.categories.map((c) => c.name).join(", ")})`;
-      case "date":
-        return "whether this transaction is from today";
-      default:
-        return "a bit more detail";
-    }
-  });
-
-  const list =
-    asks.length <= 1
-      ? asks[0]
-      : `${asks.slice(0, -1).join(", ")} and ${asks[asks.length - 1]}`;
-  return `Just need a few more details: ${list}.`;
+  switch (missing[0]) {
+    case "amount":
+      return "How much was it?";
+    case "type":
+      return "Was that money you spent or money you received?";
+    case "account":
+      return "Which account is it for?";
+    case "category":
+      return "Which category should it go in?";
+    case "date":
+      return "Is this transaction from today?";
+    default:
+      return "Can you tell me a bit more?";
+  }
 }
 
 // "Today" in the app's timezone, same timezone the parser uses
@@ -109,6 +101,30 @@ function mergeDraft(draft, parsed) {
   };
 }
 
+// Quick-reply choices for each missing detail. Tapping one sends its text as the next message.
+function optionsFor(missing, mappings) {
+  const options = {};
+  for (const field of missing) {
+    switch (field) {
+      case "type":
+        options.type = ["Spent", "Received"];
+        break;
+      case "account":
+        options.account = mappings.accounts.map((a) => a.name);
+        break;
+      case "category":
+        options.category = mappings.categories.slice(0, 8).map((c) => c.name);
+        break;
+      case "date":
+        options.date = ["Today", "Yesterday"];
+        break;
+      default:
+        break;
+    }
+  }
+  return options;
+}
+
 function summaryFor(d, mappings) {
   const account = mappings.accounts.find((a) => Number(a.id) === Number(d.account_id));
   const category = mappings.categories.find((c) => Number(c.id) === Number(d.category_id));
@@ -154,6 +170,7 @@ router.post("/chat", async (req, res) => {
         status: "ask",
         question: questionFor(missing, mappings),
         missing,
+        options: optionsFor(missing.slice(0, 1), mappings),
         draft: checked,
       });
     }
