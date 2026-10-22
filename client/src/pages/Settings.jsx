@@ -44,7 +44,6 @@ function Settings() {
     load();
   }, [navigate]);
 
-  const defaults = categories.filter((c) => c.is_default);
   const custom = categories.filter((c) => !c.is_default);
 
   async function handleAdd(e) {
@@ -179,15 +178,6 @@ function Settings() {
               ))}
             </ul>
           )}
-
-          <h3>Default categories</h3>
-          <ul>
-            {defaults.map((c) => (
-              <li key={c.id}>
-                <span>{c.name}</span> <span>(locked)</span>
-              </li>
-            ))}
-          </ul>
         </section>
       )}
 
