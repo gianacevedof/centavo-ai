@@ -1,0 +1,260 @@
+/* pages/Budgets.module.css */
+.pageWrapper {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--space-xl);
+}
+
+.loading {
+  padding: var(--space-xl);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Section Headers ===== */
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--space-md);
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.sectionSubtitle {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin: 4px 0 0;
+}
+
+.addBtn {
+  background-color: var(--color-bg-card);
+  border: 1px solid #e5e5e0;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+/* ===== Budget Grid ===== */
+.budgetGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 columns */
+  gap: var(--space-md);
+}
+
+/* 1. Donut Card (spans 2 columns) */
+.donutCard {
+  grid-column: span 2;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+}
+
+.donutChart {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.donutInner {
+  width: 90px;
+  height: 90px;
+  background-color: var(--color-bg-card);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.donutPercent {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.donutLabel {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.donutStats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: 100%;
+}
+
+.statRow {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid #f0f0eb;
+  padding-bottom: var(--space-sm);
+}
+
+.statRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.statValue {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* 2. Individual Budget Cards */
+.budgetCard {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.cardTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.icon {
+  font-size: 1rem;
+}
+
+.cardTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.badgeGrey { background-color: #f0f0eb; color: var(--color-text-secondary); }
+.badgeRed { background-color: #fde2e0; color: var(--color-red); }
+
+.cardAmounts {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: var(--space-md);
+}
+
+.spentAmount {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.limitAmount {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* ===== Goals Grid ===== */
+.goalGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 columns */
+  gap: var(--space-md);
+}
+
+.goalCard {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.badgeGreen {
+  background-color: #e8f0ec;
+  color: var(--color-green);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.goalDate {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-lg);
+}
+
+.goalProgress {
+  margin-bottom: var(--space-sm);
+}
+
+.goalAmounts {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-sm);
+}
+
+.goalSaved {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.goalTarget {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1200px) {
+  .budgetGrid { grid-template-columns: repeat(3, 1fr); }
+  .donutCard { grid-column: span 3; flex-direction: row; }
+}
+
+@media (max-width: 900px) {
+  .budgetGrid { grid-template-columns: repeat(2, 1fr); }
+  .donutCard { grid-column: span 2; }
+  .goalGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .budgetGrid { grid-template-columns: 1fr; }
+  .donutCard { grid-column: span 1; flex-direction: column; text-align: center; }
+  .donutStats { border-top: 1px solid #e5e5e0; padding-top: var(--space-md); margin-top: var(--space-md); }
+  .statRow { align-items: center; }
+  .goalGrid { grid-template-columns: 1fr; }
+  .sectionHeader { flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
+}
