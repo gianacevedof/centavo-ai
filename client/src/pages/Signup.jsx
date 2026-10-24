@@ -1,49 +1,115 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { api } from '../services/api';
-import { toast } from 'react-toastify';
+import styles from './Signup.module.css'; // Reusing the Login CSS for a perfect match!
 
 const Signup = () => {
-  const [formData, setFormData] = useState({ email: '', password: '', name: '' });
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    email: '', 
+    password: '',
+    confirmPassword: ''
+  });
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage('');
 
-    if (formData.password.length < 8) {
-      toast.error('Password must be at least 8 characters long.');
+    if (formData.password !== formData.confirmPassword) {
+      setMessage('Passwords do not match');
       return;
     }
 
     try {
-      await api.signup(formData);
-      toast.success('Signup successful! Please log in.');
-      setTimeout(() => navigate('/login'), 3000);
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password
+        }),
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        setMessage('Account created! Redirecting to login...');
+        setTimeout(() => navigate('/login'), 2000);
+      } else {
+        setMessage(data.message || 'Signup failed');
+      }
     } catch (err) {
-      toast.error(err.message || 'Signup failed');
+      setMessage('An error occurred during signup.');
     }
   };
 
   return (
-    <div>
-      <h1>Sign Up</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Name:</label>
-          <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+    <div className={styles.pageContainer}>
+      <div className={styles.loginCard}>
+        
+        {/* Brand Logo */}
+        <div className={styles.brand}>
+          <div className={styles.brandMark}>C</div>
+          <span className={styles.brandName}>Centavo-ai</span>
         </div>
-        <div>
-          <label>Email:</label>
-          <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
+
+        <h1 className={styles.title}>Create an account</h1>
+        
+        {message && <div className={styles.message}>{message}</div>}
+
+        <form onSubmit={handleSubmit} className={styles.form}>
+          
+          <div className={styles.inputGroup}>
+            <label>Full Name</label>
+            <input 
+              type="text" 
+              value={formData.name} 
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+              required 
+            />
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label>Email</label>
+            <input 
+              type="email" 
+              value={formData.email} 
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
+              required 
+            />
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label>Password</label>
+            <input 
+              type="password" 
+              value={formData.password} 
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
+              required 
+            />
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label>Confirm Password</label>
+            <input 
+              type="password" 
+              value={formData.confirmPassword} 
+              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} 
+              required 
+            />
+          </div>
+
+          <button type="submit" className={styles.submitBtn} style={{ marginTop: '12px' }}>
+            Sign Up
+          </button>
+        </form>
+
+        <div className={styles.footer}>
+          <span>Already have an account? </span>
+          <Link to="/login" className={styles.signupLink}>Log in</Link>
         </div>
-        <div>
-          <label>Password:</label>
-          <input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
-          <small style={{ display: 'block', color: '#666' }}>Minimum 8 characters</small>
-        </div>
-        <button type="submit">Sign Up</button>
-      </form>
-      <p>Already have an account? <Link to="/login">Log In</Link></p>
+      </div>
     </div>
   );
 };

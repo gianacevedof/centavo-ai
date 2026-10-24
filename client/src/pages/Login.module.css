@@ -1,0 +1,167 @@
+/* pages/Login.module.css */
+
+.pageContainer {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f4f1; /* Warm background from Transactions page */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.loginCard {
+  background: #ffffff;
+  padding: 48px;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 440px;
+  border: 1px solid #e5e5e0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.brandMark {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #8fd4b5;
+  color: #1a3a2e;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.brandName {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a3a2e;
+}
+
+.title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a3a2e;
+  margin-bottom: 32px;
+}
+
+.message {
+  background-color: #fde2e0;
+  color: #c4453a;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputGroup label {
+  font-weight: 600; /* Made slightly bolder */
+  font-size: 0.9rem;
+  color: #1a3a2e;
+}
+
+.inputGroup input {
+  padding: 12px 16px;
+  border: 1.5px solid #1a3a2e; /* Dark green borders like the image */
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  background-color: #ffffff;
+  color: #1a3a2e;
+}
+
+.inputGroup input:focus {
+  border-color: #4a7fc4; /* Blue ring on focus */
+}
+
+/* Fixed the squished row */
+.optionsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* Tighter gap */
+  color: #1a3a2e;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #1a3a2e;
+  cursor: pointer;
+  margin: 0; /* Removes default browser margin that was squishing it */
+}
+
+.forgotLink {
+  color: #1a3a2e;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.forgotLink:hover {
+  text-decoration: underline;
+}
+
+.submitBtn {
+  background-color: #4caf50; /* Kept the green from your specific image */
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background-color 0.2s;
+}
+
+.submitBtn:hover {
+  background-color: #43a047; /* Slightly darker on hover */
+}
+
+.footer {
+  text-align: center;
+  margin-top: 32px;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.signupLink {
+  color: #1a3a2e;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.signupLink:hover {
+  text-decoration: underline;
+}
