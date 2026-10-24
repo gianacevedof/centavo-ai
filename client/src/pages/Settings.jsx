@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import Layout from "../components/Layout/Layout";
+import Card from "../components/Card/Card";
+import styles from "./Settings.module.css";
 
 const UNCATEGORIZED = "uncategorized";
 
 function Settings() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState("profile");
+  const [tab, setTab] = useState("profile"); // "profile" | "categories"
   const [user, setUser] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,8 +20,8 @@ function Settings() {
   const [pageError, setPageError] = useState("");
   const [notice, setNotice] = useState("");
 
-  // Delete modal state: null when closed
-  const [modal, setModal] = useState(null); // { category, transactions, budgets }
+  // Delete modal state
+  const [modal, setModal] = useState(null);
   const [reassignTo, setReassignTo] = useState(UNCATEGORIZED);
   const [modalError, setModalError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -46,6 +48,7 @@ function Settings() {
 
   const custom = categories.filter((c) => !c.is_default);
 
+  // --- Handlers ---
   async function handleAdd(e) {
     e.preventDefault();
     setAddError("");
@@ -59,6 +62,7 @@ function Settings() {
       const created = await api.createCategory(name);
       setCategories((prev) => [...prev, created]);
       setNewName("");
+      setNotice(`Added "${created.name}".`);
     } catch (err) {
       setAddError(err.message);
     }
@@ -68,8 +72,6 @@ function Settings() {
     setCategories((prev) => prev.filter((c) => c.id !== id));
   }
 
-  // Step 1: try deleting with no body. If it is in use, the server says 409
-  // with counts and we open the modal.
   async function handleDelete(category) {
     setPageError("");
     setNotice("");
@@ -92,24 +94,20 @@ function Settings() {
     }
   }
 
-  // Step 2: user picked where things go, delete for real.
   async function confirmDelete() {
     if (!modal) return;
     setBusy(true);
     setModalError("");
     try {
       const target = reassignTo === UNCATEGORIZED ? null : Number(reassignTo);
-      const result = await api.deleteCategory(modal.category.id, {
-        reassign_to: target,
-      });
+      const result = await api.deleteCategory(modal.category.id, { reassign_to: target });
       removeFromList(modal.category.id);
 
       const parts = [`Deleted "${modal.category.name}".`];
-      if (result.transactions_moved > 0) {
-        parts.push(`${result.transactions_moved} transaction(s) moved.`);
-      }
+      if (result.transactions_moved > 0) parts.push(`${result.transactions_moved} transaction(s) moved.`);
       if (result.budgets === "moved") parts.push("Its budget moved too.");
       if (result.budgets === "removed") parts.push("Its budget was removed.");
+      
       setNotice(parts.join(" "));
       setModal(null);
     } catch (err) {
@@ -119,109 +117,251 @@ function Settings() {
     }
   }
 
-  const targets = modal
-    ? categories.filter((c) => c.id !== modal.category.id)
-    : [];
+  const targets = modal ? categories.filter((c) => c.id !== modal.category.id) : [];
+
+  // --- Renderers ---
+  if (loading) {
+    return (
+      <Layout title="Settings">
+        <div className={styles.loading}>Loading settings...</div>
+      </Layout>
+    );
+  }
 
   return (
-    <Layout title="Settings" subtitle="Your profile and categories">
-      <div>
-        <button onClick={() => setTab("profile")} disabled={tab === "profile"}>
-          Profile
+    <Layout title="Settings" subtitle="Manage your account preferences and categories">
+      
+      {/* Tabs */}
+      <div className={styles.tabs}>
+        <button 
+          className={`${styles.tabBtn} ${tab === "profile" ? styles.tabBtnActive : ""}`}
+          onClick={() => setTab("profile")}
+        >
+          Profile & Settings
         </button>
-        <button
+        <button 
+          className={`${styles.tabBtn} ${tab === "categories" ? styles.tabBtnActive : ""}`}
           onClick={() => setTab("categories")}
-          disabled={tab === "categories"}
         >
           Categories
         </button>
       </div>
 
-      {loading && <p>Loading...</p>}
+      {/* ===== TAB 1: PROFILE & SETTINGS ===== */}
+      {tab === "profile" && user && (
+        <div className={styles.profileWrapper}>
+          
+          {/* Top User Banner */}
+          <div className={styles.userBanner}>
+            <div className={styles.userAvatar}>
+              {user.name ? user.name[0] : "U"}
+            </div>
+            <div className={styles.userInfo}>
+              <h2>{user.name}</h2>
+              <p>{user.email}</p>
+            </div>
+            <button className={styles.outlineBtn}>Edit profile</button>
+          </div>
 
-      {!loading && tab === "profile" && user && (
-        <section>
-          <h2>Profile</h2>
-          <p>Name: {user.name}</p>
-          <p>Email: {user.email}</p>
-        </section>
+          {/* Settings Grid */}
+          <div className={styles.settingsGrid}>
+            
+            <Card title="Notifications">
+              <div className={styles.toggleRow}>
+                <div>
+                  <span className={styles.toggleLabel}>Weekly check-in</span>
+                </div>
+                <label className={styles.switch}>
+                  <input type="checkbox" defaultChecked />
+                  <span className={styles.slider}></span>
+                </label>
+              </div>
+              <div className={styles.toggleRow}>
+                <div>
+                  <span className={styles.toggleLabel}>Tip alerts</span>
+                </div>
+                <label className={styles.switch}>
+                  <input type="checkbox" />
+                  <span className={styles.slider}></span>
+                </label>
+              </div>
+            </Card>
+
+            <Card title="Goal pace">
+              <p className={styles.cardDesc}>Your default plan speed.</p>
+              <div className={styles.paceToggle}>
+                <button className={styles.paceBtn}>Slow</button>
+                <button className={`${styles.paceBtn} ${styles.paceBtnActive}`}>Moderate</button>
+                <button className={styles.paceBtn}>Fast</button>
+              </div>
+            </Card>
+
+            <Card title="Linked accounts">
+              <p className={styles.cardDesc}>4 banks synced</p>
+              <button className={styles.outlineBtnFull}>Manage</button>
+            </Card>
+
+            <Card title="Security">
+              <button className={styles.outlineBtnFull} style={{ marginBottom: "16px" }}>
+                Change password
+              </button>
+              <div className={styles.toggleRow}>
+                <span className={styles.toggleLabel}>Two factor sign in</span>
+                <label className={styles.switch}>
+                  <input type="checkbox" />
+                  <span className={styles.slider}></span>
+                </label>
+              </div>
+            </Card>
+
+            <Card title="Currency and date">
+              <div className={styles.selectRow}>
+                <span>Currency</span>
+                <select className={styles.miniSelect}>
+                  <option>USD - $</option>
+                  <option>EUR - €</option>
+                </select>
+              </div>
+              <div className={styles.selectRow}>
+                <span>Date format</span>
+                <select className={styles.miniSelect}>
+                  <option>Sep 15, 2026</option>
+                  <option>15/09/2026</option>
+                </select>
+              </div>
+            </Card>
+
+            <Card title="Data and privacy">
+              <button className={styles.outlineBtnFull} style={{ marginBottom: "12px" }}>
+                Export my data
+              </button>
+              <button className={styles.dangerBtnFull}>
+                Delete account
+              </button>
+            </Card>
+          </div>
+
+          <div className={styles.signOutRow}>
+            <button className={styles.outlineBtn} onClick={() => navigate("/login")}>Sign out</button>
+          </div>
+        </div>
       )}
 
-      {!loading && tab === "categories" && (
-        <section>
-          <h2>Categories</h2>
-
-          <form onSubmit={handleAdd}>
-            <input
-              type="text"
-              placeholder="New category name"
-              value={newName}
-              maxLength={100}
-              onChange={(e) => setNewName(e.target.value)}
-            />
-            <button type="submit">Add</button>
-          </form>
-          {addError && <p role="alert">{addError}</p>}
-          {pageError && <p role="alert">{pageError}</p>}
-          {notice && <p role="status">{notice}</p>}
-
-          <h3>Your categories</h3>
-          {custom.length === 0 ? (
-            <p>No custom categories yet.</p>
-          ) : (
-            <ul>
-              {custom.map((c) => (
-                <li key={c.id}>
-                  <span>{c.name}</span>
-                  <button onClick={() => handleDelete(c)}>Delete</button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {modal && (
-        <dialog open>
-          <h2>Delete "{modal.category.name}"?</h2>
-          <p>
-            This category is used by {modal.transactions} transaction(s) and{" "}
-            {modal.budgets} budget(s). Pick where the transactions should go.
-          </p>
-
-          <label htmlFor="reassign">Move transactions to</label>
-          <select
-            id="reassign"
-            value={reassignTo}
-            onChange={(e) => setReassignTo(e.target.value)}
-          >
-            <option value={UNCATEGORIZED}>Uncategorized</option>
-            {targets.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-
-          {modal.budgets > 0 && (
-            <p role="alert">
-              Budget warning: this category's budget moves to the new category
-              only if that category has no budget yet. If you choose
-              Uncategorized, or the target already has a budget, the budget is
-              removed.
+      {/* ===== TAB 2: CATEGORIES ===== */}
+      {tab === "categories" && (
+        <div className={styles.categoriesWrapper}>
+          <Card title="Manage Categories">
+            <p className={styles.cardDesc}>
+              Set a monthly limit for each category. Default categories are locked.
             </p>
-          )}
 
-          {modalError && <p role="alert">{modalError}</p>}
+            {/* Add Category Form */}
+            <form onSubmit={handleAdd} className={styles.addCategoryForm}>
+              <input
+                type="text"
+                placeholder="Category name"
+                value={newName}
+                maxLength={100}
+                onChange={(e) => setNewName(e.target.value)}
+                className={styles.textInput}
+              />
+              <button type="submit" className={styles.primaryBtn}>Add category</button>
+            </form>
 
-          <button onClick={() => setModal(null)} disabled={busy}>
-            Cancel
-          </button>
-          <button onClick={confirmDelete} disabled={busy}>
-            {busy ? "Deleting..." : "Delete category"}
-          </button>
-        </dialog>
+            {addError && <p className={styles.errorText}>{addError}</p>}
+            {pageError && <p className={styles.errorText}>{pageError}</p>}
+            {notice && <p className={styles.successText}>{notice}</p>}
+
+            {/* Categories Table */}
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th className={styles.textRight}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Default Categories */}
+                  {categories.filter(c => c.is_default).map(c => (
+                    <tr key={c.id}>
+                      <td className={styles.descCell}>
+                        <span className={styles.dot} />
+                        {c.name}
+                      </td>
+                      <td><span className={styles.badgeDefault}>Default</span></td>
+                      <td className={styles.textRight}>
+                        <button className={styles.disabledBtn} disabled>Locked</button>
+                      </td>
+                    </tr>
+                  ))}
+                  
+                  {/* Custom Categories */}
+                  {custom.map((c) => (
+                    <tr key={c.id}>
+                      <td className={styles.descCell}>
+                        <span className={styles.dot} />
+                        {c.name}
+                      </td>
+                      <td><span className={styles.badgeCustom}>Custom</span></td>
+                      <td className={styles.textRight}>
+                        <button className={styles.deleteBtn} onClick={() => handleDelete(c)}>
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
       )}
+
+      {/* ===== DELETE MODAL ===== */}
+      {modal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h3>Delete "{modal.category.name}"?</h3>
+            <p className={styles.modalDesc}>
+              This category is used by <strong>{modal.transactions} transaction(s)</strong> and{" "}
+              <strong>{modal.budgets} budget(s)</strong>. Pick where the transactions should go.
+            </p>
+
+            <label className={styles.modalLabel}>Move transactions to</label>
+            <select
+              className={styles.selectInput}
+              value={reassignTo}
+              onChange={(e) => setReassignTo(e.target.value)}
+            >
+              <option value={UNCATEGORIZED}>Uncategorized</option>
+              {targets.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+
+            {modal.budgets > 0 && (
+              <p className={styles.warningText}>
+                Budget warning: this category's budget moves to the new category only if it has no budget yet. 
+                If you choose Uncategorized, the budget is removed.
+              </p>
+            )}
+
+            {modalError && <p className={styles.errorText}>{modalError}</p>}
+
+            <div className={styles.modalActions}>
+              <button className={styles.outlineBtn} onClick={() => setModal(null)} disabled={busy}>
+                Cancel
+              </button>
+              <button className={styles.dangerBtn} onClick={confirmDelete} disabled={busy}>
+                {busy ? "Deleting..." : "Delete category"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </Layout>
   );
 }
