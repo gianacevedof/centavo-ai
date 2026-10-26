@@ -1,5 +1,5 @@
 // components/ChatPanel/ChatPanel.jsx
-// Ask Centavo-ai: conversational chat panel. Plain markup only, Jensen does the styling.
+// Ask Centavo: conversational chat panel. Plain markup only, Jensen does the styling.
 import { useState } from "react";
 import { api } from "../../services/api";
 
@@ -47,13 +47,13 @@ function ChatPanel() {
   }
 
   if (!open) {
-    return <button onClick={() => setOpen(true)}>Ask Centavo-ai</button>;
+    return <button onClick={() => setOpen(true)}>Ask Centavo</button>;
   }
 
   return (
-    <section role="dialog" aria-label="Ask Centavo-ai">
+    <section role="dialog" aria-label="Ask Centavo">
       <header>
-        <h2>Ask Centavo-ai</h2>
+        <h2>Ask Centavo</h2>
         <button onClick={() => setOpen(false)}>Close</button>
       </header>
 
