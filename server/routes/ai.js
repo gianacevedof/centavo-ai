@@ -3,6 +3,7 @@ import pool from "../db.js";
 import {
   parseTransaction,
   validateParsedTransaction,
+  chatTurn,
   AIParseError,
   AIUnavailableError,
 } from "../services/gemini.js";
@@ -22,16 +23,6 @@ async function loadMappings(userId) {
   return { accounts, categories };
 }
 
-// "Today" in the app's timezone, same timezone the parser uses
-function todayInAppTimezone() {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: process.env.APP_TIMEZONE || "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
 // Which details are still missing, in the order we ask for them.
 // Transfers need a "to" account and no category; other types need a category.
 function findMissing(d) {
@@ -48,14 +39,14 @@ function findMissing(d) {
   return missing;
 }
 
-// One conversational question for the first missing detail
+// Fallback question, used only if the AI gives no reply
 function askFor(field, mappings) {
   const accountNames = mappings.accounts.map((a) => a.name).join(", ");
   switch (field) {
     case "amount":
       return "How much was it?";
     case "type":
-      return "Was that money you spent, or money you received? (Or a move between your accounts?)";
+      return "Was that money you spent, received, or a move between your accounts?";
     case "account":
       return `Which account is it from? (${accountNames})`;
     case "to_account":
@@ -86,7 +77,7 @@ function opener() {
   return OPENERS[Math.floor(Math.random() * OPENERS.length)];
 }
 
-// The read-back shown before saving
+// The read-back shown before saving. Built here, so the numbers and names are always exact.
 function confirmTextFor(d, mappings) {
   const name = (id) => mappings.accounts.find((a) => Number(a.id) === Number(id))?.name;
   const when = friendlyDate(d.date);
@@ -99,35 +90,38 @@ function confirmTextFor(d, mappings) {
   return `${opener()} ${kind} of $${d.amount.toFixed(2)}${note}, on ${name(d.account_id)}, category ${category?.name}, ${when}. Should I save it?`;
 }
 
-// Keeps what the user already gave us. A new value from this message replaces the old one.
-function mergeDraft(draft, parsed) {
-  const pick = (newVal, oldVal) =>
-    newVal !== null && newVal !== undefined ? newVal : oldVal ?? null;
-  return {
-    amount: pick(parsed.amount, draft.amount),
-    type: pick(parsed.type, draft.type),
-    account_id: pick(parsed.account_id, draft.account_id),
-    to_account_id: pick(parsed.to_account_id, draft.to_account_id),
-    category_id: pick(parsed.category_id, draft.category_id),
-    date: pick(parsed.date, draft.date),
-    note: pick(parsed.note, draft.note),
-  };
+// Puts the values from this message over the draft. Null means "not given", so the draft keeps its value.
+const CHAT_FIELDS = ["amount", "type", "account_id", "to_account_id", "category_id", "date", "note"];
+function applyUpdates(draft, updates) {
+  const out = { ...draft };
+  for (const k of CHAT_FIELDS) {
+    if (updates[k] !== null && updates[k] !== undefined) out[k] = updates[k];
+  }
+  return out;
 }
 
-// Short replies that mean yes or no to the read-back (kept short so a correction isn't read as a yes)
+// Short replies that mean yes or no to the read-back
 const YES = /^(yes|yeah|yep|yup|ok|okay|sure|correct|confirm|save|go ahead|sounds good|looks good)\b/i;
 const NO = /^(no|nope|cancel|nevermind|never mind|don'?t save|dont save)\b/i;
 function isShort(text) {
   return text.trim().split(/\s+/).length <= 3;
 }
 
+// Names of accounts other than the given one (or any, if none given)
+function namesExcept(mappings, id, filter = () => true) {
+  return mappings.accounts
+    .filter((a) => filter(a) && (id === null || Number(a.id) !== Number(id)))
+    .map((a) => a.name)
+    .join(", ");
+}
+
 // POST /api/ai/chat
 // Body: { text: "<the user's latest message>", draft: <draft from the last reply, or {}> }
 // Replies with one of:
-//   { status: "ask", reply, missing, draft }      -> ask the reply, send the next message with the draft
-//   { status: "confirm", reply, draft }           -> read-back; the draft is now waiting for yes/no
-//   { status: "save", reply, payload }            -> the user said yes; client saves payload with POST /api/transactions
-//   { status: "cancelled", reply, draft: {} }     -> the user said no; nothing is saved
+//   { status: "ask", reply, missing, draft }      -> show reply; send the next message with the draft
+//   { status: "confirm", reply, draft }           -> read-back; the draft waits for yes/no
+//   { status: "save", reply, payload }            -> client saves payload with POST /api/transactions
+//   { status: "cancelled", reply, draft: {} }     -> nothing saved
 router.post("/chat", async (req, res) => {
   const { text, draft: incomingDraft } = req.body;
 
@@ -140,9 +134,10 @@ router.post("/chat", async (req, res) => {
   try {
     const user_id = req.user.id;
     const mappings = await loadMappings(user_id);
+    const awaitingConfirm = draft.awaiting === "confirm";
 
-    // Waiting for yes/no on the read-back
-    if (draft.awaiting === "confirm" && isShort(clean)) {
+    // Yes or no on the read-back is handled here, so nothing is saved without a clear yes
+    if (awaitingConfirm && isShort(clean)) {
       if (YES.test(clean) && !/\d/.test(clean)) {
         const isTransfer = draft.type === "transfer";
         const payload = {
@@ -168,92 +163,58 @@ router.post("/chat", async (req, res) => {
       }
     }
 
-    const parsed = await parseTransaction(clean, mappings);
+    // One AI call: the reply plus the details from this message
+    const turn = await chatTurn(clean, { mappings, draft, missing: findMissing(draft) });
+    const hasUpdates =
+      turn.action === "update" && Object.values(turn.updates).some((v) => v !== null);
 
-    // Same account on both sides (or an invalid destination): ask again and drop the destination
-    if (parsed.problems.includes("to_account_id")) {
-      const from = parsed.account_id ?? draft.account_id ?? null;
-      const retry = {
-        ...draft,
-        type: "transfer",
-        account_id: from,
-        to_account_id: null,
-        amount: parsed.amount ?? draft.amount ?? null,
-        date: draft.date ?? parsed.date ?? null,
-        raw_text: draft.raw_text ? `${draft.raw_text} / ${clean}` : clean,
-      };
-      delete retry.awaiting;
-      return res.status(200).json({
-        status: "ask",
-        reply: `Those need to be two different accounts. Which account should the money go to? (${mappings.accounts
-          .filter((a) => Number(a.id) !== Number(from))
-          .map((a) => a.name)
-          .join(", ")})`,
-        missing: ["to_account"],
-        draft: retry,
-      });
-    }
+    // Check the details against this user's accounts and categories and the rules
+    const next = validateParsedTransaction(
+      hasUpdates ? applyUpdates(draft, turn.updates) : { ...draft },
+      mappings,
+    );
+    delete next.awaiting;
 
-    // Answering "yes" to "was it today?" means today
-    const missingBefore = findMissing(draft);
-    if (missingBefore[0] === "date" && YES.test(clean) && isShort(clean)) {
-      parsed.date = todayInAppTimezone();
-    }
-
-    // When the chat is asking for the "to" account, a bare account name answers that
-    if (missingBefore[0] === "to_account" && parsed.account_id !== null && parsed.to_account_id === null) {
-      parsed.to_account_id = parsed.account_id;
-      parsed.account_id = null;
-    }
-
-    // A message that names a transfer's accounts replaces the old ones, even if it names only one
-    if (parsed.type === "transfer" || draft.type === "transfer") {
-      if (parsed.account_id !== null) draft.account_id = null;
-      if (parsed.to_account_id !== null) draft.to_account_id = null;
-    }
-
-    // Re-check the merged details against this user's accounts and categories
-    const checked = validateParsedTransaction(mergeDraft(draft, parsed), mappings);
-    const raw = draft.raw_text ? `${draft.raw_text} / ${clean}` : clean;
-    const next = { ...checked, raw_text: raw };
-
-    // Catch problems now, before the read-back, so the user can fix them
+    let override = null; // a rule problem: its message replaces the AI's reply
     const fromAccount = mappings.accounts.find((a) => Number(a.id) === Number(next.account_id));
-    if (next.type === "transfer" && fromAccount?.type === "credit_card") {
+
+    if (next.type === "transfer" && next.account_id !== null && next.problems.includes("to_account_id")) {
+      next.to_account_id = null;
+      override = {
+        reply: `Those need to be two different accounts. Which account should the money go to? (${namesExcept(mappings, next.account_id)})`,
+      };
+    } else if (next.type === "transfer" && fromAccount?.type === "credit_card") {
       next.account_id = null;
-      return res.status(200).json({
-        status: "ask",
-        reply: `Transfers can't come from a credit card. Which account should the money come from? (${mappings.accounts
-          .filter((a) => a.type !== "credit_card")
-          .map((a) => a.name)
-          .join(", ")})`,
-        missing: ["account"],
-        draft: next,
-      });
-    }
-    if (next.type === "transfer" && fromAccount && next.amount > parseFloat(fromAccount.balance)) {
+      override = {
+        reply: `Transfers can't come from a credit card. Which account should the money come from? (${namesExcept(mappings, null, (a) => a.type !== "credit_card")})`,
+      };
+    } else if (next.type === "transfer" && fromAccount && next.amount > parseFloat(fromAccount.balance)) {
       next.amount = null;
-      return res.status(200).json({
-        status: "ask",
+      override = {
         reply: `${fromAccount.name} only has $${parseFloat(fromAccount.balance).toFixed(2)}. How much should I move?`,
-        missing: ["amount"],
-        draft: next,
-      });
+      };
     }
+
+    next.raw_text = draft.raw_text ? `${draft.raw_text} / ${clean}` : clean;
 
     const missing = findMissing(next);
     if (missing.length > 0) {
       return res.status(200).json({
         status: "ask",
-        reply: askFor(missing[0], mappings),
+        reply: override?.reply || turn.reply || askFor(missing[0], mappings),
         missing,
         draft: next,
       });
     }
 
+    // Everything is there: read it back and wait for yes or no
+    const readBack = confirmTextFor(next, mappings);
+    const reply =
+      turn.action === "chat" && turn.reply ? `${turn.reply} ${readBack}` : readBack;
+
     return res.status(200).json({
       status: "confirm",
-      reply: confirmTextFor(next, mappings),
+      reply,
       draft: { ...next, awaiting: "confirm" },
     });
   } catch (err) {
