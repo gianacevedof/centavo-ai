@@ -44,3 +44,5 @@ feedback.txt
 .superpowers
 /.claude
 architecture.zip
+logs/
+/logs
