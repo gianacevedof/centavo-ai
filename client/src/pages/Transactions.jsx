@@ -59,7 +59,8 @@ function emptyForm() {
 
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
-  const [accounts, setAccounts] = useState([]);
+  const [accounts, setAccounts] = useState([]); // deduped, for the dropdowns
+  const [accountNameById, setAccountNameById] = useState(new Map()); // every account row, for lookups
   const [categories, setCategories] = useState([]);
   const [filters, setFilters] = useState({ category: "", account: "" });
   const [loading, setLoading] = useState(true);
@@ -85,6 +86,7 @@ function Transactions() {
         api.fetchCategories(),
       ]);
       setAccounts(dedupeByName(accs));
+      setAccountNameById(new Map(accs.map((a) => [Number(a.id), a.name])));
       setCategories(dedupeByName(cats));
     } catch (err) {
       console.error("Failed to load lookup data:", err);
@@ -163,7 +165,7 @@ function Transactions() {
 
   // Helpers to map IDs to names
   const getCategoryName = (id) => categories.find((c) => c.id === id)?.name || "Uncategorized";
-  const getAccountName = (id) => accounts.find((a) => a.id === id)?.name || "Unknown";
+  const getAccountName = (id) => accountNameById.get(Number(id)) || "Unknown";
 
   // Helper for category dots
   const getCategoryColor = (name) => {
@@ -359,6 +361,11 @@ function Transactions() {
                 ) : (
                   pageRows.map((tx) => {
                     const catName = getCategoryName(tx.category_id);
+                    const fromName = tx.account_name || getAccountName(tx.account_id);
+                    const accountLabel =
+                      tx.type === "transfer"
+                        ? `${fromName} → ${getAccountName(tx.to_account_id)}`
+                        : fromName;
                     return (
                       <tr key={tx.id}>
                         <td className={styles.dateCell}>{formatDay(tx.date)}</td>
@@ -369,7 +376,7 @@ function Transactions() {
                             {catName}
                           </div>
                         </td>
-                        <td className={styles.accountCell}>{getAccountName(tx.account_id)}</td>
+                        <td className={styles.accountCell}>{accountLabel}</td>
                         <td className={`${styles.textRight} ${tx.type === "expense" ? styles.textRed : styles.textGreen} ${styles.amountCell}`}>
                           {tx.type === "expense" ? "-" : "+"}${parseFloat(tx.amount).toFixed(2)}
                         </td>
