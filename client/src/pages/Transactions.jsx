@@ -36,7 +36,7 @@ function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [filters, setFilters] = useState({ category: "", account: "" });
+  const [filters, setFilters] = useState({ category: "", account: "", start_date: "", end_date: "" });
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [page, setPage] = useState(1);
@@ -93,7 +93,7 @@ function Transactions() {
   };
 
   const clearFilters = () => {
-    setFilters({ category: "", account: "" });
+    setFilters({ category: "", account: "", start_date: "", end_date: "" });
     setPage(1);
   };
 
@@ -213,9 +213,24 @@ function Transactions() {
         {/* Top Filter Bar */}
         <div className={styles.topBar}>
           <div className={styles.filtersGroup}>
-            <select className={styles.filterSelect} name="date">
-              <option>Date Range</option>
-            </select>
+            <div>
+              <label>From</label>
+              <input
+                className={styles.filterSelect}
+                type="date"
+                name="start_date"
+                value={filters.start_date}
+                onChange={handleFilterChange}
+              />
+              <label>To</label>
+              <input
+                className={styles.filterSelect}
+                type="date"
+                name="end_date"
+                value={filters.end_date}
+                onChange={handleFilterChange}
+              />
+            </div>
             <select className={styles.filterSelect} name="account" value={filters.account} onChange={handleFilterChange}>
               <option value="">All Accounts</option>
               {accounts.map((acc) => <option key={acc.id} value={acc.id}>{acc.name}</option>)}

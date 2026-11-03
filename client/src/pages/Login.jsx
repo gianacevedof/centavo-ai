@@ -62,15 +62,6 @@ const Login = () => {
             />
           </div>
 
-          {/* Remember & Forgot Password Row */}
-          <div className={styles.optionsRow}>
-            <label className={styles.checkboxLabel}>
-              <input type="checkbox" className={styles.checkbox} />
-              Remember
-            </label>
-            <a href="#" className={styles.forgotLink}>Forgot password?</a>
-          </div>
-
           <button type="submit" className={styles.submitBtn}>Sign In</button>
         </form>
 

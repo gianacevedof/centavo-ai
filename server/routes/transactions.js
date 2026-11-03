@@ -34,7 +34,7 @@ function balanceChange(direction, amount) {
 router.get("/", async (req, res) => {
   try {
     const user_id = req.user.id;
-    const { category, account, limit } = req.query;
+    const { category, account, limit, start_date, end_date } = req.query;
 
     let query = `
       SELECT t.*, c.name AS category_name, a.name AS account_name
@@ -54,6 +54,16 @@ router.get("/", async (req, res) => {
     if (account) {
       whereClauses.push("t.account_id = ?");
       queryParams.push(account);
+    }
+
+    if (start_date) {
+      whereClauses.push("t.date >= ?");
+      queryParams.push(start_date);
+    }
+
+    if (end_date) {
+      whereClauses.push("t.date <= ?");
+      queryParams.push(end_date);
     }
 
     query += " WHERE " + whereClauses.join(" AND ");
