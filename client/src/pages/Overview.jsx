@@ -6,6 +6,7 @@ import Layout from "../components/Layout/Layout";
 import Card from "../components/Card/Card";
 import ProgressBar from "../components/ProgressBar/ProgressBar";
 import styles from "./Overview.module.css";
+import AiTips from "../components/AiTips/AiTips";
 
 function greeting() {
   const h = new Date().getHours();
@@ -185,6 +186,8 @@ function Overview() {
               })}
             </ul>
           </Card>
+
+          <AiTips />
         </div>
       </div>
     </Layout>

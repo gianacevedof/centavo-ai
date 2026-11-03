@@ -7,6 +7,7 @@ import {
   AIParseError,
   AIUnavailableError,
 } from "../services/gemini.js";
+import { getMonthlyTips } from "../services/tips.js";
 
 const router = express.Router();
 
@@ -29,9 +30,11 @@ function findMissing(d) {
   const missing = [];
   if (!(d.amount > 0)) missing.push("amount");
   if (!d.type) missing.push("type");
-  if (d.account_id === null || d.account_id === undefined) missing.push("account");
+  if (d.account_id === null || d.account_id === undefined)
+    missing.push("account");
   if (d.type === "transfer") {
-    if (d.to_account_id === null || d.to_account_id === undefined) missing.push("to_account");
+    if (d.to_account_id === null || d.to_account_id === undefined)
+      missing.push("to_account");
   } else if (d.category_id === null || d.category_id === undefined) {
     missing.push("category");
   }
@@ -72,26 +75,42 @@ function friendlyDate(iso) {
 }
 
 // Varied openers for the read-back so it doesn't repeat the same phrase
-const OPENERS = ["Here's what I have:", "Okay, so:", "Got it:", "Let me check:"];
+const OPENERS = [
+  "Here's what I have:",
+  "Okay, so:",
+  "Got it:",
+  "Let me check:",
+];
 function opener() {
   return OPENERS[Math.floor(Math.random() * OPENERS.length)];
 }
 
 // The read-back shown before saving. Built here, so the numbers and names are always exact.
 function confirmTextFor(d, mappings) {
-  const name = (id) => mappings.accounts.find((a) => Number(a.id) === Number(id))?.name;
+  const name = (id) =>
+    mappings.accounts.find((a) => Number(a.id) === Number(id))?.name;
   const when = friendlyDate(d.date);
   if (d.type === "transfer") {
     return `${opener()} move $${d.amount.toFixed(2)} from ${name(d.account_id)} to ${name(d.to_account_id)}, ${when}. Should I save it?`;
   }
-  const category = mappings.categories.find((c) => Number(c.id) === Number(d.category_id));
+  const category = mappings.categories.find(
+    (c) => Number(c.id) === Number(d.category_id),
+  );
   const kind = d.type === "income" ? "income" : "expense";
   const note = d.note ? ` for ${d.note}` : "";
   return `${opener()} ${kind} of $${d.amount.toFixed(2)}${note}, on ${name(d.account_id)}, category ${category?.name}, ${when}. Should I save it?`;
 }
 
 // Puts the values from this message over the draft. Null means "not given", so the draft keeps its value.
-const CHAT_FIELDS = ["amount", "type", "account_id", "to_account_id", "category_id", "date", "note"];
+const CHAT_FIELDS = [
+  "amount",
+  "type",
+  "account_id",
+  "to_account_id",
+  "category_id",
+  "date",
+  "note",
+];
 function applyUpdates(draft, updates) {
   const out = { ...draft };
   for (const k of CHAT_FIELDS) {
@@ -101,7 +120,8 @@ function applyUpdates(draft, updates) {
 }
 
 // Short replies that mean yes or no to the read-back
-const YES = /^(yes|yeah|yep|yup|ok|okay|sure|correct|confirm|save|go ahead|sounds good|looks good)\b/i;
+const YES =
+  /^(yes|yeah|yep|yup|ok|okay|sure|correct|confirm|save|go ahead|sounds good|looks good)\b/i;
 const NO = /^(no|nope|cancel|nevermind|never mind|don'?t save|dont save)\b/i;
 function isShort(text) {
   return text.trim().split(/\s+/).length <= 3;
@@ -129,7 +149,8 @@ router.post("/chat", async (req, res) => {
     return res.status(400).json({ error: "Text is required" });
   }
   const clean = text.trim();
-  const draft = incomingDraft && typeof incomingDraft === "object" ? incomingDraft : {};
+  const draft =
+    incomingDraft && typeof incomingDraft === "object" ? incomingDraft : {};
 
   try {
     const user_id = req.user.id;
@@ -152,7 +173,9 @@ router.post("/chat", async (req, res) => {
           source: "ai_text",
           ai_input_text: draft.raw_text || null,
         };
-        return res.status(200).json({ status: "save", reply: "Done, saved it!", payload });
+        return res
+          .status(200)
+          .json({ status: "save", reply: "Done, saved it!", payload });
       }
       if (NO.test(clean)) {
         return res.status(200).json({
@@ -164,9 +187,14 @@ router.post("/chat", async (req, res) => {
     }
 
     // One AI call: the reply plus the details from this message
-    const turn = await chatTurn(clean, { mappings, draft, missing: findMissing(draft) });
+    const turn = await chatTurn(clean, {
+      mappings,
+      draft,
+      missing: findMissing(draft),
+    });
     const hasUpdates =
-      turn.action === "update" && Object.values(turn.updates).some((v) => v !== null);
+      turn.action === "update" &&
+      Object.values(turn.updates).some((v) => v !== null);
 
     // Check the details against this user's accounts and categories and the rules
     const next = validateParsedTransaction(
@@ -176,19 +204,32 @@ router.post("/chat", async (req, res) => {
     delete next.awaiting;
 
     let override = null; // a rule problem: its message replaces the AI's reply
-    const fromAccount = mappings.accounts.find((a) => Number(a.id) === Number(next.account_id));
+    const fromAccount = mappings.accounts.find(
+      (a) => Number(a.id) === Number(next.account_id),
+    );
 
-    if (next.type === "transfer" && next.account_id !== null && next.problems.includes("to_account_id")) {
+    if (
+      next.type === "transfer" &&
+      next.account_id !== null &&
+      next.problems.includes("to_account_id")
+    ) {
       next.to_account_id = null;
       override = {
         reply: `Those need to be two different accounts. Which account should the money go to? (${namesExcept(mappings, next.account_id)})`,
       };
-    } else if (next.type === "transfer" && fromAccount?.type === "credit_card") {
+    } else if (
+      next.type === "transfer" &&
+      fromAccount?.type === "credit_card"
+    ) {
       next.account_id = null;
       override = {
         reply: `Transfers can't come from a credit card. Which account should the money come from? (${namesExcept(mappings, null, (a) => a.type !== "credit_card")})`,
       };
-    } else if (next.type === "transfer" && fromAccount && next.amount > parseFloat(fromAccount.balance)) {
+    } else if (
+      next.type === "transfer" &&
+      fromAccount &&
+      next.amount > parseFloat(fromAccount.balance)
+    ) {
       next.amount = null;
       override = {
         reply: `${fromAccount.name} only has $${parseFloat(fromAccount.balance).toFixed(2)}. How much should I move?`,
@@ -210,7 +251,9 @@ router.post("/chat", async (req, res) => {
     // Everything is there: read it back and wait for yes or no
     const readBack = confirmTextFor(next, mappings);
     const reply =
-      turn.action === "chat" && turn.reply ? `${turn.reply} ${readBack}` : readBack;
+      turn.action === "chat" && turn.reply
+        ? `${turn.reply} ${readBack}`
+        : readBack;
 
     return res.status(200).json({
       status: "confirm",
@@ -270,6 +313,16 @@ router.post("/parse", async (req, res) => {
     return res
       .status(500)
       .json({ error: "Something went wrong while parsing. Try again." });
+  }
+});
+
+// GET /api/ai/tips - 2 or 3 monthly tips (AI, or a static list if the AI is slow or down)
+router.get("/tips", async (req, res) => {
+  try {
+    res.status(200).json(await getMonthlyTips(req.user.id));
+  } catch (err) {
+    console.error("Tips error:", err);
+    res.status(500).json({ error: "Failed to load tips" });
   }
 });
 

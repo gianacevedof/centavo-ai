@@ -245,4 +245,54 @@ router.post("/", async (req, res) => {
   }
 });
 
+// GET /api/transactions/summary?period=monthly  -> { period, months: [...] }
+// GET /api/transactions/summary?period=quarterly -> { period, quarters: [...] }
+// Income, expenses and net per period. Transfers are left out: they move money, they don't earn or spend it.
+router.get("/summary", async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    const { period } = req.query;
+
+    if (period !== "monthly" && period !== "quarterly") {
+      return res.status(400).json({ error: "period must be monthly or quarterly" });
+    }
+
+    const quarterly = period === "quarterly";
+    const bucketSql = quarterly
+      ? "CONCAT(YEAR(t.date), '-Q', QUARTER(t.date))"
+      : "DATE_FORMAT(t.date, '%Y-%m')";
+
+    const [rows] = await pool.query(
+      `SELECT ${bucketSql} AS bucket,
+              SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END) AS income,
+              SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END) AS expenses,
+              COUNT(*) AS transaction_count
+       FROM transactions t
+       WHERE t.user_id = ? AND t.type IN ('income', 'expense')
+       GROUP BY bucket
+       ORDER BY bucket ASC`,
+      [user_id],
+    );
+
+    const items = rows.map((r) => {
+      const income = Number(r.income);
+      const expenses = Number(r.expenses);
+      const item = {
+        income,
+        expenses,
+        net: Number((income - expenses).toFixed(2)),
+        transaction_count: Number(r.transaction_count),
+      };
+      return quarterly ? { quarter: r.bucket, ...item } : { month: r.bucket, ...item };
+    });
+
+    res.status(200).json(
+      quarterly ? { period, quarters: items } : { period, months: items },
+    );
+  } catch (err) {
+    console.error("Transaction summary error:", err);
+    res.status(500).json({ error: "Failed to build transaction summary" });
+  }
+});
+
 export default router;

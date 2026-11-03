@@ -5,6 +5,7 @@ import Budgets from "./pages/Budgets";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Settings from "./pages/Settings";
+import Trends from "./pages/Trends";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/trends" element={<Trends />} />
       </Routes>
     </BrowserRouter>
   );

@@ -349,7 +349,7 @@ function buildChatInstruction(mappings, draft, missing, today) {
   const known = {};
   for (const k of CHAT_FIELDS) known[k] = draft[k] ?? null;
 
-  return `You are Centavo-ai, a friendly assistant that helps the user log one money transaction through a short chat. The transaction is an expense, an income, or a move between two of the user's own accounts. Each turn you write the next chat reply and return the details the user gave in this message.
+  return `You are Centavo, a friendly assistant that helps the user log one money transaction through a short chat. The transaction is an expense, an income, or a move between two of the user's own accounts. Each turn you write the next chat reply and return the details the user gave in this message.
 
 Today is ${today.weekday}, ${today.date} (timezone: ${getTimezone()}).
 
@@ -415,4 +415,42 @@ export async function chatTurn(text, { mappings, draft, missing }) {
     reply: typeof parsed.reply === "string" ? parsed.reply.trim() : "",
     updates,
   };
+}
+
+// ---------- Monthly tips (task 8) ----------
+const TIPS_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    tips: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          body: { type: Type.STRING },
+        },
+        required: ["title", "body"],
+      },
+    },
+  },
+  required: ["tips"],
+};
+
+const TIPS_SYSTEM = `You write short, friendly money tips for a personal finance app.
+You are given FACTS that are already calculated. Do not calculate, estimate, or invent any numbers.
+Only use numbers and names that appear in FACTS, copied exactly.
+Write 2 or 3 tips. Each has a short title (under 6 words) and a body of one or two sentences with one specific action.
+If FACTS has little to work with (for example "none" or "not available"), still give 2 general tips without numbers.
+Plain language. No greetings.`;
+
+// Returns the raw tips array. The caller checks it before showing anything.
+export async function generateTips(facts) {
+  const raw = await callGemini(JSON.stringify(facts), TIPS_SYSTEM, TIPS_SCHEMA);
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new AIParseError("Tips response was not valid JSON", err);
+  }
+  return parsed.tips;
 }

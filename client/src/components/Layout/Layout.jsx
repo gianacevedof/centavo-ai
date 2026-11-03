@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   // { to: "/accounts", label: "Accounts" },
   { to: "/budgets", label: "Budgets & Goals" },
   { to: "/transactions", label: "Transactions" },
-  // { to: "/trends", label: "Trends" },
+  { to: "/trends", label: "Trends" },
   { to: "/settings", label: "Settings" },
 ];
 
@@ -18,7 +18,7 @@ export default function Layout({ children, title, subtitle }) {
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
           <div className={styles.brandMark}>C</div>
-          <span className={styles.brandName}>Centavo-ai</span>
+          <span className={styles.brandName}>Centavo</span>
         </div>
 
         <nav className={styles.nav}>

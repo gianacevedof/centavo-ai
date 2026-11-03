@@ -101,4 +101,8 @@ export const api = {
         body: JSON.stringify({ text, draft }),
       },
     }),
+  fetchSummary: (period) =>
+    request("/transactions/summary", { params: { period } }),
+  fetchTrends: () => request("/trends"),
+  fetchAiTips: () => request("/ai/tips"),
 };
