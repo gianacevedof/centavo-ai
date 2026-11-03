@@ -20,6 +20,38 @@ function todayLocal() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/**
+ * Adds days to an ISO date string (YYYY-MM-DD) and returns the result as ISO string.
+ * Works in local time.
+ */
+function addDays(iso, days) {
+  if (!iso) return "";
+  const parts = iso.split("-");
+  const y = Number(parts[0]);
+  const m = Number(parts[1]) - 1; // months are 0-indexed
+  const d = Number(parts[2]);
+  const date = new Date(y, m, d); // local time at midnight
+  date.setDate(date.getDate() + days);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function formatDateDisplay(iso) {
+  if (!iso) return "";
+  const d = new Date(iso); // ISO string is parsed as UTC, but we want local display.
+  // Instead, reconstruct from parts to avoid timezone shift.
+  const parts = iso.split("-");
+  const y = Number(parts[0]);
+  const m = Number(parts[1]) - 1;
+  const dNum = Number(parts[2]);
+  const localDate = new Date(y, m, dNum);
+  return localDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function emptyForm() {
   return {
     type: "expense",
@@ -36,7 +68,7 @@ function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [filters, setFilters] = useState({ category: "", account: "", start_date: "", end_date: "" });
+  const [filters, setFilters] = useState({ category: "", account: "", start_date: "", end_date: "", preset: "custom" });
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [page, setPage] = useState(1);
@@ -88,12 +120,32 @@ function Transactions() {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
+    setFilters((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === "start_date" || name === "end_date") next.preset = "custom";
+      return next;
+    });
+    setPage(1);
+  };
+
+  const handlePresetChange = (e) => {
+    const value = e.target.value;
+    const today = todayLocal();
+    let start = "";
+    let end = today;
+    if (value === "today") {
+      start = today;
+    } else if (value === "last7") {
+      start = addDays(today, -6);
+    } else if (value === "last30") {
+      start = addDays(today, -29);
+    }
+    setFilters((prev) => ({ ...prev, preset: value, start_date: start, end_date: end }));
     setPage(1);
   };
 
   const clearFilters = () => {
-    setFilters({ category: "", account: "", start_date: "", end_date: "" });
+    setFilters({ category: "", account: "", start_date: "", end_date: "", preset: "custom" });
     setPage(1);
   };
 
@@ -213,6 +265,16 @@ function Transactions() {
         {/* Top Filter Bar */}
         <div className={styles.topBar}>
           <div className={styles.filtersGroup}>
+            <select
+              className={styles.filterSelect}
+              value={filters.preset}
+              onChange={handlePresetChange}
+            >
+              <option value="custom">Custom range</option>
+              <option value="today">Today</option>
+              <option value="last7">Last 7 days</option>
+              <option value="last30">Last 30 days</option>
+            </select>
             <div>
               <label>From</label>
               <input
@@ -287,7 +349,7 @@ function Transactions() {
                     const catName = getCategoryName(tx.category_id);
                     return (
                       <tr key={tx.id}>
-                        <td className={styles.dateCell}>{tx.date}</td>
+                        <td className={styles.dateCell}>{formatDateDisplay(tx.date)}</td>
                         <td className={styles.descCell}>{tx.note || "No description"}</td>
                         <td>
                           <div className={styles.categoryCell}>
@@ -295,7 +357,7 @@ function Transactions() {
                             {catName}
                           </div>
                         </td>
-                        <td className={styles.accountCell}>{getAccountName(tx.account_id)}</td>
+                        <td className={styles.accountCell}>{tx.account_name || getAccountName(tx.account_id) || "Unknown"}</td>
                         <td className={`${styles.textRight} ${tx.type === "expense" ? styles.textRed : styles.textGreen} ${styles.amountCell}`}>
                           {tx.type === "expense" ? "-" : "+"}${parseFloat(tx.amount).toFixed(2)}
                         </td>
