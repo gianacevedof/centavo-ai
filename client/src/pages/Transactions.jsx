@@ -20,6 +20,31 @@ function todayLocal() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+// Any Date as YYYY-MM-DD in local time
+function toYMD(d) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Start and end of a preset, both inclusive, ending today
+function presetRange(preset) {
+  const today = new Date();
+  const start = new Date();
+  start.setDate(today.getDate() - (preset === "last7" ? 6 : 29));
+  return { from: toYMD(start), to: toYMD(today) };
+}
+
+// "2026-10-12" -> "Oct 12, 2026". Built from parts so the timezone can't shift the day
+function formatDay(value) {
+  if (!value) return "";
+  const [y, m, d] = String(value).slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function emptyForm() {
   return {
     type: "expense",
@@ -40,6 +65,11 @@ function Transactions() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [page, setPage] = useState(1);
+
+  // Date range: the preset picked, the range actually applied, and the custom inputs
+  const [datePreset, setDatePreset] = useState("last30");
+  const [range, setRange] = useState(() => presetRange("last30"));
+  const [customDraft, setCustomDraft] = useState({ from: "", to: "" });
 
   // Add transaction modal state
   const [showForm, setShowForm] = useState(false);
@@ -68,7 +98,7 @@ function Transactions() {
   const loadTransactions = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.fetchTransactions(filters);
+      const data = await api.fetchTransactions({ ...filters, from: range.from, to: range.to });
       // Newest added first; id breaks ties for rows added at the same time
       const newestFirst = [...data].sort((a, b) => {
         const diff = new Date(b.created_at) - new Date(a.created_at);
@@ -80,7 +110,7 @@ function Transactions() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, range]);
 
   useEffect(() => {
     loadTransactions();
@@ -92,10 +122,33 @@ function Transactions() {
     setPage(1);
   };
 
+  // Clears category and account, and puts the date range back to Last 30 days
   const clearFilters = () => {
     setFilters({ category: "", account: "" });
+    setDatePreset("last30");
+    setRange(presetRange("last30"));
     setPage(1);
   };
+
+  const pickPreset = (preset) => {
+    setDatePreset(preset);
+    if (preset === "custom") {
+      // Start the custom inputs from the range that's showing now
+      setCustomDraft({ from: range.from, to: range.to });
+    } else {
+      setRange(presetRange(preset));
+      setPage(1);
+    }
+  };
+
+  const applyCustomRange = () => {
+    if (!customDraft.from || !customDraft.to || customDraft.from > customDraft.to) return;
+    setRange({ from: customDraft.from, to: customDraft.to });
+    setPage(1);
+  };
+
+  const customInvalid =
+    !customDraft.from || !customDraft.to || customDraft.from > customDraft.to;
 
   // Pagination (client-side: all rows are loaded, then split into pages)
   const totalPages = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE));
@@ -213,8 +266,15 @@ function Transactions() {
         {/* Top Filter Bar */}
         <div className={styles.topBar}>
           <div className={styles.filtersGroup}>
-            <select className={styles.filterSelect} name="date">
-              <option>Date Range</option>
+            <select
+              className={styles.filterSelect}
+              name="date"
+              value={datePreset}
+              onChange={(e) => pickPreset(e.target.value)}
+            >
+              <option value="last7">Last 7 days</option>
+              <option value="last30">Last 30 days</option>
+              <option value="custom">Custom range</option>
             </select>
             <select className={styles.filterSelect} name="account" value={filters.account} onChange={handleFilterChange}>
               <option value="">All Accounts</option>
@@ -228,6 +288,35 @@ function Transactions() {
           <button className={styles.clearBtn} onClick={clearFilters}>Clear Filters</button>
           <button onClick={openForm}>+ Add transaction</button>
         </div>
+
+        {datePreset === "custom" && (
+          <div>
+            <label htmlFor="range-from">From</label>
+            <input
+              id="range-from"
+              type="date"
+              value={customDraft.from}
+              onChange={(e) => setCustomDraft((d) => ({ ...d, from: e.target.value }))}
+            />
+            <label htmlFor="range-to">To</label>
+            <input
+              id="range-to"
+              type="date"
+              value={customDraft.to}
+              onChange={(e) => setCustomDraft((d) => ({ ...d, to: e.target.value }))}
+            />
+            <button type="button" onClick={applyCustomRange} disabled={customInvalid}>
+              Apply
+            </button>
+            {customDraft.from && customDraft.to && customDraft.from > customDraft.to && (
+              <p role="alert">Start date must be on or before end date.</p>
+            )}
+          </div>
+        )}
+
+        <p>
+          Showing {formatDay(range.from)} to {formatDay(range.to)}
+        </p>
 
         {notice && <p role="status">{notice}</p>}
 
@@ -272,7 +361,7 @@ function Transactions() {
                     const catName = getCategoryName(tx.category_id);
                     return (
                       <tr key={tx.id}>
-                        <td className={styles.dateCell}>{tx.date}</td>
+                        <td className={styles.dateCell}>{formatDay(tx.date)}</td>
                         <td className={styles.descCell}>{tx.note || "No description"}</td>
                         <td>
                           <div className={styles.categoryCell}>

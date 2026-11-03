@@ -5,6 +5,13 @@ const router = express.Router();
 
 const VALID_TYPES = ["expense", "income", "transfer"];
 
+// Accepts only a real calendar day written as YYYY-MM-DD
+function isValidDay(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(value + "T00:00:00Z");
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
+
 // Checks that the account belongs to this user
 async function ownsAccount(accountId, userId) {
   const [rows] = await pool.query(
@@ -34,7 +41,14 @@ function balanceChange(direction, amount) {
 router.get("/", async (req, res) => {
   try {
     const user_id = req.user.id;
-    const { category, account, limit } = req.query;
+    const { category, account, limit, from, to } = req.query;
+
+    if ((from && !isValidDay(from)) || (to && !isValidDay(to))) {
+      return res.status(400).json({ error: "Dates must look like YYYY-MM-DD" });
+    }
+    if (from && to && from > to) {
+      return res.status(400).json({ error: "'from' must be on or before 'to'" });
+    }
 
     let query = `
       SELECT t.*, c.name AS category_name, a.name AS account_name
@@ -54,6 +68,16 @@ router.get("/", async (req, res) => {
     if (account) {
       whereClauses.push("t.account_id = ?");
       queryParams.push(account);
+    }
+
+    // Both ends are inclusive. "to" uses < next day so a DATETIME column still matches the whole last day
+    if (from) {
+      whereClauses.push("t.date >= ?");
+      queryParams.push(from);
+    }
+    if (to) {
+      whereClauses.push("t.date < DATE_ADD(?, INTERVAL 1 DAY)");
+      queryParams.push(to);
     }
 
     query += " WHERE " + whereClauses.join(" AND ");
