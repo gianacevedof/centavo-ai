@@ -77,9 +77,24 @@ function ChatPanel() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
-        <button type="submit" disabled={busy}>
-          Send
-        </button>
+        <div>
+          <button type="submit" disabled={busy}>
+            Send
+          </button>
+          {draft && draft.awaiting === "confirm" && (
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(null);
+                setInput("");
+                addMessage("ai", "No problem, I didn't save it.");
+              }}
+              disabled={busy}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
     </section>
   );
