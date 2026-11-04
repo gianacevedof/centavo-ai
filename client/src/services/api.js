@@ -94,6 +94,14 @@ export const api = {
         body: JSON.stringify(data),
       },
     }),
+  fetchGoals: () => request("/goals"),
+  createGoal: (data) =>
+    request("/goals", {
+      options: {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    }),
   parseAIInput: (text) =>
     request("/ai/parse", {
       options: {
