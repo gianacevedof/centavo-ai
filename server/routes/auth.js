@@ -9,6 +9,10 @@ import {
 
 const router = express.Router();
 
+// Practical email check: something@something.tld, no spaces, max 254 chars.
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isValidEmail = (email) => email.length <= 254 && EMAIL_REGEX.test(email);
+
 /**
  * POST /api/auth/signup
  * Creates a new user account.
@@ -22,12 +26,19 @@ const DEFAULT_ACCOUNTS = [
 ];
 
 router.post("/signup", async (req, res) => {
-  const { email, password, name } = req.body;
+  const { password, name } = req.body;
+  const email = typeof req.body.email === "string" ? req.body.email.trim() : "";
 
   if (!email || !password || !name) {
     return res
       .status(400)
       .json({ message: "Please provide all required fields." });
+  }
+
+  if (!isValidEmail(email)) {
+    return res
+      .status(400)
+      .json({ message: "Please enter a valid email address." });
   }
 
   // NIST SP 800-63-4 inspired password restrictions:
@@ -94,12 +105,19 @@ router.post("/signup", async (req, res) => {
  * Verifies credentials and sets an auth cookie.
  */
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { password } = req.body;
+  const email = typeof req.body.email === "string" ? req.body.email.trim() : "";
 
   if (!email || !password) {
     return res
       .status(400)
       .json({ message: "Please provide all required fields." });
+  }
+
+  if (!isValidEmail(email)) {
+    return res
+      .status(400)
+      .json({ message: "Please enter a valid email address." });
   }
 
   try {
