@@ -22,26 +22,33 @@ router.get("/", async (req, res) => {
 // POST /api/budgets - Create a new budget
 router.post("/", async (req, res) => {
   const user_id = req.user.id;
-  const { category_id, monthly_limit } = req.body;
+  const { category_id } = req.body;
+  const limit = Number(req.body.monthly_limit);
 
-  if (!category_id || !monthly_limit) {
-    return res
-      .status(400)
-      .json({ error: "category_id and monthly_limit are required" });
-  }
-
-  const [cats] = await pool.query(
-    "SELECT id FROM categories WHERE id = ? AND (user_id IS NULL OR user_id = ?)",
-    [category_id, user_id],
-  );
-  if (cats.length === 0) {
-    return res.status(400).json({ error: "Invalid category" });
+  // Number("") and Number(null) are 0, so empty input is rejected too.
+  if (
+    !category_id ||
+    !Number.isFinite(limit) ||
+    limit <= 0 ||
+    limit > 9999999999.99 // DECIMAL(12,2) max
+  ) {
+    return res.status(400).json({
+      error: "category_id and a monthly_limit greater than 0 are required",
+    });
   }
 
   try {
+    const [cats] = await pool.query(
+      "SELECT id FROM categories WHERE id = ? AND (user_id IS NULL OR user_id = ?)",
+      [category_id, user_id],
+    );
+    if (cats.length === 0) {
+      return res.status(400).json({ error: "Invalid category" });
+    }
+
     const [result] = await pool.query(
       "INSERT INTO budgets (user_id, category_id, monthly_limit) VALUES (?, ?, ?)",
-      [user_id, category_id, monthly_limit],
+      [user_id, category_id, limit],
     );
     res.status(201).json({
       message: "Budget created successfully",

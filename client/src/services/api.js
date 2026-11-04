@@ -87,6 +87,13 @@ export const api = {
       },
     }),
   fetchBudgets: (params) => request("/budgets", { params }),
+  createBudget: (data) =>
+    request("/budgets", {
+      options: {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    }),
   parseAIInput: (text) =>
     request("/ai/parse", {
       options: {
