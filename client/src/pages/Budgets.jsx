@@ -4,6 +4,16 @@ import Layout from "../components/Layout/Layout";
 import ProgressBar from "../components/ProgressBar/ProgressBar";
 import styles from "./Budgets.module.css";
 
+// "2028-12-01" -> "Dec 2028". Parsed as UTC so the day can't shift.
+function formatMonthYear(ymd) {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 function AddBudgetModal({ existingCategoryIds, onClose, onCreated }) {
   const [categories, setCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
@@ -30,7 +40,6 @@ function AddBudgetModal({ existingCategoryIds, onClose, onCreated }) {
     };
   }, []);
 
-  // Close on Escape, unless a save is in progress.
   useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape" && !busy) onClose();
@@ -156,30 +165,176 @@ function AddBudgetModal({ existingCategoryIds, onClose, onCreated }) {
   );
 }
 
+function AddGoalModal({ onClose, onCreated }) {
+  const [name, setName] = useState("");
+  const [targetAmount, setTargetAmount] = useState("");
+  const [targetDate, setTargetDate] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape" && !busy) onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [busy, onClose]);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+
+    const trimmed = name.trim();
+    const amount = Number(targetAmount);
+    if (!trimmed) {
+      setError("Enter a goal name.");
+      return;
+    }
+    if (!targetAmount || !Number.isFinite(amount) || amount <= 0) {
+      setError("Enter a target amount greater than 0.");
+      return;
+    }
+    if (!targetDate) {
+      setError("Pick a target date.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await api.createGoal({
+        name: trimmed,
+        target_amount: amount,
+        target_date: targetDate,
+      });
+      onCreated();
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={() => !busy && onClose()}>
+      <div
+        className={styles.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-goal-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 id="add-goal-title" className={styles.modalTitle}>
+          Add a savings goal
+        </h3>
+        <p className={styles.modalSubtitle}>
+          Name the goal, set the amount, and pick a date to reach it.
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <label className={styles.fieldLabel} htmlFor="goal-name">
+            Goal name
+          </label>
+          <input
+            id="goal-name"
+            type="text"
+            maxLength={100}
+            placeholder="e.g. Emergency Fund"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={styles.fieldInput}
+          />
+
+          <label className={styles.fieldLabel} htmlFor="goal-amount">
+            Target amount
+          </label>
+          <div className={styles.moneyInputWrap}>
+            <span className={styles.moneyPrefix}>$</span>
+            <input
+              id="goal-amount"
+              type="number"
+              inputMode="decimal"
+              min="0.01"
+              step="0.01"
+              placeholder="0.00"
+              value={targetAmount}
+              onChange={(e) => setTargetAmount(e.target.value)}
+              className={`${styles.fieldInput} ${styles.moneyInput}`}
+            />
+          </div>
+
+          <label className={styles.fieldLabel} htmlFor="goal-date">
+            Target date
+          </label>
+          <input
+            id="goal-date"
+            type="date"
+            value={targetDate}
+            onChange={(e) => setTargetDate(e.target.value)}
+            className={styles.fieldInput}
+          />
+
+          {error && <p className={styles.errorText}>{error}</p>}
+
+          <div className={styles.modalActions}>
+            <button
+              type="button"
+              className={styles.addBtn}
+              onClick={onClose}
+              disabled={busy}
+            >
+              Cancel
+            </button>
+            <button type="submit" className={styles.primaryBtn} disabled={busy}>
+              {busy ? "Saving..." : "Add goal"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function Budgets() {
   const [budgets, setBudgets] = useState([]);
+  const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [showAdd, setShowAdd] = useState(false);
+  const [budgetError, setBudgetError] = useState("");
+  const [goalError, setGoalError] = useState("");
+  const [showAddBudget, setShowAddBudget] = useState(false);
+  const [showAddGoal, setShowAddGoal] = useState(false);
   const [notice, setNotice] = useState("");
 
   const loadBudgets = useCallback(async () => {
     try {
       setBudgets(await api.fetchBudgets());
-      setLoadError("");
+      setBudgetError("");
     } catch (err) {
-      setLoadError(err.message);
+      setBudgetError(err.message);
+    }
+  }, []);
+
+  const loadGoals = useCallback(async () => {
+    try {
+      setGoals(await api.fetchGoals());
+      setGoalError("");
+    } catch (err) {
+      setGoalError(err.message);
     }
   }, []);
 
   useEffect(() => {
-    loadBudgets().finally(() => setLoading(false));
-  }, [loadBudgets]);
+    Promise.all([loadBudgets(), loadGoals()]).finally(() => setLoading(false));
+  }, [loadBudgets, loadGoals]);
 
-  async function handleCreated() {
-    setShowAdd(false);
+  async function handleBudgetCreated() {
+    setShowAddBudget(false);
     setNotice("Budget added.");
     await loadBudgets();
+  }
+
+  async function handleGoalCreated() {
+    setShowAddGoal(false);
+    setNotice("Goal added.");
+    await loadGoals();
   }
 
   // Totals come only from real data.
@@ -224,14 +379,14 @@ function Budgets() {
             className={styles.addBtn}
             onClick={() => {
               setNotice("");
-              setShowAdd(true);
+              setShowAddBudget(true);
             }}
           >
             + Add Budget
           </button>
         </div>
 
-        {loadError && <p className={styles.errorText}>{loadError}</p>}
+        {budgetError && <p className={styles.errorText}>{budgetError}</p>}
         {notice && <p className={styles.successText}>{notice}</p>}
 
         <div className={styles.budgetGrid}>
@@ -298,13 +453,78 @@ function Budgets() {
             );
           })}
         </div>
+
+        {/* ===== SAVINGS GOALS ===== */}
+        <div className={styles.sectionHeader} style={{ marginTop: "32px" }}>
+          <div>
+            <h2 className={styles.sectionTitle}>Active Savings Goals</h2>
+            <p className={styles.sectionSubtitle}>
+              Monitor your progress toward major financial milestones
+            </p>
+          </div>
+          <button
+            className={styles.addBtn}
+            onClick={() => {
+              setNotice("");
+              setShowAddGoal(true);
+            }}
+          >
+            + Add Goal
+          </button>
+        </div>
+
+        {goalError && <p className={styles.errorText}>{goalError}</p>}
+
+        {goals.length === 0 && !goalError && (
+          <p className={styles.sectionSubtitle}>No savings goals yet.</p>
+        )}
+
+        <div className={styles.goalGrid}>
+          {goals.map((goal) => {
+            const target = parseFloat(goal.target_amount || 0);
+            const saved = parseFloat(goal.current_amount || 0);
+            const pct = target ? Math.round((saved / target) * 100) : 0;
+
+            return (
+              <div key={goal.id} className={styles.goalCard}>
+                <div className={styles.cardHeader}>
+                  <span className={styles.cardTitle}>{goal.name}</span>
+                  <span className={styles.badgeGreen}>{pct}%</span>
+                </div>
+                <p className={styles.goalDate}>
+                  Target completion: {formatMonthYear(goal.target_date)}
+                </p>
+
+                <div className={styles.goalProgress}>
+                  <ProgressBar value={saved} max={target} tone="green" />
+                </div>
+
+                <div className={styles.goalAmounts}>
+                  <span className={styles.goalSaved}>
+                    ${saved.toLocaleString()}
+                  </span>
+                  <span className={styles.goalTarget}>
+                    ${target.toLocaleString()} goal
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {showAdd && (
+      {showAddBudget && (
         <AddBudgetModal
           existingCategoryIds={budgets.map((b) => b.category_id)}
-          onClose={() => setShowAdd(false)}
-          onCreated={handleCreated}
+          onClose={() => setShowAddBudget(false)}
+          onCreated={handleBudgetCreated}
+        />
+      )}
+
+      {showAddGoal && (
+        <AddGoalModal
+          onClose={() => setShowAddGoal(false)}
+          onCreated={handleGoalCreated}
         />
       )}
     </Layout>
