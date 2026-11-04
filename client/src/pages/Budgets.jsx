@@ -4,17 +4,6 @@ import Layout from "../components/Layout/Layout";
 import ProgressBar from "../components/ProgressBar/ProgressBar";
 import styles from "./Budgets.module.css";
 
-// Emojis for categories to match the mockup icons
-const CATEGORY_ICONS = {
-  Groceries: "🛒",
-  "Dining Out": "🍽️",
-  Transport: "🚗",
-  Utilities: "💡",
-  Entertainment: "🎬",
-  Shopping: "🛍️",
-  Default: "💳",
-};
-
 function AddBudgetModal({ existingCategoryIds, onClose, onCreated }) {
   const [categories, setCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
@@ -174,34 +163,6 @@ function Budgets() {
   const [showAdd, setShowAdd] = useState(false);
   const [notice, setNotice] = useState("");
 
-  // Hardcoded goals for now to match mockup (replace with API later)
-  const goals = [
-    {
-      id: 1,
-      name: "Emergency Fund",
-      targetDate: "Dec 2028",
-      saved: 15000,
-      target: 20000,
-      tone: "green",
-    },
-    {
-      id: 2,
-      name: "Euro Vacation",
-      targetDate: "Jun 2027",
-      saved: 3250,
-      target: 5000,
-      tone: "green",
-    },
-    {
-      id: 3,
-      name: "Electric Vehicle",
-      targetDate: "Mar 2028",
-      saved: 12000,
-      target: 35000,
-      tone: "green",
-    },
-  ];
-
   const loadBudgets = useCallback(async () => {
     try {
       setBudgets(await api.fetchBudgets());
@@ -221,7 +182,7 @@ function Budgets() {
     await loadBudgets();
   }
 
-  // Totals come only from real data. No placeholder numbers.
+  // Totals come only from real data.
   const totalBudgeted = budgets.reduce(
     (sum, b) => sum + parseFloat(b.monthly_limit || 0),
     0,
@@ -251,7 +212,7 @@ function Budgets() {
   return (
     <Layout title="Budgets & Goals" subtitle={todayLabel}>
       <div className={styles.pageWrapper}>
-        {/* ===== TOP SECTION: BUDGETS ===== */}
+        {/* ===== BUDGETS ===== */}
         <div className={styles.sectionHeader}>
           <div>
             <h2 className={styles.sectionTitle}>Monthly Budgets</h2>
@@ -309,14 +270,11 @@ function Budgets() {
             const spent = parseFloat(bg.spent || 0);
             const pct = limit ? Math.round((spent / limit) * 100) : 0;
             const isOver = pct > 100;
-            const icon =
-              CATEGORY_ICONS[bg.category_name] || CATEGORY_ICONS.Default;
 
             return (
               <div key={bg.id} className={styles.budgetCard}>
                 <div className={styles.cardHeader}>
                   <div className={styles.cardTitleGroup}>
-                    <span className={styles.icon}>{icon}</span>
                     <span className={styles.cardTitle}>{bg.category_name}</span>
                   </div>
                   <span
@@ -336,51 +294,6 @@ function Budgets() {
                   max={limit}
                   tone={isOver ? "red" : "blue"}
                 />
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ===== BOTTOM SECTION: GOALS ===== */}
-        <div className={styles.sectionHeader} style={{ marginTop: "32px" }}>
-          <div>
-            <h2 className={styles.sectionTitle}>Active Savings Goals</h2>
-            <p className={styles.sectionSubtitle}>
-              Monitor your progress toward major financial milestones
-            </p>
-          </div>
-          <button className={styles.addBtn}>+ Add Goal</button>
-        </div>
-
-        <div className={styles.goalGrid}>
-          {goals.map((goal) => {
-            const pct = Math.round((goal.saved / goal.target) * 100);
-            return (
-              <div key={goal.id} className={styles.goalCard}>
-                <div className={styles.cardHeader}>
-                  <span className={styles.cardTitle}>{goal.name}</span>
-                  <span className={styles.badgeGreen}>{pct}%</span>
-                </div>
-                <p className={styles.goalDate}>
-                  Target completion: {goal.targetDate}
-                </p>
-
-                <div className={styles.goalProgress}>
-                  <ProgressBar
-                    value={goal.saved}
-                    max={goal.target}
-                    tone="green"
-                  />
-                </div>
-
-                <div className={styles.goalAmounts}>
-                  <span className={styles.goalSaved}>
-                    ${goal.saved.toLocaleString()}
-                  </span>
-                  <span className={styles.goalTarget}>
-                    ${goal.target.toLocaleString()} goal
-                  </span>
-                </div>
               </div>
             );
           })}
