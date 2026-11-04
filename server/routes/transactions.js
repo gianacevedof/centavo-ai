@@ -3,7 +3,16 @@ import pool from "../db.js";
 
 const router = express.Router();
 
-const VALID_TYPES = ["expense", "income", "transfer"];
+const VALID_TYPES = ["expense", "income", "transfer", "savings"];
+
+// Checks that the savings goal belongs to this user
+async function ownsGoal(goalId, userId) {
+  const [rows] = await pool.query(
+    "SELECT id FROM savings_goals WHERE id = ? AND user_id = ?",
+    [goalId, userId],
+  );
+  return rows.length > 0;
+}
 
 // Accepts only a real calendar day written as YYYY-MM-DD
 function isValidDay(value) {
@@ -146,6 +155,17 @@ router.post("/", async (req, res) => {
     }
   }
 
+  if (type === "savings") {
+    if (!savings_goal_id) {
+      return res
+        .status(400)
+        .json({ error: "savings_goal_id is required for savings" });
+    }
+    if (!(await ownsGoal(savings_goal_id, user_id))) {
+      return res.status(400).json({ error: "Invalid savings goal" });
+    }
+  }
+
   // Ownership checks: every ID must belong to this user
   if (!(await ownsAccount(account_id, user_id))) {
     return res.status(400).json({ error: "Invalid account" });
@@ -206,6 +226,30 @@ router.post("/", async (req, res) => {
       );
     }
 
+    if (type === "savings") {
+      if (source.type === "credit_card") {
+        await connection.rollback();
+        return res
+          .status(400)
+          .json({ error: "Savings contributions can't come from a credit card" });
+      }
+      if (Number(source.balance) < amt) {
+        await connection.rollback();
+        return res
+          .status(400)
+          .json({ error: "Insufficient funds in source account" });
+      }
+
+      await connection.query(
+        "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
+        [balanceChange("out", amt), account_id, user_id],
+      );
+      await connection.query(
+        "UPDATE savings_goals SET current_amount = current_amount + ? WHERE id = ? AND user_id = ?",
+        [amt, savings_goal_id, user_id],
+      );
+    }
+
     let transferCategoryId = null;
     if (type === "transfer") {
       const [catRows] = await connection.query(
@@ -220,8 +264,12 @@ router.post("/", async (req, res) => {
         user_id,
         account_id,
         type === "transfer" ? to_account_id : null,
-        type === "transfer" ? transferCategoryId : category_id ?? null,
-        savings_goal_id ?? null,
+        type === "transfer"
+          ? transferCategoryId
+          : type === "savings"
+            ? null
+            : category_id ?? null,
+        type === "savings" ? Number(savings_goal_id) : null,
         type,
         amt,
         date,
