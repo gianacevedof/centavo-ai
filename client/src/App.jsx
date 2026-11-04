@@ -6,21 +6,55 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Settings from "./pages/Settings";
 import Trends from "./pages/Trends";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 function App() {
   return (
     <BrowserRouter>
-      {/* The old <nav> is removed here because Layout.jsx handles navigation now */}
-
       <Routes>
-        <Route path="/" element={<Overview />} />
-        <Route path="/transactions" element={<Transactions />} />
-        <Route path="/budgets" element={<Budgets />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Overview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/transactions"
+          element={
+            <ProtectedRoute>
+              <Transactions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/budgets"
+          element={
+            <ProtectedRoute>
+              <Budgets />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trends"
+          element={
+            <ProtectedRoute>
+              <Trends />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/trends" element={<Trends />} />
       </Routes>
     </BrowserRouter>
   );

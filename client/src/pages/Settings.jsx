@@ -18,6 +18,7 @@ function Settings() {
   const [newName, setNewName] = useState("");
   const [addError, setAddError] = useState("");
   const [pageError, setPageError] = useState("");
+  const [signOutError, setSignOutError] = useState("");
   const [notice, setNotice] = useState("");
 
   // Delete modal state
@@ -47,6 +48,18 @@ function Settings() {
   }, [navigate]);
 
   const custom = categories.filter((c) => !c.is_default);
+
+  async function handleSignOut() {
+    setSignOutError("");
+    try {
+      await api.logout();
+    } catch (err) {
+      // Don't send the user to /login if the cookie may still be set.
+      setSignOutError(err.message);
+      return;
+    }
+    navigate("/login");
+  }
 
   // --- Handlers ---
   async function handleAdd(e) {
@@ -100,14 +113,17 @@ function Settings() {
     setModalError("");
     try {
       const target = reassignTo === UNCATEGORIZED ? null : Number(reassignTo);
-      const result = await api.deleteCategory(modal.category.id, { reassign_to: target });
+      const result = await api.deleteCategory(modal.category.id, {
+        reassign_to: target,
+      });
       removeFromList(modal.category.id);
 
       const parts = [`Deleted "${modal.category.name}".`];
-      if (result.transactions_moved > 0) parts.push(`${result.transactions_moved} transaction(s) moved.`);
+      if (result.transactions_moved > 0)
+        parts.push(`${result.transactions_moved} transaction(s) moved.`);
       if (result.budgets === "moved") parts.push("Its budget moved too.");
       if (result.budgets === "removed") parts.push("Its budget was removed.");
-      
+
       setNotice(parts.join(" "));
       setModal(null);
     } catch (err) {
@@ -117,7 +133,9 @@ function Settings() {
     }
   }
 
-  const targets = modal ? categories.filter((c) => c.id !== modal.category.id) : [];
+  const targets = modal
+    ? categories.filter((c) => c.id !== modal.category.id)
+    : [];
 
   // --- Renderers ---
   if (loading) {
@@ -129,17 +147,19 @@ function Settings() {
   }
 
   return (
-    <Layout title="Settings" subtitle="Manage your account preferences and categories">
-      
+    <Layout
+      title="Settings"
+      subtitle="Manage your account preferences and categories"
+    >
       {/* Tabs */}
       <div className={styles.tabs}>
-        <button 
+        <button
           className={`${styles.tabBtn} ${tab === "profile" ? styles.tabBtnActive : ""}`}
           onClick={() => setTab("profile")}
         >
           Profile & Settings
         </button>
-        <button 
+        <button
           className={`${styles.tabBtn} ${tab === "categories" ? styles.tabBtnActive : ""}`}
           onClick={() => setTab("categories")}
         >
@@ -150,7 +170,6 @@ function Settings() {
       {/* ===== TAB 1: PROFILE & SETTINGS ===== */}
       {tab === "profile" && user && (
         <div className={styles.profileWrapper}>
-          
           {/* Top User Banner */}
           <div className={styles.userBanner}>
             <div className={styles.userAvatar}>
@@ -164,7 +183,10 @@ function Settings() {
           </div>
 
           <div className={styles.signOutRow}>
-            <button className={styles.outlineBtn} onClick={() => navigate("/login")}>Sign out</button>
+            <button className={styles.outlineBtn} onClick={handleSignOut}>
+              Sign out
+            </button>
+            {signOutError && <p className={styles.errorText}>{signOutError}</p>}
           </div>
         </div>
       )}
@@ -174,7 +196,8 @@ function Settings() {
         <div className={styles.categoriesWrapper}>
           <Card title="Manage Categories">
             <p className={styles.cardDesc}>
-              Set a monthly limit for each category. Default categories are locked.
+              Set a monthly limit for each category. Default categories are
+              locked.
             </p>
 
             {/* Add Category Form */}
@@ -187,7 +210,9 @@ function Settings() {
                 onChange={(e) => setNewName(e.target.value)}
                 className={styles.textInput}
               />
-              <button type="submit" className={styles.primaryBtn}>Add category</button>
+              <button type="submit" className={styles.primaryBtn}>
+                Add category
+              </button>
             </form>
 
             {addError && <p className={styles.errorText}>{addError}</p>}
@@ -206,19 +231,25 @@ function Settings() {
                 </thead>
                 <tbody>
                   {/* Default Categories */}
-                  {categories.filter(c => c.is_default).map(c => (
-                    <tr key={c.id}>
-                      <td className={styles.descCell}>
-                        <span className={styles.dot} />
-                        {c.name}
-                      </td>
-                      <td><span className={styles.badgeDefault}>Default</span></td>
-                      <td className={styles.textRight}>
-                        <button className={styles.disabledBtn} disabled>Locked</button>
-                      </td>
-                    </tr>
-                  ))}
-                  
+                  {categories
+                    .filter((c) => c.is_default)
+                    .map((c) => (
+                      <tr key={c.id}>
+                        <td className={styles.descCell}>
+                          <span className={styles.dot} />
+                          {c.name}
+                        </td>
+                        <td>
+                          <span className={styles.badgeDefault}>Default</span>
+                        </td>
+                        <td className={styles.textRight}>
+                          <button className={styles.disabledBtn} disabled>
+                            Locked
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+
                   {/* Custom Categories */}
                   {custom.map((c) => (
                     <tr key={c.id}>
@@ -226,9 +257,14 @@ function Settings() {
                         <span className={styles.dot} />
                         {c.name}
                       </td>
-                      <td><span className={styles.badgeCustom}>Custom</span></td>
+                      <td>
+                        <span className={styles.badgeCustom}>Custom</span>
+                      </td>
                       <td className={styles.textRight}>
-                        <button className={styles.deleteBtn} onClick={() => handleDelete(c)}>
+                        <button
+                          className={styles.deleteBtn}
+                          onClick={() => handleDelete(c)}
+                        >
                           Delete
                         </button>
                       </td>
@@ -247,8 +283,10 @@ function Settings() {
           <div className={styles.modalContent}>
             <h3>Delete "{modal.category.name}"?</h3>
             <p className={styles.modalDesc}>
-              This category is used by <strong>{modal.transactions} transaction(s)</strong> and{" "}
-              <strong>{modal.budgets} budget(s)</strong>. Pick where the transactions should go.
+              This category is used by{" "}
+              <strong>{modal.transactions} transaction(s)</strong> and{" "}
+              <strong>{modal.budgets} budget(s)</strong>. Pick where the
+              transactions should go.
             </p>
 
             <label className={styles.modalLabel}>Move transactions to</label>
@@ -259,31 +297,41 @@ function Settings() {
             >
               <option value={UNCATEGORIZED}>Uncategorized</option>
               {targets.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
 
             {modal.budgets > 0 && (
               <p className={styles.warningText}>
-                Budget warning: this category's budget moves to the new category only if it has no budget yet. 
-                If you choose Uncategorized, the budget is removed.
+                Budget warning: this category's budget moves to the new category
+                only if it has no budget yet. If you choose Uncategorized, the
+                budget is removed.
               </p>
             )}
 
             {modalError && <p className={styles.errorText}>{modalError}</p>}
 
             <div className={styles.modalActions}>
-              <button className={styles.outlineBtn} onClick={() => setModal(null)} disabled={busy}>
+              <button
+                className={styles.outlineBtn}
+                onClick={() => setModal(null)}
+                disabled={busy}
+              >
                 Cancel
               </button>
-              <button className={styles.dangerBtn} onClick={confirmDelete} disabled={busy}>
+              <button
+                className={styles.dangerBtn}
+                onClick={confirmDelete}
+                disabled={busy}
+              >
                 {busy ? "Deleting..." : "Delete category"}
               </button>
             </div>
           </div>
         </div>
       )}
-
     </Layout>
   );
 }
