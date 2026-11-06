@@ -6,6 +6,7 @@ import Card from "../components/Card/Card";
 import styles from "./Transactions.module.css";
 
 const TRANSFER = "transfer";
+const SAVINGS = "savings";
 const PAGE_SIZE = 10;
 
 // Keeps the first row for each name (same behavior as before)
@@ -52,6 +53,7 @@ function emptyForm() {
     account_id: "",
     to_account_id: "",
     category_id: "",
+    savings_goal_id: "", // NEW
     date: todayLocal(),
     note: "",
   };
@@ -62,6 +64,7 @@ function Transactions() {
   const [accounts, setAccounts] = useState([]); // deduped, for the dropdowns
   const [accountNameById, setAccountNameById] = useState(new Map()); // every account row, for lookups
   const [categories, setCategories] = useState([]);
+  const [goals, setGoals] = useState([]); // NEW: For savings goals
   const [filters, setFilters] = useState({ category: "", account: "" });
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
@@ -78,16 +81,18 @@ function Transactions() {
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Load accounts and categories for the dropdowns
+  // Load accounts, categories, and goals for the dropdowns
   const loadLookupData = useCallback(async () => {
     try {
-      const [accs, cats] = await Promise.all([
+      const [accs, cats, gls] = await Promise.all([
         api.fetchAccounts(),
         api.fetchCategories(),
+        api.fetchSavingsGoals ? api.fetchSavingsGoals() : Promise.resolve([]), // Fallback if API method isn't ready yet
       ]);
       setAccounts(dedupeByName(accs));
       setAccountNameById(new Map(accs.map((a) => [Number(a.id), a.name])));
       setCategories(dedupeByName(cats));
+      setGoals(gls); // NEW
     } catch (err) {
       console.error("Failed to load lookup data:", err);
     }
@@ -178,6 +183,7 @@ function Transactions() {
   // ----- Add transaction form -----
 
   const isTransfer = form.type === TRANSFER;
+  const isSavings = form.type === SAVINGS; // NEW
   const sourceAccount = accounts.find((a) => String(a.id) === String(form.account_id));
   const amountNum = Number(form.amount);
   const cardSource = isTransfer && sourceAccount?.type === "credit_card";
@@ -204,11 +210,14 @@ function Transactions() {
     if (!form.account_id) return "Pick an account.";
     if (!(amountNum > 0)) return "Amount must be greater than 0.";
     if (!form.date) return "Pick a date.";
+    
     if (isTransfer) {
       if (!form.to_account_id) return "Pick a destination account.";
       if (form.to_account_id === form.account_id) return "Pick two different accounts.";
       if (cardSource) return "Transfers can't come from a credit card.";
       if (overBalance) return "That's more than this account has.";
+    } else if (isSavings) {
+      if (!form.savings_goal_id) return "Pick a savings goal."; // NEW validation
     } else if (!form.category_id) {
       return "Pick a category.";
     }
@@ -231,7 +240,9 @@ function Transactions() {
       note: form.note || null,
       ...(isTransfer
         ? { to_account_id: Number(form.to_account_id) }
-        : { category_id: Number(form.category_id) }),
+        : isSavings 
+          ? { savings_goal_id: Number(form.savings_goal_id) } // NEW payload
+          : { category_id: Number(form.category_id) }),
     };
 
     setSaving(true);
@@ -239,7 +250,7 @@ function Transactions() {
     try {
       await api.createTransaction(payload);
       setShowForm(false);
-      setNotice(isTransfer ? "Transfer saved." : "Transaction saved.");
+      setNotice(isTransfer ? "Transfer saved." : isSavings ? "Savings contribution saved." : "Transaction saved.");
       // Refresh balances and the table
       await Promise.all([loadLookupData(), loadTransactions()]);
     } catch (err) {
@@ -436,6 +447,7 @@ function Transactions() {
               <option value="expense">Expense</option>
               <option value="income">Income</option>
               <option value="transfer">Transfer</option>
+              <option value="savings">Savings</option> {/* NEW */}
             </select>
 
             <label htmlFor="tx-amount">Amount</label>
@@ -482,7 +494,24 @@ function Transactions() {
               </>
             )}
 
-            {!isTransfer && (
+            {/* NEW SAVINGS DROPDOWN */}
+            {isSavings && (
+              <>
+                <label htmlFor="tx-goal">Savings Goal</label>
+                <select
+                  id="tx-goal"
+                  value={form.savings_goal_id}
+                  onChange={(e) => updateForm("savings_goal_id", e.target.value)}
+                >
+                  <option value="">Select a goal</option>
+                  {goals.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+              </>
+            )}
+
+            {!isTransfer && !isSavings && (
               <>
                 <label htmlFor="tx-category">Category</label>
                 <select
