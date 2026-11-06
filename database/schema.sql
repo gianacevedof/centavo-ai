@@ -71,6 +71,7 @@ CREATE TABLE categories (
 -- ============================================================
 -- 4. SAVINGS GOALS
 -- current_amount is a stored cache of contributions; app owns sync.
+-- Goal names are unique per user.
 -- ============================================================
 CREATE TABLE savings_goals (
     id             INT AUTO_INCREMENT PRIMARY KEY,
@@ -103,7 +104,6 @@ CREATE TABLE transactions (
     to_account_id   INT NULL,
     category_id     INT NULL,
     savings_goal_id INT NULL,
-    -- ADDED: 'savings' to the ENUM
     type            ENUM('expense','income','transfer','savings') NOT NULL,
     amount          DECIMAL(12,2) NOT NULL,
     date            DATE NOT NULL,
@@ -126,7 +126,7 @@ CREATE TABLE transactions (
 
     CONSTRAINT chk_amount_positive CHECK (amount > 0),
     
-    -- UPDATED: Enforce transfer shape, allow savings, and require goal for savings
+    -- Enforce transaction shape based on type
     CONSTRAINT chk_transaction_shape CHECK (
         (type = 'transfer' AND to_account_id IS NOT NULL AND to_account_id <> account_id AND savings_goal_id IS NULL)
         OR
