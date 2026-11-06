@@ -7,6 +7,7 @@
 --   2. Deleting an account cascades to its transactions.
 --   3. Deleting a category is RESTRICTED — user must reassign first.
 --   4. Every transaction logs its source: 'manual' or 'ai_text'.
+--   5. Savings transactions REQUIRE a savings_goal_id.
 --
 -- IMPORTANT: this file is the single source of truth. Do not ALTER
 -- live tables by hand — add migrations here and rebuild dev DBs.
@@ -54,16 +55,6 @@ CREATE TABLE accounts (
 -- ============================================================
 -- 3. CATEGORIES
 -- user_id NULL = system default, shared across all users.
---
--- MySQL treats NULL as distinct in unique indexes, so a plain
--- UNIQUE(user_id, name) would allow infinite duplicate defaults.
--- We use a generated column (user_key) so that NULL maps to 0
--- and uniqueness is enforced across BOTH global defaults and
--- per-user categories:
---     (user_key, name) unique  =>  global defaults unique
---                              =>  per-user categories unique
---                              =>  users may shadow a global name
---                                  with their own custom category
 -- ============================================================
 CREATE TABLE categories (
     id         INT AUTO_INCREMENT PRIMARY KEY,
@@ -101,6 +92,7 @@ CREATE TABLE savings_goals (
 --   * amount > 0 always (direction is encoded by `type`).
 --   * transfers MUST have to_account_id set and != account_id.
 --   * non-transfers MUST NOT have to_account_id set.
+--   * savings transactions MUST have a savings_goal_id.
 --   * deleting a category is RESTRICTED (don't orphan history).
 --   * deleting a savings goal SET NULLs the link (keep the txn).
 -- ============================================================
@@ -111,7 +103,8 @@ CREATE TABLE transactions (
     to_account_id   INT NULL,
     category_id     INT NULL,
     savings_goal_id INT NULL,
-    type            ENUM('expense','income','transfer') NOT NULL,
+    -- ADDED: 'savings' to the ENUM
+    type            ENUM('expense','income','transfer','savings') NOT NULL,
     amount          DECIMAL(12,2) NOT NULL,
     date            DATE NOT NULL,
     note            VARCHAR(255) NULL,
@@ -132,10 +125,14 @@ CREATE TABLE transactions (
         FOREIGN KEY (savings_goal_id) REFERENCES savings_goals(id) ON DELETE SET NULL,
 
     CONSTRAINT chk_amount_positive CHECK (amount > 0),
-    CONSTRAINT chk_transfer_shape CHECK (
-        (type = 'transfer' AND to_account_id IS NOT NULL AND to_account_id <> account_id)
+    
+    -- UPDATED: Enforce transfer shape, allow savings, and require goal for savings
+    CONSTRAINT chk_transaction_shape CHECK (
+        (type = 'transfer' AND to_account_id IS NOT NULL AND to_account_id <> account_id AND savings_goal_id IS NULL)
         OR
-        (type IN ('expense','income') AND to_account_id IS NULL)
+        (type = 'savings' AND to_account_id IS NULL AND savings_goal_id IS NOT NULL)
+        OR
+        (type IN ('expense','income') AND to_account_id IS NULL AND savings_goal_id IS NULL)
     )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -145,8 +142,6 @@ CREATE INDEX idx_user_date          ON transactions(user_id, date);
 
 -- ============================================================
 -- 6. BUDGETS
--- Recurring, no history. Editing a limit changes it retroactively
--- for all analytics, by design.
 -- ============================================================
 CREATE TABLE budgets (
     id            INT AUTO_INCREMENT PRIMARY KEY,
