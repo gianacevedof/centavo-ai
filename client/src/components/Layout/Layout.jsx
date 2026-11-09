@@ -1,11 +1,12 @@
 // components/Layout/Layout.jsx
+import { useState, useEffect } from "react";
 import { NavLink, Link } from "react-router-dom";
 import ChatPanel from "../ChatPanel/ChatPanel";
+import { api } from "../../services/api"; // Make sure api is imported
 import styles from "./Layout.module.css";
 
 const NAV_ITEMS = [
   { to: "/", label: "Overview" },
-  // { to: "/accounts", label: "Accounts" },
   { to: "/budgets", label: "Budgets & Goals" },
   { to: "/transactions", label: "Transactions" },
   { to: "/trends", label: "Trends" },
@@ -13,6 +14,24 @@ const NAV_ITEMS = [
 ];
 
 export default function Layout({ children, title, subtitle }) {
+  const [reviewCount, setReviewCount] = useState(0);
+
+  // Fetch transactions to calculate the "Review & Corrections" count
+  useEffect(() => {
+    async function checkCorrections() {
+      try {
+        const txs = await api.fetchTransactions({ limit: 100 }); 
+        // Rule: A transaction needs review if it has no category
+        // (You can add more rules here later, like checking for missing notes or AI flags)
+        const needsReview = txs.filter((tx) => !tx.category_id).length;
+        setReviewCount(needsReview);
+      } catch (err) {
+        console.error("Failed to calculate review count:", err);
+      }
+    }
+    checkCorrections();
+  }, [title]); // Re-run whenever the page changes
+
   return (
     <div className={styles.layout}>
       <aside className={styles.sidebar}>
@@ -61,7 +80,11 @@ export default function Layout({ children, title, subtitle }) {
               placeholder="Search transactions, goals..."
             />
             <button className={styles.reviewButton}>
-              Review & corrections <span className={styles.reviewCount}>3</span>
+              Review & corrections
+              {/* Only show the badge if the count is greater than 0 */}
+              {reviewCount > 0 && (
+                <span className={styles.reviewCount}>{reviewCount}</span>
+              )}
             </button>
             <Link
               to="/settings"
@@ -71,7 +94,6 @@ export default function Layout({ children, title, subtitle }) {
           </div>
         </header>
 
-        {/* ChatPanel is now INSIDE the content wrapper */}
         <div className={styles.content}>
           {children}
           <ChatPanel />
