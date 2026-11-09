@@ -71,8 +71,11 @@ export default function Layout({ children, title, subtitle }) {
           </div>
         </header>
 
-        <div className={styles.content}>{children}</div>
-        <ChatPanel />
+        {/* ChatPanel is now INSIDE the content wrapper */}
+        <div className={styles.content}>
+          {children}
+          <ChatPanel />
+        </div>
       </main>
     </div>
   );
