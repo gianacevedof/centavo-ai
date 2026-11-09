@@ -1,0 +1,209 @@
+/* components/ChatPanel/ChatPanel.module.css */
+
+.chatToggleBtn {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 12px 24px;
+  font-size: var(--font-size-body);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--space-xl);
+  margin-bottom: var(--space-xl);
+  transition: background-color 0.2s;
+}
+
+.chatToggleBtn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* ===== The Open Panel ===== */
+.chatPanel {
+  margin-top: var(--space-xl);
+  margin-bottom: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  font-family: var(--font-family);
+}
+
+/* Header */
+.chatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chatHeader h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+/* Messages */
+.messagesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.message {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-body);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.messageAi {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.messageUser {
+  background-color: var(--color-primary);
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+/* Suggestions */
+.suggestionsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  flex-wrap: wrap;
+  margin-top: var(--space-sm);
+}
+
+.suggestionPill {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-green);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.suggestionPill:hover {
+  background-color: var(--color-surface-muted);
+}
+
+/* ===== Input Box ===== */
+.chatForm {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+}
+
+.inputRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px 12px 24px;
+  border-bottom: 1px solid #f0f0eb;
+}
+
+.chatInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: var(--font-size-body);
+  font-family: inherit;
+  color: var(--color-text);
+  outline: none;
+}
+
+.chatInput::placeholder {
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-sm);
+}
+
+.sendBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--color-primary);
+  color: white;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.sendBtn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.sendBtn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cancelBtn {
+  background-color: transparent;
+  color: var(--color-expense);
+  border: 1px solid var(--color-expense);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.inputHint {
+  padding: 12px 24px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+}
+
+/* ===== Footer ===== */
+.chatFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-sm);
+  padding-top: var(--space-xs);
+}
+
+.manualEntry {
+  color: var(--color-green);
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.trustText {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-green);
+  font-size: var(--font-size-xs);
+}
