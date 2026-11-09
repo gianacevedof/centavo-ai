@@ -8,7 +8,6 @@
 .loading {
   padding: var(--space-xl);
   text-align: center;
-  color: var(--color-text-secondary);
 }
 
 /* ===== Section Headers ===== */
@@ -27,17 +26,17 @@
 }
 
 .sectionSubtitle {
-  font-size: var(--font-size-xs);
+  font-size: 0.85rem;
   color: var(--color-text-secondary);
   margin: 4px 0 0;
 }
 
 .addBtn {
-  background-color: var(--color-bg-card);
+  background-color: #ffffff;
   border: 1px solid #e5e5e0;
   padding: 8px 16px;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
+  border-radius: 8px;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-text-primary);
   cursor: pointer;
@@ -46,15 +45,15 @@
 /* ===== Budget Grid ===== */
 .budgetGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 4 columns */
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-md);
 }
 
-/* 1. Donut Card (spans 2 columns) */
+/* 1. Donut Card */
 .donutCard {
   grid-column: span 2;
   background-color: var(--color-bg-card);
-  border-radius: var(--radius-lg);
+  border-radius: 12px;
   padding: var(--space-lg);
   display: flex;
   align-items: center;
@@ -62,8 +61,8 @@
 }
 
 .donutChart {
-  width: 120px;
-  height: 120px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -71,8 +70,8 @@
 }
 
 .donutInner {
-  width: 90px;
-  height: 90px;
+  width: 80px;
+  height: 80px;
   background-color: var(--color-bg-card);
   border-radius: 50%;
   display: flex;
@@ -82,54 +81,45 @@
 }
 
 .donutPercent {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: #1a3a2e;
 }
 
 .donutLabel {
   font-size: 0.65rem;
-  text-transform: uppercase;
+  text-transform: lowercase;
   color: var(--color-text-secondary);
-  font-weight: 600;
 }
 
 .donutStats {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-sm);
   width: 100%;
 }
 
 .statRow {
   display: flex;
   flex-direction: column;
-  border-bottom: 1px solid #f0f0eb;
-  padding-bottom: var(--space-sm);
-}
-
-.statRow:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+  padding-bottom: var(--space-xs);
 }
 
 .statLabel {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--color-text-secondary);
-  text-transform: uppercase;
-  font-weight: 600;
 }
 
 .statValue {
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: #1a3a2e;
 }
 
 /* 2. Individual Budget Cards */
 .budgetCard {
   background-color: var(--color-bg-card);
-  border-radius: var(--radius-lg);
+  border-radius: 12px;
   padding: var(--space-lg);
   display: flex;
   flex-direction: column;
@@ -146,15 +136,15 @@
 .cardTitleGroup {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 6px;
 }
 
 .icon {
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .cardTitle {
-  font-size: var(--font-size-sm);
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -163,40 +153,40 @@
   font-size: 0.7rem;
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
 }
 
-.badgeGrey { background-color: #f0f0eb; color: var(--color-text-secondary); }
-.badgeRed { background-color: #fde2e0; color: var(--color-red); }
+.badgeGrey { background-color: transparent; color: #9ca3af; }
+.badgeRed { background-color: transparent; color: #dc2626; }
 
 .cardAmounts {
   display: flex;
   align-items: baseline;
   gap: 4px;
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-sm);
 }
 
 .spentAmount {
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: #1a3a2e;
 }
 
 .limitAmount {
-  font-size: var(--font-size-xs);
+  font-size: 0.75rem;
   color: var(--color-text-secondary);
 }
 
 /* ===== Goals Grid ===== */
 .goalGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 columns */
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-md);
 }
 
 .goalCard {
   background-color: var(--color-bg-card);
-  border-radius: var(--radius-lg);
+  border-radius: 12px;
   padding: var(--space-lg);
   display: flex;
   flex-direction: column;
@@ -204,44 +194,45 @@
 
 .badgeGreen {
   background-color: #e8f0ec;
-  color: var(--color-green);
+  color: #16a34a;
   font-size: 0.7rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .goalDate {
   font-size: 0.75rem;
   color: var(--color-text-secondary);
-  margin: 0 0 var(--space-lg);
+  margin: 4px 0 var(--space-md);
 }
 
 .goalProgress {
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-xs);
 }
 
 .goalAmounts {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: var(--space-sm);
+  margin-top: var(--space-xs);
 }
 
 .goalSaved {
-  font-size: var(--font-size-sm);
+  font-size: 0.85rem;
   font-weight: 700;
+  color: #1a3a2e;
 }
 
 .goalTarget {
-  font-size: var(--font-size-xs);
+  font-size: 0.75rem;
   color: var(--color-text-secondary);
 }
 
 /* ===== Responsive ===== */
 @media (max-width: 1200px) {
   .budgetGrid { grid-template-columns: repeat(3, 1fr); }
-  .donutCard { grid-column: span 3; flex-direction: row; }
+  .donutCard { grid-column: span 3; }
 }
 
 @media (max-width: 900px) {
@@ -253,8 +244,6 @@
 @media (max-width: 600px) {
   .budgetGrid { grid-template-columns: 1fr; }
   .donutCard { grid-column: span 1; flex-direction: column; text-align: center; }
-  .donutStats { border-top: 1px solid #e5e5e0; padding-top: var(--space-md); margin-top: var(--space-md); }
-  .statRow { align-items: center; }
   .goalGrid { grid-template-columns: 1fr; }
   .sectionHeader { flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
 }
