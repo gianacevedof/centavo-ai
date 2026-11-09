@@ -93,3 +93,29 @@
   --topbar-height: 64px;
   --content-max:   1440px;
 }
+/* ============================================================
+   Bridge for older component styles
+   Maps the new design tokens to the legacy names used in
+   Transactions, ChatPanel, and Layout CSS modules.
+   ============================================================ */
+:root {
+  --color-bg-primary: var(--color-bg);
+  --color-bg-card: var(--color-surface);
+  --color-bg-sidebar: var(--color-sidebar-bg);
+  --color-text-primary: var(--color-text);
+  --color-text-secondary: var(--color-text-muted);
+  --color-text-on-dark: var(--color-sidebar-text-active);
+  --color-text-on-dark-muted: var(--color-sidebar-text);
+  --color-green: var(--color-income);
+  --color-red: var(--color-expense);
+  --color-amber: var(--color-warning);
+  --color-accent-soft: var(--color-ai-tip-bg);
+  
+  --space-xs: var(--space-1);
+  --space-sm: var(--space-2);
+  --space-md: var(--space-4);
+  --space-lg: var(--space-5);
+  --space-xl: var(--space-6);
+  
+  --radius-full: var(--radius-pill);
+}
