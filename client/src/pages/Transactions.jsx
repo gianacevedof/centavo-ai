@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-// Note: Adjusted imports since this file is directly in /pages
 import { api } from "../services/api";
 import Layout from "../components/Layout/Layout";
 import Card from "../components/Card/Card";
@@ -9,25 +8,21 @@ const TRANSFER = "transfer";
 const SAVINGS = "savings";
 const PAGE_SIZE = 10;
 
-// Keeps the first row for each name (same behavior as before)
 function dedupeByName(list) {
   return Array.from(new Map(list.map((item) => [item.name, item])).values());
 }
 
-// Today's date in the user's local time, as YYYY-MM-DD
 function todayLocal() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-// Any Date as YYYY-MM-DD in local time
 function toYMD(d) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-// Start and end of a preset, both inclusive, ending today
 function presetRange(preset) {
   const today = new Date();
   const start = new Date();
@@ -35,7 +30,6 @@ function presetRange(preset) {
   return { from: toYMD(start), to: toYMD(today) };
 }
 
-// "2026-10-12" -> "Oct 12, 2026". Built from parts so the timezone can't shift the day
 function formatDay(value) {
   if (!value) return "";
   const [y, m, d] = String(value).slice(0, 10).split("-").map(Number);
@@ -53,7 +47,7 @@ function emptyForm() {
     account_id: "",
     to_account_id: "",
     category_id: "",
-    savings_goal_id: "", // NEW
+    savings_goal_id: "",
     date: todayLocal(),
     note: "",
   };
@@ -61,38 +55,35 @@ function emptyForm() {
 
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
-  const [accounts, setAccounts] = useState([]); // deduped, for the dropdowns
-  const [accountNameById, setAccountNameById] = useState(new Map()); // every account row, for lookups
+  const [accounts, setAccounts] = useState([]);
+  const [accountNameById, setAccountNameById] = useState(new Map());
   const [categories, setCategories] = useState([]);
-  const [goals, setGoals] = useState([]); // NEW: For savings goals
+  const [goals, setGoals] = useState([]);
   const [filters, setFilters] = useState({ category: "", account: "" });
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [page, setPage] = useState(1);
 
-  // Date range: the preset picked, the range actually applied, and the custom inputs
   const [datePreset, setDatePreset] = useState("last30");
   const [range, setRange] = useState(() => presetRange("last30"));
   const [customDraft, setCustomDraft] = useState({ from: "", to: "" });
 
-  // Add transaction modal state
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm());
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Load accounts, categories, and goals for the dropdowns
   const loadLookupData = useCallback(async () => {
     try {
       const [accs, cats, gls] = await Promise.all([
         api.fetchAccounts(),
         api.fetchCategories(),
-        api.fetchSavingsGoals ? api.fetchSavingsGoals() : Promise.resolve([]), // Fallback if API method isn't ready yet
+        api.fetchSavingsGoals ? api.fetchSavingsGoals() : Promise.resolve([]),
       ]);
       setAccounts(dedupeByName(accs));
       setAccountNameById(new Map(accs.map((a) => [Number(a.id), a.name])));
       setCategories(dedupeByName(cats));
-      setGoals(gls); // NEW
+      setGoals(gls);
     } catch (err) {
       console.error("Failed to load lookup data:", err);
     }
@@ -106,7 +97,6 @@ function Transactions() {
     setLoading(true);
     try {
       const data = await api.fetchTransactions({ ...filters, from: range.from, to: range.to });
-      // Newest added first; id breaks ties for rows added at the same time
       const newestFirst = [...data].sort((a, b) => {
         const diff = new Date(b.created_at) - new Date(a.created_at);
         return diff !== 0 ? diff : b.id - a.id;
@@ -129,7 +119,6 @@ function Transactions() {
     setPage(1);
   };
 
-  // Clears category and account, and puts the date range back to Last 30 days
   const clearFilters = () => {
     setFilters({ category: "", account: "" });
     setDatePreset("last30");
@@ -140,7 +129,6 @@ function Transactions() {
   const pickPreset = (preset) => {
     setDatePreset(preset);
     if (preset === "custom") {
-      // Start the custom inputs from the range that's showing now
       setCustomDraft({ from: range.from, to: range.to });
     } else {
       setRange(presetRange(preset));
@@ -154,25 +142,20 @@ function Transactions() {
     setPage(1);
   };
 
-  const customInvalid =
-    !customDraft.from || !customDraft.to || customDraft.from > customDraft.to;
+  const customInvalid = !customDraft.from || !customDraft.to || customDraft.from > customDraft.to;
 
-  // Pagination (client-side: all rows are loaded, then split into pages)
   const totalPages = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE));
   const pageRows = transactions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const showingStart = transactions.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const showingEnd = Math.min(page * PAGE_SIZE, transactions.length);
 
-  // Keep the page number valid if the list gets shorter
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
-  // Helpers to map IDs to names
   const getCategoryName = (id) => categories.find((c) => c.id === id)?.name || "Uncategorized";
   const getAccountName = (id) => accountNameById.get(Number(id)) || "Unknown";
 
-  // Helper for category dots
   const getCategoryColor = (name) => {
     const colors = ["#c4453a", "#2d7a5f", "#d99a2b", "#4a7fc4", "#6b7280", "#8b5cf6"];
     let hash = 0;
@@ -180,15 +163,12 @@ function Transactions() {
     return colors[Math.abs(hash) % colors.length];
   };
 
-  // ----- Add transaction form -----
-
   const isTransfer = form.type === TRANSFER;
-  const isSavings = form.type === SAVINGS; // NEW
+  const isSavings = form.type === SAVINGS;
   const sourceAccount = accounts.find((a) => String(a.id) === String(form.account_id));
   const amountNum = Number(form.amount);
   const cardSource = isTransfer && sourceAccount?.type === "credit_card";
-  const overBalance =
-    isTransfer && sourceAccount && amountNum > parseFloat(sourceAccount.balance);
+  const overBalance = isTransfer && sourceAccount && amountNum > parseFloat(sourceAccount.balance);
 
   function openForm() {
     setForm(emptyForm());
@@ -205,7 +185,6 @@ function Transactions() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  // Same rules the server checks, so the user sees problems before submitting
   function checkForm() {
     if (!form.account_id) return "Pick an account.";
     if (!(amountNum > 0)) return "Amount must be greater than 0.";
@@ -217,7 +196,7 @@ function Transactions() {
       if (cardSource) return "Transfers can't come from a credit card.";
       if (overBalance) return "That's more than this account has.";
     } else if (isSavings) {
-      if (!form.savings_goal_id) return "Pick a savings goal."; // NEW validation
+      if (!form.savings_goal_id) return "Pick a savings goal.";
     } else if (!form.category_id) {
       return "Pick a category.";
     }
@@ -241,7 +220,7 @@ function Transactions() {
       ...(isTransfer
         ? { to_account_id: Number(form.to_account_id) }
         : isSavings 
-          ? { savings_goal_id: Number(form.savings_goal_id) } // NEW payload
+          ? { savings_goal_id: Number(form.savings_goal_id) }
           : { category_id: Number(form.category_id) }),
     };
 
@@ -251,7 +230,6 @@ function Transactions() {
       await api.createTransaction(payload);
       setShowForm(false);
       setNotice(isTransfer ? "Transfer saved." : isSavings ? "Savings contribution saved." : "Transaction saved.");
-      // Refresh balances and the table
       await Promise.all([loadLookupData(), loadTransactions()]);
     } catch (err) {
       setFormError(err.message);
@@ -260,31 +238,17 @@ function Transactions() {
     }
   }
 
-  const income = transactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-  const expenses = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-
+  const income = transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + parseFloat(t.amount), 0);
+  const expenses = transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + parseFloat(t.amount), 0);
   const net = income - expenses;
 
   return (
-    <Layout
-      title="Transactions"
-      subtitle="Tuesday, September 15 · Your plan is 82% on track"
-    >
+    <Layout title="Transactions" subtitle="Tuesday, September 15 · Your plan is 82% on track">
       <div className={styles.container}>
 
-        {/* Top Filter Bar */}
         <div className={styles.topBar}>
           <div className={styles.filtersGroup}>
-            <select
-              className={styles.filterSelect}
-              name="date"
-              value={datePreset}
-              onChange={(e) => pickPreset(e.target.value)}
-            >
+            <select className={styles.filterSelect} name="date" value={datePreset} onChange={(e) => pickPreset(e.target.value)}>
               <option value="last7">Last 7 days</option>
               <option value="last30">Last 30 days</option>
               <option value="custom">Custom range</option>
@@ -299,41 +263,23 @@ function Transactions() {
             </select>
           </div>
           <button className={styles.clearBtn} onClick={clearFilters}>Clear Filters</button>
-          <button onClick={openForm}>+ Add transaction</button>
+          <button className={styles.primaryBtn} onClick={openForm}>+ Add transaction</button>
         </div>
 
         {datePreset === "custom" && (
-          <div>
+          <div className={styles.customRange}>
             <label htmlFor="range-from">From</label>
-            <input
-              id="range-from"
-              type="date"
-              value={customDraft.from}
-              onChange={(e) => setCustomDraft((d) => ({ ...d, from: e.target.value }))}
-            />
+            <input id="range-from" type="date" value={customDraft.from} onChange={(e) => setCustomDraft((d) => ({ ...d, from: e.target.value }))} />
             <label htmlFor="range-to">To</label>
-            <input
-              id="range-to"
-              type="date"
-              value={customDraft.to}
-              onChange={(e) => setCustomDraft((d) => ({ ...d, to: e.target.value }))}
-            />
-            <button type="button" onClick={applyCustomRange} disabled={customInvalid}>
-              Apply
-            </button>
-            {customDraft.from && customDraft.to && customDraft.from > customDraft.to && (
-              <p role="alert">Start date must be on or before end date.</p>
-            )}
+            <input id="range-to" type="date" value={customDraft.to} onChange={(e) => setCustomDraft((d) => ({ ...d, to: e.target.value }))} />
+            <button type="button" className={styles.outlineBtn} onClick={applyCustomRange} disabled={customInvalid}>Apply</button>
           </div>
         )}
 
-        <p>
-          Showing {formatDay(range.from)} to {formatDay(range.to)}
-        </p>
+        <p className={styles.dateShowing}>Showing {formatDay(range.from)} to {formatDay(range.to)}</p>
 
-        {notice && <p role="status">{notice}</p>}
+        {notice && <p className={styles.notice}>{notice}</p>}
 
-        {/* Summary Cards */}
         <div className={styles.summaryGrid}>
           <div className={styles.summaryCard}>
             <span className={styles.summaryLabel}>Period Income</span>
@@ -345,13 +291,10 @@ function Transactions() {
           </div>
           <div className={styles.summaryCard}>
             <span className={styles.summaryLabel}>Net Savings</span>
-            <span className={styles.textPurple}>
-              {net < 0 ? "-" : "+"}${Math.abs(net).toFixed(2)}
-            </span>
+            <span className={styles.textPurple}>{net < 0 ? "-" : "+"}${Math.abs(net).toFixed(2)}</span>
           </div>
         </div>
 
-        {/* Data Table */}
         <Card className={styles.tableCard}>
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
@@ -373,10 +316,7 @@ function Transactions() {
                   pageRows.map((tx) => {
                     const catName = getCategoryName(tx.category_id);
                     const fromName = tx.account_name || getAccountName(tx.account_id);
-                    const accountLabel =
-                      tx.type === "transfer"
-                        ? `${fromName} → ${getAccountName(tx.to_account_id)}`
-                        : fromName;
+                    const accountLabel = tx.type === "transfer" ? `${fromName} → ${getAccountName(tx.to_account_id)}` : fromName;
                     return (
                       <tr key={tx.id}>
                         <td className={styles.dateCell}>{formatDay(tx.date)}</td>
@@ -399,172 +339,137 @@ function Transactions() {
             </table>
           </div>
 
-          {/* Pagination Footer */}
           <div className={styles.pagination}>
-            <span className={styles.pageInfo}>
-              Showing {showingStart}-{showingEnd} of {transactions.length} transactions
-            </span>
+            <span className={styles.pageInfo}>Showing {showingStart}-{showingEnd} of {transactions.length} transactions</span>
             <div className={styles.pageButtons}>
-              <button
-                className={styles.pageBtn}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                Prev
-              </button>
+              <button className={styles.pageBtn} onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Prev</button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  className={n === page ? `${styles.pageBtn} ${styles.pageBtnActive}` : styles.pageBtn}
-                  onClick={() => setPage(n)}
-                >
-                  {n}
-                </button>
+                <button key={n} className={n === page ? `${styles.pageBtn} ${styles.pageBtnActive}` : styles.pageBtn} onClick={() => setPage(n)}>{n}</button>
               ))}
-              <button
-                className={styles.pageBtn}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-              </button>
+              <button className={styles.pageBtn} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</button>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Add Transaction Modal (design: Manual Add Transaction Modal) */}
+      {/* ===== REDESIGNED MODAL ===== */}
       {showForm && (
-        <dialog open>
-          <h2>Add transaction</h2>
-          <form onSubmit={handleSubmit}>
-            <label htmlFor="tx-type">Type</label>
-            <select
-              id="tx-type"
-              value={form.type}
-              onChange={(e) => updateForm("type", e.target.value)}
-            >
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-              <option value="transfer">Transfer</option>
-              <option value="savings">Savings</option> {/* NEW */}
-            </select>
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h2>Add transaction</h2>
+              <button className={styles.closeBtn} onClick={closeForm}>✕</button>
+            </div>
+            <p className={styles.modalSubtitle}>Add the details that keep your plan accurate.</p>
 
-            <label htmlFor="tx-amount">Amount</label>
-            <input
-              id="tx-amount"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              value={form.amount}
-              onChange={(e) => updateForm("amount", e.target.value)}
-            />
+            <form onSubmit={handleSubmit}>
+              <div className={styles.modalTabs}>
+                <button type="button" className={`${styles.modalTab} ${form.type === "expense" ? styles.modalTabActive : ""}`} onClick={() => updateForm("type", "expense")}>Expense</button>
+                <button type="button" className={`${styles.modalTab} ${form.type === "income" ? styles.modalTabActive : ""}`} onClick={() => updateForm("type", "income")}>Income</button>
+                <button type="button" className={`${styles.modalTab} ${form.type === "transfer" ? styles.modalTabActive : ""}`} onClick={() => updateForm("type", "transfer")}>Transfer</button>
+                <button type="button" className={`${styles.modalTab} ${form.type === "savings" ? styles.modalTabActive : ""}`} onClick={() => updateForm("type", "savings")}>Savings</button>
+              </div>
 
-            <label htmlFor="tx-account">{isTransfer ? "From account" : "Account"}</label>
-            <select
-              id="tx-account"
-              value={form.account_id}
-              onChange={(e) => updateForm("account_id", e.target.value)}
-            >
-              <option value="">Select an account</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
-            {sourceAccount && (
-              <p>Current balance: ${parseFloat(sourceAccount.balance).toFixed(2)}</p>
-            )}
+              {isTransfer ? (
+                <>
+                  <div className={styles.formGroup}>
+                    <label>From</label>
+                    <select value={form.account_id} onChange={(e) => updateForm("account_id", e.target.value)}>
+                      <option value="">Select account</option>
+                      {accounts.map((a) => <option key={a.id} value={a.id}>{a.name} (${parseFloat(a.balance || 0).toFixed(2)})</option>)}
+                    </select>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>To</label>
+                    <select value={form.to_account_id} onChange={(e) => updateForm("to_account_id", e.target.value)}>
+                      <option value="">Select account</option>
+                      {accounts.filter((a) => String(a.id) !== String(form.account_id)).map((a) => <option key={a.id} value={a.id}>{a.name} (${parseFloat(a.balance || 0).toFixed(2)})</option>)}
+                    </select>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Amount</label>
+                    <input type="number" step="0.01" value={form.amount} onChange={(e) => updateForm("amount", e.target.value)} placeholder="$ 0.00" />
+                  </div>
+                </>
+              ) : isSavings ? (
+                <>
+                  <div className={styles.formRow}>
+                    <div className={styles.formGroup}>
+                      <label>Amount *</label>
+                      <input type="number" step="0.01" value={form.amount} onChange={(e) => updateForm("amount", e.target.value)} placeholder="$ 0.00" />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>Date *</label>
+                      <input type="date" value={form.date} onChange={(e) => updateForm("date", e.target.value)} />
+                    </div>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>From Account *</label>
+                    <select value={form.account_id} onChange={(e) => updateForm("account_id", e.target.value)}>
+                      <option value="">Select account</option>
+                      {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Savings Goal *</label>
+                    <select value={form.savings_goal_id} onChange={(e) => updateForm("savings_goal_id", e.target.value)}>
+                      <option value="">Select a goal</option>
+                      {goals.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    </select>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Note (optional)</label>
+                    <input type="text" value={form.note} onChange={(e) => updateForm("note", e.target.value)} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.formRow}>
+                    <div className={styles.formGroup}>
+                      <label>Amount *</label>
+                      <input type="number" step="0.01" value={form.amount} onChange={(e) => updateForm("amount", e.target.value)} placeholder="$ 0.00" />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>Date *</label>
+                      <input type="date" value={form.date} onChange={(e) => updateForm("date", e.target.value)} />
+                    </div>
+                  </div>
+                  <div className={styles.formRow}>
+                    <div className={styles.formGroup}>
+                      <label>{isTransfer ? "From account" : "Account"}</label>
+                      <select value={form.account_id} onChange={(e) => updateForm("account_id", e.target.value)}>
+                        <option value="">Select account</option>
+                        {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </select>
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>Category (optional)</label>
+                      <select value={form.category_id} onChange={(e) => updateForm("category_id", e.target.value)}>
+                        <option value="">Select category</option>
+                        {categories.filter((c) => c.name !== "Transfer").map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Note (optional)</label>
+                    <input type="text" value={form.note} onChange={(e) => updateForm("note", e.target.value)} />
+                  </div>
+                </>
+              )}
 
-            {isTransfer && (
-              <>
-                <label htmlFor="tx-to">To account</label>
-                <select
-                  id="tx-to"
-                  value={form.to_account_id}
-                  onChange={(e) => updateForm("to_account_id", e.target.value)}
-                >
-                  <option value="">Select an account</option>
-                  {accounts
-                    .filter((a) => String(a.id) !== String(form.account_id))
-                    .map((a) => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                </select>
-              </>
-            )}
+              {formError && <p className={styles.errorText}>{formError}</p>}
+              {overBalance && <p className={styles.errorText}>That's more than this account has.</p>}
+              {cardSource && <p className={styles.errorText}>Transfers can't come from a credit card.</p>}
 
-            {/* NEW SAVINGS DROPDOWN */}
-            {isSavings && (
-              <>
-                <label htmlFor="tx-goal">Savings Goal</label>
-                <select
-                  id="tx-goal"
-                  value={form.savings_goal_id}
-                  onChange={(e) => updateForm("savings_goal_id", e.target.value)}
-                >
-                  <option value="">Select a goal</option>
-                  {goals.map((g) => (
-                    <option key={g.id} value={g.id}>{g.name}</option>
-                  ))}
-                </select>
-              </>
-            )}
-
-            {!isTransfer && !isSavings && (
-              <>
-                <label htmlFor="tx-category">Category</label>
-                <select
-                  id="tx-category"
-                  value={form.category_id}
-                  onChange={(e) => updateForm("category_id", e.target.value)}
-                >
-                  <option value="">Select a category</option>
-                  {categories
-                    .filter((c) => c.name !== "Transfer")
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                </select>
-              </>
-            )}
-
-            <label htmlFor="tx-date">Date</label>
-            <input
-              id="tx-date"
-              type="date"
-              value={form.date}
-              onChange={(e) => updateForm("date", e.target.value)}
-            />
-
-            <label htmlFor="tx-note">Note (optional)</label>
-            <input
-              id="tx-note"
-              type="text"
-              maxLength={255}
-              value={form.note}
-              onChange={(e) => updateForm("note", e.target.value)}
-            />
-
-            {overBalance && (
-              <p role="alert">That's more than this account has.</p>
-            )}
-            {cardSource && (
-              <p role="alert">Transfers can't come from a credit card.</p>
-            )}
-            {formError && <p role="alert">{formError}</p>}
-
-            <button type="button" onClick={closeForm} disabled={saving}>
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving || overBalance || cardSource}
-            >
-              {saving ? "Saving..." : "Save"}
-            </button>
-          </form>
-        </dialog>
+              <div className={styles.modalFooter}>
+                <button type="button" className={styles.outlineBtn} onClick={closeForm} disabled={saving}>Cancel</button>
+                <button type="submit" className={styles.primaryBtn} disabled={saving || overBalance || cardSource}>
+                  {saving ? "Saving..." : "Add Transaction"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </Layout>
   );
