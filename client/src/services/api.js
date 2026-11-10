@@ -94,8 +94,8 @@ export const api = {
         body: JSON.stringify(data),
       },
     }),
-  fetchGoals: () => request("/goals"),
-  createGoal: (data) =>
+  fetchSavingsGoals: () => request("/goals"),
+  createSavingsGoal: (data) =>
     request("/goals", {
       options: {
         method: "POST",
