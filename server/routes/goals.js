@@ -131,24 +131,83 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-// DELETE /api/goals/:id - Remove a goal.
-// Linked transactions are kept; the schema sets their savings_goal_id to NULL.
+// DELETE /api/goals/:id?money=return|spent
+// Contributions (savings transactions) to this goal must be handled first:
+// - No contributions: deleted directly.
+// - Contributions exist and no ?money= given: 409 with counts, so the client can ask the user.
+// - ?money=return: each contribution goes back to the account it came from, then is removed.
+// - ?money=spent: contributions are removed from history; account balances stay as they are.
 router.delete("/:id", async (req, res) => {
-  const { id } = req.params;
+  const goalId = Number(req.params.id);
   const user_id = req.user.id;
+  const mode = req.query.money;
 
+  if (!Number.isInteger(goalId)) {
+    return res.status(400).json({ error: "Invalid goal id" });
+  }
+  if (mode !== undefined && mode !== "return" && mode !== "spent") {
+    return res.status(400).json({ error: "money must be return or spent" });
+  }
+
+  const connection = await pool.getConnection();
   try {
-    const [result] = await pool.query(
-      "DELETE FROM savings_goals WHERE id = ? AND user_id = ?",
-      [id, user_id],
+    await connection.beginTransaction();
+
+    const [owned] = await connection.query(
+      "SELECT id FROM savings_goals WHERE id = ? AND user_id = ? FOR UPDATE",
+      [goalId, user_id],
     );
-    if (result.affectedRows === 0) {
+    if (owned.length === 0) {
+      await connection.rollback();
       return res.status(404).json({ error: "Goal not found or unauthorized" });
     }
-    res.status(200).json({ message: "Goal deleted successfully" });
+
+    const [contribs] = await connection.query(
+      "SELECT id, account_id, amount FROM transactions WHERE savings_goal_id = ? AND user_id = ? AND type = 'savings' FOR UPDATE",
+      [goalId, user_id],
+    );
+
+    if (contribs.length > 0 && mode === undefined) {
+      await connection.rollback();
+      const total = contribs.reduce((sum, c) => sum + Number(c.amount), 0);
+      return res.status(409).json({
+        error: "Goal has contributions",
+        contributions: contribs.length,
+        total: Number(total.toFixed(2)),
+      });
+    }
+
+    if (mode === "return") {
+      for (const c of contribs) {
+        await connection.query(
+          "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
+          [c.amount, c.account_id, user_id],
+        );
+      }
+    }
+
+    // Remove contributions before the goal, so the goal link is never set to NULL
+    await connection.query(
+      "DELETE FROM transactions WHERE savings_goal_id = ? AND user_id = ? AND type = 'savings'",
+      [goalId, user_id],
+    );
+    await connection.query(
+      "DELETE FROM savings_goals WHERE id = ? AND user_id = ?",
+      [goalId, user_id],
+    );
+
+    await connection.commit();
+    res.status(200).json({
+      message: "Goal deleted successfully",
+      contributions_removed: contribs.length,
+      money: mode ?? "none",
+    });
   } catch (err) {
+    await connection.rollback();
     console.error("Goal deletion error:", err);
     res.status(500).json({ error: "Failed to delete goal" });
+  } finally {
+    connection.release();
   }
 });
 
