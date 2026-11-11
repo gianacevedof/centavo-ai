@@ -355,3 +355,73 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Row actions and delete confirmation ===== */
+.rowActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.editBtn,
+.dangerBtn {
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #fff;
+}
+.editBtn {
+  border: 1px solid #d6dbd9;
+  color: #1a3a2e;
+}
+.editBtn:hover {
+  background: #f3f6f4;
+}
+.dangerBtn {
+  border: 1px solid #e0a3a3;
+  color: #c0392b;
+}
+.dangerBtn:hover:not(:disabled) {
+  background: #fdf1f1;
+}
+.dangerBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ===== Icon row buttons ===== */
+.iconBtn,
+.iconDangerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #d6dbd9;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a3a2e;
+  cursor: pointer;
+}
+.iconBtn:hover {
+  background: #f3f6f4;
+}
+.iconDangerBtn {
+  border-color: #e0a3a3;
+  color: #c0392b;
+}
+.iconDangerBtn:hover:not(:disabled) {
+  background: #fdf1f1;
+}
+.iconBtn:disabled,
+.iconDangerBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Delete sits on the left of the edit modal footer */
+.deleteInModal {
+  margin-right: auto;
+}
