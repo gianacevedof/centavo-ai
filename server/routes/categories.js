@@ -57,6 +57,49 @@ router.post("/", async (req, res) => {
   }
 });
 
+// PATCH /api/categories/:id   body: { name }
+// Renames one of this user's custom categories. Defaults cannot be renamed.
+router.patch("/:id", async (req, res) => {
+  const userId = req.user.id;
+  const categoryId = Number(req.params.id);
+  const name = (req.body.name || "").trim();
+
+  if (!Number.isInteger(categoryId)) {
+    return res.status(400).json({ error: "Invalid category id" });
+  }
+  if (!name) {
+    return res.status(400).json({ error: "Category name is required" });
+  }
+  if (name.length > 100) {
+    return res.status(400).json({ error: "Category name is too long" });
+  }
+
+  try {
+    const [dupes] = await pool.query(
+      `SELECT id FROM categories
+       WHERE LOWER(name) = LOWER(?) AND (user_id IS NULL OR user_id = ?) AND id <> ?`,
+      [name, userId, categoryId],
+    );
+    if (dupes.length > 0) {
+      return res
+        .status(409)
+        .json({ error: "A category with that name already exists" });
+    }
+
+    const [result] = await pool.query(
+      "UPDATE categories SET name = ? WHERE id = ? AND user_id = ?",
+      [name, categoryId, userId],
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+    res.status(200).json({ id: categoryId, name, is_default: false });
+  } catch (err) {
+    console.error("Category rename error:", err);
+    res.status(500).json({ error: "Failed to rename category" });
+  }
+});
+
 // DELETE /api/categories/:id
 // No body: if the category is in use, returns 409 with counts.
 // Body { "reassign_to": <id> }: moves transactions to that category, then deletes.
