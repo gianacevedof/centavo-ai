@@ -3,6 +3,61 @@ import { useState } from "react";
 import { api } from "../../services/api";
 import styles from "./ChatPanel.module.css";
 
+// Runs the actions from a confirmed card, in order. New categories are created
+// first, and items that use them wait for the id. A failed item doesn't stop the rest.
+async function runActions(actions) {
+  const newIds = {}; // "new:<name>" -> id of the category created for it
+  const failures = [];
+  let saved = 0;
+  let total = 0;
+
+  const withCategory = (body, key) => {
+    if (!key) return body;
+    if (newIds[key] === undefined) {
+      throw new Error(`the new category "${key.slice(4)}" was not created`);
+    }
+    return { ...body, category_id: newIds[key] };
+  };
+
+  for (const a of actions) {
+    try {
+      if (a.kind === "category_create") {
+        const cat = await api.createCategory(a.name);
+        newIds[a.key] = cat.id;
+        continue;
+      }
+      total++;
+      if (a.kind === "transaction_create") {
+        await api.createTransaction(withCategory(a.body, a.category_key));
+      } else if (a.kind === "transaction_update") {
+        await api.updateTransaction(a.id, withCategory(a.body, a.category_key));
+      } else if (a.kind === "budget_create") {
+        await api.createBudget(withCategory(a.body, a.category_key));
+      } else if (a.kind === "budget_update") {
+        await api.updateBudget(a.id, a.monthly_limit);
+      } else if (a.kind === "goal_create") {
+        await api.createSavingsGoal(a.body);
+      } else if (a.kind === "goal_update") {
+        await api.updateSavingsGoal(a.id, a.body);
+      } else if (a.kind === "category_rename") {
+        await api.renameCategory(a.id, a.name);
+      } else {
+        throw new Error("unknown action");
+      }
+      saved++;
+    } catch (err) {
+      failures.push(err.message || "something went wrong");
+    }
+  }
+  return { saved, total, failures };
+}
+
+function summarize({ saved, total, failures }) {
+  if (total === 0 && failures.length === 0) return "Nothing to save.";
+  if (failures.length === 0) return total === 1 ? "Saved." : `Saved all ${total}.`;
+  return `Saved ${saved} of ${total}. Could not save: ${failures.join("; ")}.`;
+}
+
 function ChatPanel() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]); 
@@ -24,9 +79,9 @@ function ChatPanel() {
       const reply = await api.chatAI(clean, draft ?? {});
 
       if (reply.status === "save") {
-        await api.createTransaction(reply.payload);
-        addMessage("ai", reply.reply);
         setDraft(null);
+        const result = await runActions(reply.actions);
+        addMessage("ai", summarize(result));
       } else if (reply.status === "cancelled") {
         addMessage("ai", reply.reply);
         setDraft(null);
