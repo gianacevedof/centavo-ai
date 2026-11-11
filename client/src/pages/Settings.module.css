@@ -238,3 +238,59 @@ input:checked + .slider:before { transform: translateX(18px); }
   .addCategoryForm { flex-direction: column; }
   .userBanner { flex-direction: column; text-align: center; }
 }
+
+/* ===== Category row actions ===== */
+.rowActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.editBtn {
+  padding: 5px 12px;
+  border: 1px solid #d6dbd9;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a3a2e;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.editBtn:hover {
+  background: #f3f6f4;
+}
+
+/* ===== Icon row buttons ===== */
+.iconBtn,
+.iconDangerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #d6dbd9;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a3a2e;
+  cursor: pointer;
+}
+.iconBtn:hover {
+  background: #f3f6f4;
+}
+.iconDangerBtn {
+  border-color: #e0a3a3;
+  color: #c0392b;
+}
+.iconDangerBtn:hover:not(:disabled) {
+  background: #fdf1f1;
+}
+.iconBtn:disabled,
+.iconDangerBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Delete sits on the left of the edit modal footer */
+.deleteInModal {
+  margin-right: auto;
+}

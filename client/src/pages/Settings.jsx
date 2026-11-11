@@ -4,6 +4,7 @@ import { api } from "../services/api";
 import Layout from "../components/Layout/Layout";
 import Card from "../components/Card/Card";
 import styles from "./Settings.module.css";
+import { PencilIcon } from "../components/Icons/Icons";
 
 const UNCATEGORIZED = "uncategorized";
 
@@ -26,6 +27,9 @@ function Settings() {
   const [reassignTo, setReassignTo] = useState(UNCATEGORIZED);
   const [modalError, setModalError] = useState("");
   const [busy, setBusy] = useState(false);
+  // Category being renamed inline; null when none is
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -83,6 +87,38 @@ function Settings() {
 
   function removeFromList(id) {
     setCategories((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  function startEdit(category) {
+    setPageError("");
+    setNotice("");
+    setEditingId(category.id);
+    setEditName(category.name);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditName("");
+  }
+
+  async function handleRename(e) {
+    e?.preventDefault();
+    const name = editName.trim();
+    if (!name) {
+      setPageError("Category name is required.");
+      return;
+    }
+    setPageError("");
+    try {
+      const updated = await api.renameCategory(editingId, name);
+      setCategories((prev) =>
+        prev.map((c) => (c.id === editingId ? { ...c, name: updated.name } : c))
+      );
+      setNotice(`Renamed to "${updated.name}".`);
+      cancelEdit();
+    } catch (err) {
+      setPageError(err.message);
+    }
   }
 
   async function handleDelete(category) {
@@ -240,12 +276,17 @@ function Settings() {
                         <span className={styles.badgeCustom}>Custom</span>
                       </td>
                       <td className={styles.textRight}>
-                        <button
-                          className={styles.deleteBtn}
-                          onClick={() => handleDelete(c)}
-                        >
-                          Delete
-                        </button>
+                        <div className={styles.rowActions}>
+                          <button
+                            className={styles.iconBtn}
+                            onClick={() => startEdit(c)}
+                            aria-label="Edit category"
+                            title="Edit"
+                          >
+                            <PencilIcon />
+                          </button>
+                          
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -315,6 +356,46 @@ function Settings() {
                 {busy ? "Deleting..." : "Delete category"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== RENAME MODAL ===== */}
+      {editingId !== null && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h3>Rename category</h3>
+            <form onSubmit={handleRename}>
+              <label className={styles.modalLabel}>Category name</label>
+              <input
+                type="text"
+                className={styles.textInput}
+                value={editName}
+                maxLength={100}
+                autoFocus
+                onChange={(e) => setEditName(e.target.value)}
+              />
+              {pageError && <p className={styles.errorText}>{pageError}</p>}
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={`${styles.dangerBtn} ${styles.deleteInModal}`}
+                  onClick={() => {
+                    const category = categories.find((c) => c.id === editingId);
+                    cancelEdit();
+                    handleDelete(category);
+                  }}
+                >
+                  Delete
+                </button>
+                <button type="button" className={styles.outlineBtn} onClick={cancelEdit}>
+                  Cancel
+                </button>
+                <button type="submit" className={styles.primaryBtn}>
+                  Save
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
