@@ -47,6 +47,151 @@ function balanceChange(direction, amount) {
   return direction === "out" ? -amount : amount;
 }
 
+// Checks the request body. Returns { error } or { values } with cleaned fields.
+async function validateTransaction(body, userId) {
+  const {
+    account_id,
+    to_account_id,
+    category_id,
+    type,
+    amount,
+    date,
+    note,
+    savings_goal_id,
+  } = body;
+
+  if (!account_id || !type || !amount || !date) {
+    return { error: "Missing required fields: account_id, type, amount, or date" };
+  }
+  if (!VALID_TYPES.includes(type)) {
+    return { error: "Invalid transaction type" };
+  }
+  const amt = Number(amount);
+  if (!Number.isFinite(amt) || amt <= 0) {
+    return { error: "Amount must be greater than 0" };
+  }
+  if (!isValidDay(date)) {
+    return { error: "Date must look like YYYY-MM-DD" };
+  }
+
+  if (type === "transfer") {
+    if (!to_account_id) {
+      return { error: "to_account_id is required for transfers" };
+    }
+    if (Number(to_account_id) === Number(account_id)) {
+      return { error: "Transfers need two different accounts" };
+    }
+  }
+
+  if (type === "savings") {
+    if (!savings_goal_id) {
+      return { error: "savings_goal_id is required for savings" };
+    }
+    if (!(await ownsGoal(savings_goal_id, userId))) {
+      return { error: "Invalid savings goal" };
+    }
+  }
+
+  // Ownership checks: every ID must belong to this user
+  if (!(await ownsAccount(account_id, userId))) {
+    return { error: "Invalid account" };
+  }
+  if (type === "transfer" && !(await ownsAccount(to_account_id, userId))) {
+    return { error: "Invalid destination account" };
+  }
+  if (category_id && !(await canUseCategory(category_id, userId))) {
+    return { error: "Invalid category" };
+  }
+
+  return {
+    values: {
+      account_id: Number(account_id),
+      to_account_id: type === "transfer" ? Number(to_account_id) : null,
+      category_id: category_id ?? null,
+      savings_goal_id: type === "savings" ? Number(savings_goal_id) : null,
+      type,
+      amt,
+      date,
+      note: note ?? null,
+    },
+  };
+}
+
+// Moves money for a transaction. Returns an error message, or null if it worked.
+// Must run inside a DB transaction; locks the account rows it touches.
+async function applyEffects(connection, v, userId) {
+  const accountIds = v.type === "transfer" ? [v.account_id, v.to_account_id] : [v.account_id];
+  const [rows] = await connection.query(
+    "SELECT id, type, balance FROM accounts WHERE id IN (?) AND user_id = ? FOR UPDATE",
+    [accountIds, userId],
+  );
+  const accounts = new Map(rows.map((a) => [Number(a.id), a]));
+  const source = accounts.get(v.account_id);
+  if (!source) return "Invalid account";
+
+  const adjust = (accountId, change) =>
+    connection.query(
+      "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
+      [change, accountId, userId],
+    );
+
+  if (v.type === "transfer") {
+    if (!accounts.get(v.to_account_id)) return "Invalid destination account";
+    if (source.type === "credit_card") return "Transfers can't come from a credit card";
+    if (Number(source.balance) < v.amt) return "Insufficient funds in source account";
+    await adjust(v.account_id, balanceChange("out", v.amt));
+    await adjust(v.to_account_id, balanceChange("in", v.amt));
+  } else if (v.type === "expense") {
+    await adjust(v.account_id, balanceChange("out", v.amt));
+  } else if (v.type === "income") {
+    await adjust(v.account_id, balanceChange("in", v.amt));
+  } else if (v.type === "savings") {
+    if (source.type === "credit_card") {
+      return "Savings contributions can't come from a credit card";
+    }
+    if (Number(source.balance) < v.amt) return "Insufficient funds in source account";
+    await adjust(v.account_id, balanceChange("out", v.amt));
+    await connection.query(
+      "UPDATE savings_goals SET current_amount = current_amount + ? WHERE id = ? AND user_id = ?",
+      [v.amt, v.savings_goal_id, userId],
+    );
+  }
+  return null;
+}
+
+// Undoes the money movement of a saved transaction. Used by edit and delete.
+async function reverseEffects(connection, tx, userId) {
+  const amt = Number(tx.amount);
+  const adjust = (accountId, change) =>
+    connection.query(
+      "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
+      [change, accountId, userId],
+    );
+
+  if (tx.type === "expense") {
+    await adjust(tx.account_id, balanceChange("in", amt));
+  } else if (tx.type === "income") {
+    await adjust(tx.account_id, balanceChange("out", amt));
+  } else if (tx.type === "transfer") {
+    await adjust(tx.account_id, balanceChange("in", amt));
+    await adjust(tx.to_account_id, balanceChange("out", amt));
+  } else if (tx.type === "savings") {
+    await adjust(tx.account_id, balanceChange("in", amt));
+    await connection.query(
+      "UPDATE savings_goals SET current_amount = current_amount - ? WHERE id = ? AND user_id = ?",
+      [amt, tx.savings_goal_id, userId],
+    );
+  }
+}
+
+// Transfers are stored under the built-in "Transfer" category
+async function transferCategoryId(connection) {
+  const [rows] = await connection.query(
+    "SELECT id FROM categories WHERE user_id IS NULL AND name = 'Transfer' LIMIT 1",
+  );
+  return rows.length > 0 ? rows[0].id : null;
+}
+
 router.get("/", async (req, res) => {
   try {
     const user_id = req.user.id;
@@ -105,175 +250,48 @@ router.get("/", async (req, res) => {
   }
 });
 
+// POST /api/transactions - Create a transaction (expense, income, transfer, or savings)
 router.post("/", async (req, res) => {
   const user_id = req.user.id;
-  const {
-    account_id,
-    to_account_id,
-    category_id,
-    type,
-    amount,
-    date,
-    note,
-    savings_goal_id,
-    source,
-    ai_input_text,
-  } = req.body;
-
-  // Where the entry came from: typed in the manual form, or confirmed from the AI chat
-  const entrySource = source === "ai_text" ? "ai_text" : "manual";
+  const entrySource = req.body.source === "ai_text" ? "ai_text" : "manual";
   const aiText =
-    entrySource === "ai_text" && typeof ai_input_text === "string"
-      ? ai_input_text.trim().slice(0, 2000) || null
+    entrySource === "ai_text" && typeof req.body.ai_input_text === "string"
+      ? req.body.ai_input_text.trim().slice(0, 2000) || null
       : null;
 
-  if (!account_id || !type || !amount || !date) {
-    return res.status(400).json({
-      error: "Missing required fields: account_id, type, amount, or date",
-    });
-  }
-
-  if (!VALID_TYPES.includes(type)) {
-    return res.status(400).json({ error: "Invalid transaction type" });
-  }
-
-  const amt = Number(amount);
-  if (!Number.isFinite(amt) || amt <= 0) {
-    return res.status(400).json({ error: "Amount must be greater than 0" });
-  }
-
-  if (type === "transfer") {
-    if (!to_account_id) {
-      return res
-        .status(400)
-        .json({ error: "to_account_id is required for transfers" });
-    }
-    if (Number(to_account_id) === Number(account_id)) {
-      return res
-        .status(400)
-        .json({ error: "Transfers need two different accounts" });
-    }
-  }
-
-  if (type === "savings") {
-    if (!savings_goal_id) {
-      return res
-        .status(400)
-        .json({ error: "savings_goal_id is required for savings" });
-    }
-    if (!(await ownsGoal(savings_goal_id, user_id))) {
-      return res.status(400).json({ error: "Invalid savings goal" });
-    }
-  }
-
-  // Ownership checks: every ID must belong to this user
-  if (!(await ownsAccount(account_id, user_id))) {
-    return res.status(400).json({ error: "Invalid account" });
-  }
-  if (type === "transfer" && !(await ownsAccount(to_account_id, user_id))) {
-    return res.status(400).json({ error: "Invalid destination account" });
-  }
-  if (category_id && !(await canUseCategory(category_id, user_id))) {
-    return res.status(400).json({ error: "Invalid category" });
-  }
+  const checked = await validateTransaction(req.body, user_id);
+  if (checked.error) return res.status(400).json({ error: checked.error });
+  const v = checked.values;
 
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
 
-    // Lock the account rows so two requests can't both spend the same money
-    const accountIds = type === "transfer" ? [account_id, to_account_id] : [account_id];
-    const [accountRows] = await connection.query(
-      "SELECT id, type, balance FROM accounts WHERE id IN (?) AND user_id = ? FOR UPDATE",
-      [accountIds, user_id],
-    );
-    const accounts = new Map(accountRows.map((a) => [Number(a.id), a]));
-    const source = accounts.get(Number(account_id));
-    const destination =
-      type === "transfer" ? accounts.get(Number(to_account_id)) : null;
-
-    if (type === "transfer") {
-      if (source.type === "credit_card") {
-        await connection.rollback();
-        return res
-          .status(400)
-          .json({ error: "Transfers can't come from a credit card" });
-      }
-      if (Number(source.balance) < amt) {
-        await connection.rollback();
-        return res.status(400).json({ error: "Insufficient funds in source account" });
-      }
+    const problem = await applyEffects(connection, v, user_id);
+    if (problem) {
+      await connection.rollback();
+      return res.status(400).json({ error: problem });
     }
 
-    if (type === "expense") {
-      await connection.query(
-        "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [balanceChange("out", amt), account_id, user_id],
-      );
-    } else if (type === "income") {
-      await connection.query(
-        "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [balanceChange("in", amt), account_id, user_id],
-      );
-    } else if (type === "transfer") {
-      await connection.query(
-        "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [balanceChange("out", amt), account_id, user_id],
-      );
-      await connection.query(
-        "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [balanceChange("in", amt), to_account_id, user_id],
-      );
-    }
-
-    if (type === "savings") {
-      if (source.type === "credit_card") {
-        await connection.rollback();
-        return res
-          .status(400)
-          .json({ error: "Savings contributions can't come from a credit card" });
-      }
-      if (Number(source.balance) < amt) {
-        await connection.rollback();
-        return res
-          .status(400)
-          .json({ error: "Insufficient funds in source account" });
-      }
-
-      await connection.query(
-        "UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?",
-        [balanceChange("out", amt), account_id, user_id],
-      );
-      await connection.query(
-        "UPDATE savings_goals SET current_amount = current_amount + ? WHERE id = ? AND user_id = ?",
-        [amt, savings_goal_id, user_id],
-      );
-    }
-
-    let transferCategoryId = null;
-    if (type === "transfer") {
-      const [catRows] = await connection.query(
-        "SELECT id FROM categories WHERE user_id IS NULL AND name = 'Transfer' LIMIT 1",
-      );
-      transferCategoryId = catRows.length > 0 ? catRows[0].id : null;
-    }
+    const categoryForRow =
+      v.type === "transfer"
+        ? await transferCategoryId(connection)
+        : v.type === "savings"
+          ? null
+          : v.category_id;
 
     const [result] = await connection.query(
       "INSERT INTO transactions (user_id, account_id, to_account_id, category_id, savings_goal_id, type, amount, date, note, source, ai_input_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         user_id,
-        account_id,
-        type === "transfer" ? to_account_id : null,
-        type === "transfer"
-          ? transferCategoryId
-          : type === "savings"
-            ? null
-            : category_id ?? null,
-        type === "savings" ? Number(savings_goal_id) : null,
-        type,
-        amt,
-        date,
-        note ?? null,
+        v.account_id,
+        v.to_account_id,
+        categoryForRow,
+        v.savings_goal_id,
+        v.type,
+        v.amt,
+        v.date,
+        v.note,
         entrySource,
         aiText,
       ],
@@ -288,6 +306,115 @@ router.post("/", async (req, res) => {
     await connection.rollback();
     console.error("Transaction creation error:", err);
     res.status(500).json({ error: "Failed to process transaction" });
+  } finally {
+    connection.release();
+  }
+});
+
+// PUT /api/transactions/:id - Replace a transaction's details.
+// The old money movement is undone first, then the new one is applied.
+router.put("/:id", async (req, res) => {
+  const user_id = req.user.id;
+  const txId = Number(req.params.id);
+  if (!Number.isInteger(txId)) {
+    return res.status(400).json({ error: "Invalid transaction id" });
+  }
+
+  const checked = await validateTransaction(req.body, user_id);
+  if (checked.error) return res.status(400).json({ error: checked.error });
+  const v = checked.values;
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [oldRows] = await connection.query(
+      "SELECT * FROM transactions WHERE id = ? AND user_id = ? FOR UPDATE",
+      [txId, user_id],
+    );
+    if (oldRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    await reverseEffects(connection, oldRows[0], user_id);
+
+    const problem = await applyEffects(connection, v, user_id);
+    if (problem) {
+      await connection.rollback();
+      return res.status(400).json({ error: problem });
+    }
+
+    const categoryForRow =
+      v.type === "transfer"
+        ? await transferCategoryId(connection)
+        : v.type === "savings"
+          ? null
+          : v.category_id;
+
+    await connection.query(
+      `UPDATE transactions
+       SET account_id = ?, to_account_id = ?, category_id = ?, savings_goal_id = ?,
+           type = ?, amount = ?, date = ?, note = ?
+       WHERE id = ? AND user_id = ?`,
+      [
+        v.account_id,
+        v.to_account_id,
+        categoryForRow,
+        v.savings_goal_id,
+        v.type,
+        v.amt,
+        v.date,
+        v.note,
+        txId,
+        user_id,
+      ],
+    );
+
+    await connection.commit();
+    res.status(200).json({ message: "Transaction updated successfully" });
+  } catch (err) {
+    await connection.rollback();
+    console.error("Transaction update error:", err);
+    res.status(500).json({ error: "Failed to update transaction" });
+  } finally {
+    connection.release();
+  }
+});
+
+// DELETE /api/transactions/:id - Remove a transaction and undo its money movement
+router.delete("/:id", async (req, res) => {
+  const user_id = req.user.id;
+  const txId = Number(req.params.id);
+  if (!Number.isInteger(txId)) {
+    return res.status(400).json({ error: "Invalid transaction id" });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [rows] = await connection.query(
+      "SELECT * FROM transactions WHERE id = ? AND user_id = ? FOR UPDATE",
+      [txId, user_id],
+    );
+    if (rows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    await reverseEffects(connection, rows[0], user_id);
+    await connection.query(
+      "DELETE FROM transactions WHERE id = ? AND user_id = ?",
+      [txId, user_id],
+    );
+
+    await connection.commit();
+    res.status(200).json({ message: "Transaction deleted successfully" });
+  } catch (err) {
+    await connection.rollback();
+    console.error("Transaction delete error:", err);
+    res.status(500).json({ error: "Failed to delete transaction" });
   } finally {
     connection.release();
   }
