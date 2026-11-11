@@ -262,6 +262,7 @@ function Transactions() {
               {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
             </select>
           </div>
+          <button className={styles.clearBtn} onClick={() => { loadLookupData(); loadTransactions(); }} aria-label="Refresh" title="Refresh"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></svg></button>
           <button className={styles.clearBtn} onClick={clearFilters}>Clear Filters</button>
           <button className={styles.primaryBtn} onClick={openForm}>+ Add transaction</button>
         </div>
@@ -320,7 +321,7 @@ function Transactions() {
                     return (
                       <tr key={tx.id}>
                         <td className={styles.dateCell}>{formatDay(tx.date)}</td>
-                        <td className={styles.descCell}>{tx.note || "No description"}</td>
+                        <td className={styles.descCell}>{tx.note || ""}</td>
                         <td>
                           <div className={styles.categoryCell}>
                             <span className={styles.dot} style={{ backgroundColor: getCategoryColor(catName) }} />

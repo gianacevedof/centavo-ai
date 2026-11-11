@@ -196,8 +196,7 @@ function Settings() {
         <div className={styles.categoriesWrapper}>
           <Card title="Manage Categories">
             <p className={styles.cardDesc}>
-              Set a monthly limit for each category. Default categories are
-              locked.
+              Set a monthly limit for each category.
             </p>
 
             {/* Add Category Form */}
@@ -230,26 +229,6 @@ function Settings() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Default Categories */}
-                  {categories
-                    .filter((c) => c.is_default)
-                    .map((c) => (
-                      <tr key={c.id}>
-                        <td className={styles.descCell}>
-                          <span className={styles.dot} />
-                          {c.name}
-                        </td>
-                        <td>
-                          <span className={styles.badgeDefault}>Default</span>
-                        </td>
-                        <td className={styles.textRight}>
-                          <button className={styles.disabledBtn} disabled>
-                            Locked
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-
                   {/* Custom Categories */}
                   {custom.map((c) => (
                     <tr key={c.id}>
@@ -270,6 +249,13 @@ function Settings() {
                       </td>
                     </tr>
                   ))}
+                {custom.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className={styles.descCell}>
+                        No custom categories yet. Want to add one?
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

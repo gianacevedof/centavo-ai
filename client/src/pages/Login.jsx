@@ -5,6 +5,7 @@ import styles from "./Login.module.css";
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -55,25 +56,24 @@ const Login = () => {
 
           <div className={styles.inputGroup}>
             <label>Password</label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          {/* Remember & Forgot Password Row */}
-          <div className={styles.optionsRow}>
-            <label className={styles.checkboxLabel}>
-              <input type="checkbox" className={styles.checkbox} />
-              Remember
-            </label>
-            <a href="#" className={styles.forgotLink}>
-              Forgot password?
-            </a>
+            <div className={styles.passwordWrap}>
+              <input
+                className={styles.passwordField}
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                required
+              />
+              <button
+                type="button"
+                className={styles.toggleBtn}
+                onClick={() => setShowPassword((v) => !v)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className={styles.submitBtn}>
