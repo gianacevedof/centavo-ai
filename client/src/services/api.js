@@ -118,7 +118,23 @@ export const api = {
         body: JSON.stringify(txData),
       },
     }),
+  updateTransaction: (id, txData) =>
+    request(`/transactions/${id}`, {
+      options: { method: "PUT", body: JSON.stringify(txData) },
+    }),
+  deleteTransaction: (id) =>
+    request(`/transactions/${id}`, { options: { method: "DELETE" } }),
+  renameCategory: (id, name) =>
+    request(`/categories/${id}`, {
+      options: { method: "PATCH", body: JSON.stringify({ name }) },
+    }),
   fetchBudgets: (params) => request("/budgets", { params }),
+  updateBudget: (id, monthly_limit) =>
+    request(`/budgets/${id}`, {
+      options: { method: "PATCH", body: JSON.stringify({ monthly_limit }) },
+    }),
+  deleteBudget: (id) =>
+    request(`/budgets/${id}`, { options: { method: "DELETE" } }),
   createBudget: (data) =>
     request("/budgets", {
       options: {
@@ -127,6 +143,17 @@ export const api = {
       },
     }),
   fetchSavingsGoals: () => request("/goals"),
+  updateSavingsGoal: (id, data) =>
+    request(`/goals/${id}`, {
+      options: { method: "PATCH", body: JSON.stringify(data) },
+    }),
+  // money: "return" (back to accounts) or "spent" (drop from history).
+  // Omit it to get a 409 when the goal has contributions.
+  deleteSavingsGoal: (id, money) =>
+    request(`/goals/${id}`, {
+      params: money ? { money } : {},
+      options: { method: "DELETE" },
+    }),
   createSavingsGoal: (data) =>
     request("/goals", {
       options: {
