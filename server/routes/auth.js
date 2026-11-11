@@ -4,10 +4,39 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 import {
   hashPassword,
   verifyPassword,
-  generateToken,
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
 } from "../services/authService.js";
 
 const router = express.Router();
+
+const COOKIE_BASE = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "Strict",
+};
+const ACCESS_MAX_AGE = 15 * 60 * 1000; // 15 minutes
+const REFRESH_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function setSessionCookies(res, user) {
+  res.cookie("access_token", generateAccessToken(user), {
+    ...COOKIE_BASE,
+    path: "/",
+    maxAge: ACCESS_MAX_AGE,
+  });
+  // Refresh cookie is only sent to /api/auth routes
+  res.cookie("refresh_token", generateRefreshToken(user), {
+    ...COOKIE_BASE,
+    path: "/api/auth",
+    maxAge: REFRESH_MAX_AGE,
+  });
+}
+
+function clearSessionCookies(res) {
+  res.clearCookie("access_token", { ...COOKIE_BASE, path: "/" });
+  res.clearCookie("refresh_token", { ...COOKIE_BASE, path: "/api/auth" });
+}
 
 // Practical email check: something@something.tld, no spaces, max 254 chars.
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -131,15 +160,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
-    // Generate token and set cookie
-    const token = generateToken(user);
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    });
+    setSessionCookies(res, user);
 
     res.status(200).json({
       message: "Login successful",
@@ -156,12 +177,47 @@ router.post("/login", async (req, res) => {
  * Clears the auth cookie.
  */
 router.post("/logout", (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Strict",
-  });
+  clearSessionCookies(res);
   res.status(200).json({ message: "Logged out successfully." });
+});
+
+/**
+ * POST /api/auth/refresh
+ * Uses the refresh cookie to issue a new access token and refresh token.
+ */
+router.post("/refresh", async (req, res) => {
+  const payload = req.cookies.refresh_token
+    ? verifyRefreshToken(req.cookies.refresh_token)
+    : null;
+
+  if (!payload) {
+    clearSessionCookies(res);
+    return res.status(401).json({
+      message: "Your session has expired. Please log in again.",
+      code: "SESSION_EXPIRED",
+    });
+  }
+
+  try {
+    // Make sure the user still exists before issuing new tokens
+    const [rows] = await pool.query(
+      "SELECT id, email FROM users WHERE id = ?",
+      [payload.id],
+    );
+    if (rows.length === 0) {
+      clearSessionCookies(res);
+      return res.status(401).json({
+        message: "Your session has expired. Please log in again.",
+        code: "SESSION_EXPIRED",
+      });
+    }
+
+    setSessionCookies(res, rows[0]);
+    res.status(200).json({ message: "Session refreshed." });
+  } catch (error) {
+    console.error("Refresh error:", error);
+    res.status(500).json({ message: "An internal server error occurred." });
+  }
 });
 
 router.get("/me", authMiddleware, async (req, res) => {
