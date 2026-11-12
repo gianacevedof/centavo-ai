@@ -28,5 +28,6 @@ Many individuals and small business owners struggle with manual financial organi
 ## 👥 Core Team & Responsibilities
 
 - **Giancarlo Acevedo** (*Programming*): System architecture, React frontend, Express REST API, and Gemini API integration.
-- **Jensen Ramnarine** (*IT*): MySQL relational schema design, database queries, and frontend CSS styling assistance.
-- **Marcos Gutierrez** (*IT*): Deployment, QA, and project documentation management.
+- **Jensen Ramnarine** (*IT*): MySQL relational schema design, database queries, and frontend CSS styling.
+- **Marcos Gutierrez** (*IT*): Pen Testing, QA, and Project Documentation Management.
+- **Steeve Roger** (*IT*): Deployment, QA, Web Design.
