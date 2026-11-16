@@ -1,0 +1,56 @@
+/* components/EmptyState/EmptyState.module.css */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xl) var(--space-md);
+    text-align: center;
+    background-color: var(--color-surface-muted);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--color-border);
+    margin: var(--space-md) 0;
+  }
+  
+  .iconWrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: var(--color-bg-card);
+    display: grid;
+    place-items: center;
+    font-size: 2rem;
+    margin-bottom: var(--space-md);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 var(--space-xs);
+  }
+  
+  .description {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-lg);
+    max-width: 300px;
+    line-height: 1.5;
+  }
+  
+  .actionBtn {
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  
+  .actionBtn:hover {
+    background-color: var(--color-primary-hover);
+  }
