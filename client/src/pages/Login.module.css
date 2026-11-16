@@ -191,3 +191,52 @@
 .toggleBtn:hover {
   text-decoration: underline;
 }
+/*============================================================
+   MOBILE RESPONSIVE AUTH (Login/Signup)
+   ============================================================ */
+@media (max-width: 768px) {
+  /* 1. Hide the left green branding panel */
+  .brandPanel {
+    display: none;
+  }
+
+  /* 2. Make the container a single centered column */
+  .authContainer {
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+    padding: var(--space-md);
+    background-color: #f5f4f1; /* Keep the warm background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 3. Keep the white card look! */
+  .loginCard {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px 24px;
+    background: #ffffff; /* <--- THIS IS THE FIX */
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e5e5e0;
+  }
+
+  /* 4. Make inputs taller for easier tapping */
+  .formGroup input {
+    padding: 14px var(--space-md);
+    font-size: 1rem;
+  }
+
+  /* 5. Make the submit button taller */
+  .submitBtn {
+    padding: 16px;
+    font-size: 1.05rem;
+    margin-top: var(--space-md);
+  }
+
+  /* 6. Adjust the footer text spacing */
+  .footer {
+    margin-top: var(--space-lg);
+  }
+}
