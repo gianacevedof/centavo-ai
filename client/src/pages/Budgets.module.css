@@ -454,3 +454,90 @@
 .deleteInModal {
   margin-right: auto;
 }
+/* ============================================================
+   MOBILE RESPONSIVE BUDGETS
+   ============================================================ */
+   @media (max-width: 1024px) {
+    .budgetGrid { 
+      grid-template-columns: repeat(2, 1fr); 
+    }
+    .donutCard { 
+      grid-column: span 2; 
+    }
+    .goalGrid { 
+      grid-template-columns: repeat(2, 1fr); 
+    }
+  }
+  
+  @media (max-width: 768px) {
+    /* 1. Stack everything to a single column */
+    .budgetGrid,
+    .goalGrid {
+      grid-template-columns: 1fr;
+    }
+  
+    .donutCard {
+      grid-column: span 1;
+      flex-direction: column; /* Stack donut and stats vertically */
+      text-align: center;
+      gap: var(--space-md);
+      padding: var(--space-lg) var(--space-md);
+    }
+  
+    .donutStats {
+      width: 100%;
+      border-top: 1px solid var(--color-border);
+      padding-top: var(--space-md);
+    }
+  
+    .statRow {
+      align-items: center;
+    }
+  
+    /* 2. Adjust Section Headers */
+    .sectionHeader {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-sm);
+    }
+  
+    .addBtn {
+      width: 100%;
+      text-align: center;
+    }
+  
+    /* 3. Budget Cards Mobile Adjustments */
+    .budgetCard {
+      padding: var(--space-md);
+    }
+  
+    .cardHeader {
+      margin-bottom: var(--space-sm);
+    }
+  
+    /* 4. Goals Grid Adjustments */
+    .goalCard {
+      padding: var(--space-md);
+    }
+  
+    .goalAmounts {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+  
+    .goalTarget {
+      margin-left: 0;
+    }
+  
+    /* 5. Modal Adjustments for Mobile */
+    .modalContent {
+      padding: var(--space-lg);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+  
+    .formRow {
+      grid-template-columns: 1fr;
+    }
+  }
