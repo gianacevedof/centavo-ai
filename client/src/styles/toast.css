@@ -1,0 +1,39 @@
+/* client/src/styles/toast.css */
+.Toastify__toast {
+    border-radius: 12px;
+    font-family: var(--font-family);
+    font-size: 0.875rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  .Toastify__toast--success {
+    background-color: #e8f0ec;
+    color: #1a3a2e;
+    border: 1px solid #c3dcd2;
+  }
+  
+  .Toastify__toast--error {
+    background-color: #fde2e0;
+    color: #c4453a;
+    border: 1px solid #f9cdca;
+  }
+  
+  .Toastify__toast--info {
+    background-color: #e8f0ec;
+    color: #1a3a2e;
+  }
+  
+  /* Dark Mode Support */
+  body.dark-mode .Toastify__toast {
+    background-color: #1f2937;
+    color: #f9fafb;
+    border-color: #374151;
+  }
+  body.dark-mode .Toastify__toast--success {
+    border-color: #2d7a5f;
+    background-color: #1a3a2e;
+  }
+  body.dark-mode .Toastify__toast--error {
+    border-color: #c4453a;
+    background-color: #451a18;
+  }
