@@ -1,0 +1,16 @@
+/* components/Skeleton/Skeleton.module.css */
+.skeleton {
+    background: #e5e5e0;
+    animation: pulse 1.5s infinite ease-in-out;
+    border-radius: 4px;
+  }
+  
+  :global(.dark-mode) .skeleton {
+    background: #374151;
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
