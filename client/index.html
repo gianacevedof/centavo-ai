@@ -4,7 +4,17 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+    <title>Centavo</title>
+    
+    <!-- Global Dark Mode Check (Runs before React loads) -->
+    <script>
+      const savedMode = localStorage.getItem("darkMode");
+      if (savedMode === "true") {
+        document.documentElement.classList.add("dark-mode");
+        document.body.classList.add("dark-mode");
+      }
+    </script>
+    
   </head>
   <body>
     <div id="root"></div>
