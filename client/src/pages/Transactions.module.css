@@ -425,3 +425,123 @@
 .deleteInModal {
   margin-right: auto;
 }
+/* ============================================================
+   MOBILE RESPONSIVE TRANSACTIONS
+   ============================================================ */
+   @media (max-width: 768px) {
+    /* 1. Top Filter Bar */
+    .topBar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-sm);
+      padding: var(--space-md);
+    }
+  
+    .filtersGroup {
+      flex-wrap: wrap;
+    }
+  
+    .filterSelect {
+      flex: 1;
+      min-width: 120px;
+    }
+  
+    .clearBtn {
+      text-align: left;
+      padding: 8px 0;
+    }
+  
+    .primaryBtn {
+      width: 100%;
+      text-align: center;
+      margin-top: 8px;
+    }
+  
+    /* 2. Summary Cards (Stack vertically) */
+    .summaryGrid {
+      grid-template-columns: 1fr;
+      padding: 0;
+      gap: var(--space-sm);
+      background: transparent;
+      border: none;
+    }
+  
+    .summaryCard {
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      border-right: 1px solid var(--color-border); /* Reset from desktop */
+    }
+  
+    .summaryCard:last-child {
+      border-right: 1px solid var(--color-border);
+    }
+  
+    /* 3. The Data Table -> Stacked List */
+    .tableWrapper {
+      padding: 0;
+    }
+  
+    .table {
+      display: block;
+    }
+  
+    .table thead {
+      display: none; /* Hide column headers on mobile */
+    }
+  
+    .table tbody {
+      display: block;
+    }
+  
+    .table tr {
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-md);
+      border-bottom: 1px solid var(--color-border);
+      gap: 4px;
+    }
+  
+    .table td {
+      display: block;
+      padding: 0;
+      border: none;
+      font-size: var(--font-size-sm);
+    }
+  
+    /* Format the mobile table cells */
+    .dateCell {
+      font-size: 0.75rem;
+      order: 2; /* Move date below the description */
+      color: var(--color-text-muted);
+    }
+  
+    .descCell {
+      font-size: 0.95rem;
+      font-weight: 600;
+      order: 1;
+      color: var(--color-text);
+    }
+  
+    /* Hide category and account on mobile to save space */
+    .table td:nth-child(3),
+    .table td:nth-child(4) {
+      display: none; 
+    }
+  
+    .amountCell {
+      order: 3;
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: left !important; /* Force left alignment on mobile */
+      margin-top: 4px;
+    }
+  
+    /* 4. Pagination */
+    .pagination {
+      flex-direction: column;
+      gap: var(--space-md);
+      text-align: center;
+    }
+  }
