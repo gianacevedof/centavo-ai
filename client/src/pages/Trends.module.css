@@ -1,0 +1,241 @@
+/* pages/Trends.module.css */
+.pageWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  
+  .loading {
+    padding: var(--space-xl);
+    text-align: center;
+  }
+  
+  .emptyState {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    padding: var(--space-md) 0;
+    text-align: center;
+  }
+  
+  /* ===== Top Summary Cards ===== */
+  .summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+  }
+  
+  .summaryCard {
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  
+  .summaryLabel {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+  
+  .summaryValue {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  
+  .summarySub {
+    font-size: 0.75rem;
+    color: var(--color-text-subtle);
+  }
+  
+  .savingsGoalRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  
+  .badgeGreen {
+    background-color: #e8f0ec;
+    color: var(--color-green);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  
+  /* ===== Main Chart ===== */
+  .chartCard {
+    padding: var(--space-xl);
+  }
+  
+  .chartHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-xl);
+  }
+  
+  .chartTitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .chartSub {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin: 4px 0 0;
+  }
+  
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+  }
+  
+  .dotBlue {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--color-info);
+  }
+  
+  /* CRITICAL: Fix for the huge chart bug */
+  .canvasWrapper {
+    height: 300px;
+    width: 100%;
+    position: relative;
+  }
+  
+  /* ===== Bottom Row ===== */
+  .bottomGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+  }
+  
+  .breakdownList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    padding-top: var(--space-md);
+  }
+  
+  .breakdownRow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .breakdownHeader {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+  }
+  
+  .breakdownAmount {
+    color: var(--color-text);
+  }
+  
+  /* Table */
+  .tableWrapper {
+    width: 100%;
+    margin-top: var(--space-md);
+  }
+  
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+  
+  .table th {
+    padding: var(--space-sm) 0;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .table td {
+    padding: var(--space-md) 0;
+    font-size: var(--font-size-sm);
+    border-bottom: 1px solid #f0f0eb;
+  }
+  
+  .table tr:last-child td {
+    border-bottom: none;
+  }
+  
+  .textRight { text-align: right; }
+  .textGreen { color: var(--color-income); }
+  .textRed { color: var(--color-expense); }
+  
+  /* ===== Responsive ===== */
+  @media (max-width: 1024px) {
+    .summaryGrid { grid-template-columns: 1fr; }
+    .bottomGrid { grid-template-columns: 1fr; }
+  }
+  /* Utility spacing for Skeleton layout */
+.mtSm { margin-top: var(--space-sm); }
+.mtLg { margin-top: var(--space-lg); }
+/* ============================================================
+   MOBILE RESPONSIVE TRENDS
+   ============================================================ */
+   @media (max-width: 1024px) {
+    .summaryGrid {
+      grid-template-columns: 1fr;
+      gap: var(--space-md);
+    }
+    
+    .bottomGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    /* 1. Adjust Summary Cards */
+    .summaryCard {
+      padding: var(--space-md);
+    }
+  
+    .summaryValue {
+      font-size: 1.5rem;
+    }
+  
+    /* 2. Chart Card Adjustments */
+    .chartCard {
+      padding: var(--space-md);
+    }
+  
+    .chartHeader {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+    }
+  
+    /* Shrink the chart height so it doesn't dominate the screen */
+    .canvasWrapper {
+      height: 250px; 
+    }
+  
+    /* 3. Bottom Grid Adjustments */
+    .breakdownList {
+      gap: var(--space-md);
+    }
+  
+    /* Make the table scroll horizontally if it gets too wide */
+    .tableWrapper {
+      overflow-x: auto;
+    }
+  
+    .table th,
+    .table td {
+      padding: 8px 4px;
+      font-size: 0.8rem;
+    }
+  }
