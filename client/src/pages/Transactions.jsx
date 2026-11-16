@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "react-toastify";
 import { api } from "../services/api";
 import Layout from "../components/Layout/Layout";
 import Card from "../components/Card/Card";
+import EmptyState from "../components/EmptyState/EmptyState";
 import styles from "./Transactions.module.css";
-import { PencilIcon } from "../components/Icons/Icons";
 
 const TRANSFER = "transfer";
 const SAVINGS = "savings";
@@ -62,7 +63,6 @@ function Transactions() {
   const [goals, setGoals] = useState([]);
   const [filters, setFilters] = useState({ category: "", account: "" });
   const [loading, setLoading] = useState(true);
-  const [notice, setNotice] = useState("");
   const [page, setPage] = useState(1);
 
   const [datePreset, setDatePreset] = useState("last30");
@@ -73,12 +73,6 @@ function Transactions() {
   const [form, setForm] = useState(emptyForm());
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
-
-  // Transaction being edited; null means the form adds a new one
-  const [editingTx, setEditingTx] = useState(null);
-  // Transaction waiting for delete confirmation
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleting, setDeleting] = useState(false);
 
   const loadLookupData = useCallback(async () => {
     try {
@@ -175,56 +169,17 @@ function Transactions() {
   const sourceAccount = accounts.find((a) => String(a.id) === String(form.account_id));
   const amountNum = Number(form.amount);
   const cardSource = isTransfer && sourceAccount?.type === "credit_card";
-  // When editing a transfer from the same account, its old amount is already out of the balance
-  const editAddBack =
-    editingTx && editingTx.type === TRANSFER && String(editingTx.account_id) === String(form.account_id)
-      ? parseFloat(editingTx.amount)
-      : 0;
-  const availableBalance = sourceAccount ? parseFloat(sourceAccount.balance) + editAddBack : 0;
-  const overBalance = isTransfer && sourceAccount && amountNum > availableBalance;
+  const overBalance = isTransfer && sourceAccount && amountNum > parseFloat(sourceAccount.balance);
 
   function openForm() {
-    setEditingTx(null);
     setForm(emptyForm());
-    setFormError("");
-    setShowForm(true);
-  }
-
-  function openEdit(tx) {
-    setEditingTx(tx);
-    setForm({
-      type: tx.type,
-      amount: String(tx.amount),
-      account_id: String(tx.account_id),
-      to_account_id: tx.to_account_id ? String(tx.to_account_id) : "",
-      category_id: tx.category_id ? String(tx.category_id) : "",
-      savings_goal_id: tx.savings_goal_id ? String(tx.savings_goal_id) : "",
-      date: String(tx.date).slice(0, 10),
-      note: tx.note || "",
-    });
     setFormError("");
     setShowForm(true);
   }
 
   function closeForm() {
     setShowForm(false);
-    setEditingTx(null);
     setFormError("");
-  }
-
-  async function confirmDelete() {
-    setDeleting(true);
-    try {
-      await api.deleteTransaction(deleteTarget.id);
-      setDeleteTarget(null);
-      setNotice("Transaction deleted.");
-      await Promise.all([loadLookupData(), loadTransactions()]);
-    } catch (err) {
-      setNotice(err.message || "Failed to delete transaction.");
-      setDeleteTarget(null);
-    } finally {
-      setDeleting(false);
-    }
   }
 
   function updateForm(name, value) {
@@ -273,21 +228,14 @@ function Transactions() {
     setSaving(true);
     setFormError("");
     try {
-      if (editingTx) {
-        await api.updateTransaction(editingTx.id, payload);
-      } else {
-        await api.createTransaction(payload);
-      }
+      await api.createTransaction(payload);
       setShowForm(false);
-      setEditingTx(null);
-      setNotice(
-        editingTx
-          ? "Transaction updated."
-          : isTransfer ? "Transfer saved." : isSavings ? "Savings contribution saved." : "Transaction saved."
-      );
+      
+      toast.success(isTransfer ? "Transfer saved." : isSavings ? "Savings contribution saved." : "Transaction saved.");
+      
       await Promise.all([loadLookupData(), loadTransactions()]);
     } catch (err) {
-      setFormError(err.message);
+      toast.error(err.message || "Failed to save transaction.");
     } finally {
       setSaving(false);
     }
@@ -317,7 +265,6 @@ function Transactions() {
               {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
             </select>
           </div>
-          <button className={styles.clearBtn} onClick={() => { loadLookupData(); loadTransactions(); }} aria-label="Refresh" title="Refresh"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></svg></button>
           <button className={styles.clearBtn} onClick={clearFilters}>Clear Filters</button>
           <button className={styles.primaryBtn} onClick={openForm}>+ Add transaction</button>
         </div>
@@ -333,8 +280,6 @@ function Transactions() {
         )}
 
         <p className={styles.dateShowing}>Showing {formatDay(range.from)} to {formatDay(range.to)}</p>
-
-        {notice && <p className={styles.notice}>{notice}</p>}
 
         <div className={styles.summaryGrid}>
           <div className={styles.summaryCard}>
@@ -361,14 +306,23 @@ function Transactions() {
                   <th>Category</th>
                   <th>Account</th>
                   <th className={styles.textRight}>Amount</th>
-                  <th className={styles.textRight}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan="6" className={styles.emptyState}>Loading transactions...</td></tr>
+                  <tr><td colSpan="5" className={styles.emptyState}>Loading transactions...</td></tr>
                 ) : transactions.length === 0 ? (
-                  <tr><td colSpan="6" className={styles.emptyState}>No transactions found</td></tr>
+                  <tr>
+                    <td colSpan="5" style={{ padding: 0, border: 'none' }}>
+                      <EmptyState 
+                        icon="💸" 
+                        title="No transactions yet" 
+                        description="Get started by adding your first income or expense."
+                        actionLabel="+ Add Transaction"
+                        onAction={openForm}
+                      />
+                    </td>
+                  </tr>
                 ) : (
                   pageRows.map((tx) => {
                     const catName = getCategoryName(tx.category_id);
@@ -377,7 +331,7 @@ function Transactions() {
                     return (
                       <tr key={tx.id}>
                         <td className={styles.dateCell}>{formatDay(tx.date)}</td>
-                        <td className={styles.descCell}>{tx.note || ""}</td>
+                        <td className={styles.descCell}>{tx.note || "No description"}</td>
                         <td>
                           <div className={styles.categoryCell}>
                             <span className={styles.dot} style={{ backgroundColor: getCategoryColor(catName) }} />
@@ -387,12 +341,6 @@ function Transactions() {
                         <td className={styles.accountCell}>{accountLabel}</td>
                         <td className={`${styles.textRight} ${tx.type === "expense" ? styles.textRed : styles.textGreen} ${styles.amountCell}`}>
                           {tx.type === "expense" ? "-" : "+"}${parseFloat(tx.amount).toFixed(2)}
-                        </td>
-                        <td className={styles.textRight}>
-                          <div className={styles.rowActions}>
-                            <button className={styles.iconBtn} onClick={() => openEdit(tx)} aria-label="Edit transaction" title="Edit"><PencilIcon /></button>
-
-                          </div>
                         </td>
                       </tr>
                     );
@@ -420,12 +368,10 @@ function Transactions() {
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <div className={styles.modalHeader}>
-              <h2>{editingTx ? "Edit transaction" : "Add transaction"}</h2>
+              <h2>Add transaction</h2>
               <button className={styles.closeBtn} onClick={closeForm}>✕</button>
             </div>
-            <p className={styles.modalSubtitle}>
-              {editingTx ? "Changes update your account balances." : "Add the details that keep your plan accurate."}
-            </p>
+            <p className={styles.modalSubtitle}>Add the details that keep your plan accurate.</p>
 
             <form onSubmit={handleSubmit}>
               <div className={styles.modalTabs}>
@@ -527,48 +473,12 @@ function Transactions() {
               {cardSource && <p className={styles.errorText}>Transfers can't come from a credit card.</p>}
 
               <div className={styles.modalFooter}>
-                {editingTx && (
-                  <button
-                    type="button"
-                    className={`${styles.dangerBtn} ${styles.deleteInModal}`}
-                    onClick={() => {
-                      const tx = editingTx;
-                      closeForm();
-                      setDeleteTarget(tx);
-                    }}
-                    disabled={saving}
-                  >
-                    Delete
-                  </button>
-                )}
                 <button type="button" className={styles.outlineBtn} onClick={closeForm} disabled={saving}>Cancel</button>
                 <button type="submit" className={styles.primaryBtn} disabled={saving || overBalance || cardSource}>
-                  {saving ? "Saving..." : editingTx ? "Save Changes" : "Add Transaction"}
+                  {saving ? "Saving..." : "Add Transaction"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* DELETE CONFIRMATION */}
-      {deleteTarget && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h2>Delete transaction?</h2>
-              <button className={styles.closeBtn} onClick={() => setDeleteTarget(null)} disabled={deleting}>✕</button>
-            </div>
-            <p className={styles.modalSubtitle}>
-              {formatDay(deleteTarget.date)} · ${parseFloat(deleteTarget.amount).toFixed(2)}
-              {deleteTarget.note ? ` · ${deleteTarget.note}` : ""}. Its effect on your account balances will be undone.
-            </p>
-            <div className={styles.modalFooter}>
-              <button type="button" className={styles.outlineBtn} onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</button>
-              <button type="button" className={styles.dangerBtn} onClick={confirmDelete} disabled={deleting}>
-                {deleting ? "Deleting..." : "Delete"}
-              </button>
-            </div>
           </div>
         </div>
       )}
