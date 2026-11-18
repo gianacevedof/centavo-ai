@@ -35,8 +35,7 @@ router.post("/", authMiddleware, async (req, res) => {
       "INSERT INTO accounts (user_id, name, type, balance) VALUES (?, ?, ?, ?)",
       [userId, name, type, balance ?? 0.0],
     );
-    res
-      .status(201)
+    res.status(201)
       .json({
         id: result.insertId,
         user_id: userId,

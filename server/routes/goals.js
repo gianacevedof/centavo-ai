@@ -1,3 +1,4 @@
+import { clearAiCache } from "../services/aiCache.js";
 import { sendError } from "../utils/errors.js";
 import express from "express";
 import pool from "../db.js";
@@ -67,6 +68,7 @@ router.post("/", async (req, res) => {
       "INSERT INTO savings_goals (user_id, name, target_amount, target_date) VALUES (?, ?, ?, ?)",
       [user_id, name, Number(target_amount), target_date],
     );
+    clearAiCache(user_id);
     res.status(201).json({
       message: "Goal created successfully",
       goalId: result.insertId,
@@ -116,6 +118,7 @@ router.patch("/:id", async (req, res) => {
     if (result.affectedRows === 0) {
       return sendError(res, 404, "Goal not found or unauthorized");
     }
+    clearAiCache(user_id);
     res.status(200).json({ message: "Goal updated successfully" });
   } catch (err) {
     if (err.code === "ER_DUP_ENTRY") {
@@ -188,6 +191,7 @@ router.delete("/:id", async (req, res) => {
     );
 
     await connection.commit();
+    clearAiCache(user_id);
     res.status(200).json({
       message: "Goal deleted successfully",
       contributions_removed: contribs.length,

@@ -1,3 +1,4 @@
+import { clearAiCache } from "../services/aiCache.js";
 import { sendError } from "../utils/errors.js";
 import express from "express";
 import pool from "../db.js";
@@ -299,6 +300,7 @@ router.post("/", async (req, res) => {
     );
 
     await connection.commit();
+    clearAiCache(user_id);
     res.status(201).json({
       message: "Transaction recorded successfully",
       transactionId: result.insertId,
@@ -373,6 +375,7 @@ router.put("/:id", async (req, res) => {
     );
 
     await connection.commit();
+    clearAiCache(user_id);
     res.status(200).json({ message: "Transaction updated successfully" });
   } catch (err) {
     await connection.rollback();
@@ -411,6 +414,7 @@ router.delete("/:id", async (req, res) => {
     );
 
     await connection.commit();
+    clearAiCache(user_id);
     res.status(200).json({ message: "Transaction deleted successfully" });
   } catch (err) {
     await connection.rollback();

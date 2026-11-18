@@ -1,3 +1,4 @@
+import { clearAiCache } from "../services/aiCache.js";
 import { sendError } from "../utils/errors.js";
 import express from "express";
 import pool from "../db.js";
@@ -49,6 +50,7 @@ router.post("/", async (req, res) => {
       "INSERT INTO categories (user_id, name, is_default) VALUES (?, ?, FALSE)",
       [userId, name],
     );
+    clearAiCache(userId);
     res.status(201).json({ id: result.insertId, name, is_default: false });
   } catch (err) {
     console.error("Category create error:", err);
@@ -90,6 +92,7 @@ router.patch("/:id", async (req, res) => {
     if (result.affectedRows === 0) {
       return sendError(res, 404, "Category not found");
     }
+    clearAiCache(userId);
     res.status(200).json({ id: categoryId, name, is_default: false });
   } catch (err) {
     console.error("Category rename error:", err);
@@ -205,6 +208,7 @@ router.delete("/:id", async (req, res) => {
     );
 
     await connection.commit();
+    clearAiCache(userId);
     res.status(200).json({
       deleted: categoryId,
       transactions_moved: txCount,
