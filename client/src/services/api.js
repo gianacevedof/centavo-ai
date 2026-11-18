@@ -39,7 +39,7 @@ async function request(endpoint, { params = {}, options = {}, retried = false } 
   // Access token expired: refresh once, then retry this request
   if (
     response.status === 401 &&
-    data.code === "TOKEN_EXPIRED" &&
+    data.error?.code === "TOKEN_EXPIRED" &&
     !retried &&
     !NO_REFRESH.includes(endpoint)
   ) {
@@ -48,9 +48,7 @@ async function request(endpoint, { params = {}, options = {}, retried = false } 
   }
 
   if (!response.ok) {
-    const err = new Error(
-      data.message || data.error?.message || data.error || "An error occurred",
-    );
+    const err = new Error(data.error?.message || "An error occurred");
     // Keep the status and full response so callers can read extra fields
     // (for example the transaction and budget counts on a 409).
     err.status = response.status;

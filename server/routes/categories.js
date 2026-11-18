@@ -1,3 +1,4 @@
+import { sendError } from "../utils/errors.js";
 import express from "express";
 import pool from "../db.js";
 
@@ -18,7 +19,7 @@ router.get("/", async (req, res) => {
     res.status(200).json(rows);
   } catch (err) {
     console.error("Categories fetch error:", err);
-    res.status(500).json({ error: "Failed to fetch categories" });
+    sendError(res, 500, "Failed to fetch categories");
   }
 });
 
@@ -28,10 +29,10 @@ router.post("/", async (req, res) => {
   const name = (req.body.name || "").trim();
 
   if (!name) {
-    return res.status(400).json({ error: "Category name is required" });
+    return sendError(res, 400, "Category name is required");
   }
   if (name.length > 100) {
-    return res.status(400).json({ error: "Category name is too long" });
+    return sendError(res, 400, "Category name is too long");
   }
 
   try {
@@ -41,9 +42,7 @@ router.post("/", async (req, res) => {
       [name, userId],
     );
     if (dupes.length > 0) {
-      return res
-        .status(409)
-        .json({ error: "A category with that name already exists" });
+      return sendError(res, 409, "A category with that name already exists");
     }
 
     const [result] = await pool.query(
@@ -53,7 +52,7 @@ router.post("/", async (req, res) => {
     res.status(201).json({ id: result.insertId, name, is_default: false });
   } catch (err) {
     console.error("Category create error:", err);
-    res.status(500).json({ error: "Failed to create category" });
+    sendError(res, 500, "Failed to create category");
   }
 });
 
@@ -65,13 +64,13 @@ router.patch("/:id", async (req, res) => {
   const name = (req.body.name || "").trim();
 
   if (!Number.isInteger(categoryId)) {
-    return res.status(400).json({ error: "Invalid category id" });
+    return sendError(res, 400, "Invalid category id");
   }
   if (!name) {
-    return res.status(400).json({ error: "Category name is required" });
+    return sendError(res, 400, "Category name is required");
   }
   if (name.length > 100) {
-    return res.status(400).json({ error: "Category name is too long" });
+    return sendError(res, 400, "Category name is too long");
   }
 
   try {
@@ -81,9 +80,7 @@ router.patch("/:id", async (req, res) => {
       [name, userId, categoryId],
     );
     if (dupes.length > 0) {
-      return res
-        .status(409)
-        .json({ error: "A category with that name already exists" });
+      return sendError(res, 409, "A category with that name already exists");
     }
 
     const [result] = await pool.query(
@@ -91,12 +88,12 @@ router.patch("/:id", async (req, res) => {
       [name, categoryId, userId],
     );
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Category not found" });
+      return sendError(res, 404, "Category not found");
     }
     res.status(200).json({ id: categoryId, name, is_default: false });
   } catch (err) {
     console.error("Category rename error:", err);
-    res.status(500).json({ error: "Failed to rename category" });
+    sendError(res, 500, "Failed to rename category");
   }
 });
 
@@ -113,10 +110,10 @@ router.delete("/:id", async (req, res) => {
   const reassignTo = body.reassign_to;
 
   if (!Number.isInteger(categoryId)) {
-    return res.status(400).json({ error: "Invalid category id" });
+    return sendError(res, 400, "Invalid category id");
   }
   if (hasReassign && reassignTo !== null && !Number.isInteger(reassignTo)) {
-    return res.status(400).json({ error: "Invalid category to reassign to" });
+    return sendError(res, 400, "Invalid category to reassign to");
   }
 
   const connection = await pool.getConnection();
@@ -130,7 +127,7 @@ router.delete("/:id", async (req, res) => {
     );
     if (owned.length === 0) {
       await connection.rollback();
-      return res.status(404).json({ error: "Category not found" });
+      return sendError(res, 404, "Category not found");
     }
 
     const [txRows] = await connection.query(
@@ -148,20 +145,14 @@ router.delete("/:id", async (req, res) => {
     // In use and no decision from the user yet: ask the client to show the menu.
     if ((txCount > 0 || bgCount > 0) && !hasReassign) {
       await connection.rollback();
-      return res.status(409).json({
-        error: "Category is in use",
-        transactions: txCount,
-        budgets: bgCount,
-      });
+      return sendError(res, 409, "Category is in use", { transactions: txCount, budgets: bgCount });
     }
 
     // If a target category was chosen, it must be a default or this user's own, and not the one being deleted.
     if (hasReassign && reassignTo !== null) {
       if (reassignTo === categoryId) {
         await connection.rollback();
-        return res
-          .status(400)
-          .json({ error: "Invalid category to reassign to" });
+        return sendError(res, 400, "Invalid category to reassign to");
       }
       const [target] = await connection.query(
         "SELECT id FROM categories WHERE id = ? AND (user_id IS NULL OR user_id = ?)",
@@ -169,9 +160,7 @@ router.delete("/:id", async (req, res) => {
       );
       if (target.length === 0) {
         await connection.rollback();
-        return res
-          .status(400)
-          .json({ error: "Invalid category to reassign to" });
+        return sendError(res, 400, "Invalid category to reassign to");
       }
     }
 
@@ -224,7 +213,7 @@ router.delete("/:id", async (req, res) => {
   } catch (err) {
     await connection.rollback();
     console.error("Category delete error:", err);
-    res.status(500).json({ error: "Failed to delete category" });
+    sendError(res, 500, "Failed to delete category");
   } finally {
     connection.release();
   }

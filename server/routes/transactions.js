@@ -1,3 +1,4 @@
+import { sendError } from "../utils/errors.js";
 import express from "express";
 import pool from "../db.js";
 
@@ -198,10 +199,10 @@ router.get("/", async (req, res) => {
     const { category, account, limit, from, to } = req.query;
 
     if ((from && !isValidDay(from)) || (to && !isValidDay(to))) {
-      return res.status(400).json({ error: "Dates must look like YYYY-MM-DD" });
+      return sendError(res, 400, "Dates must look like YYYY-MM-DD");
     }
     if (from && to && from > to) {
-      return res.status(400).json({ error: "'from' must be on or before 'to'" });
+      return sendError(res, 400, "'from' must be on or before 'to'");
     }
 
     let query = `
@@ -246,7 +247,7 @@ router.get("/", async (req, res) => {
     res.status(200).json(rows);
   } catch (err) {
     console.error("Transaction fetch error:", err);
-    res.status(500).json({ error: "Failed to fetch transactions" });
+    sendError(res, 500, "Failed to fetch transactions");
   }
 });
 
@@ -260,7 +261,7 @@ router.post("/", async (req, res) => {
       : null;
 
   const checked = await validateTransaction(req.body, user_id);
-  if (checked.error) return res.status(400).json({ error: checked.error });
+  if (checked.error) return sendError(res, 400, checked.error);
   const v = checked.values;
 
   const connection = await pool.getConnection();
@@ -270,7 +271,7 @@ router.post("/", async (req, res) => {
     const problem = await applyEffects(connection, v, user_id);
     if (problem) {
       await connection.rollback();
-      return res.status(400).json({ error: problem });
+      return sendError(res, 400, problem);
     }
 
     const categoryForRow =
@@ -305,7 +306,7 @@ router.post("/", async (req, res) => {
   } catch (err) {
     await connection.rollback();
     console.error("Transaction creation error:", err);
-    res.status(500).json({ error: "Failed to process transaction" });
+    sendError(res, 500, "Failed to process transaction");
   } finally {
     connection.release();
   }
@@ -317,11 +318,11 @@ router.put("/:id", async (req, res) => {
   const user_id = req.user.id;
   const txId = Number(req.params.id);
   if (!Number.isInteger(txId)) {
-    return res.status(400).json({ error: "Invalid transaction id" });
+    return sendError(res, 400, "Invalid transaction id");
   }
 
   const checked = await validateTransaction(req.body, user_id);
-  if (checked.error) return res.status(400).json({ error: checked.error });
+  if (checked.error) return sendError(res, 400, checked.error);
   const v = checked.values;
 
   const connection = await pool.getConnection();
@@ -334,7 +335,7 @@ router.put("/:id", async (req, res) => {
     );
     if (oldRows.length === 0) {
       await connection.rollback();
-      return res.status(404).json({ error: "Transaction not found" });
+      return sendError(res, 404, "Transaction not found");
     }
 
     await reverseEffects(connection, oldRows[0], user_id);
@@ -342,7 +343,7 @@ router.put("/:id", async (req, res) => {
     const problem = await applyEffects(connection, v, user_id);
     if (problem) {
       await connection.rollback();
-      return res.status(400).json({ error: problem });
+      return sendError(res, 400, problem);
     }
 
     const categoryForRow =
@@ -376,7 +377,7 @@ router.put("/:id", async (req, res) => {
   } catch (err) {
     await connection.rollback();
     console.error("Transaction update error:", err);
-    res.status(500).json({ error: "Failed to update transaction" });
+    sendError(res, 500, "Failed to update transaction");
   } finally {
     connection.release();
   }
@@ -387,7 +388,7 @@ router.delete("/:id", async (req, res) => {
   const user_id = req.user.id;
   const txId = Number(req.params.id);
   if (!Number.isInteger(txId)) {
-    return res.status(400).json({ error: "Invalid transaction id" });
+    return sendError(res, 400, "Invalid transaction id");
   }
 
   const connection = await pool.getConnection();
@@ -400,7 +401,7 @@ router.delete("/:id", async (req, res) => {
     );
     if (rows.length === 0) {
       await connection.rollback();
-      return res.status(404).json({ error: "Transaction not found" });
+      return sendError(res, 404, "Transaction not found");
     }
 
     await reverseEffects(connection, rows[0], user_id);
@@ -414,7 +415,7 @@ router.delete("/:id", async (req, res) => {
   } catch (err) {
     await connection.rollback();
     console.error("Transaction delete error:", err);
-    res.status(500).json({ error: "Failed to delete transaction" });
+    sendError(res, 500, "Failed to delete transaction");
   } finally {
     connection.release();
   }
@@ -429,7 +430,7 @@ router.get("/summary", async (req, res) => {
     const { period } = req.query;
 
     if (period !== "monthly" && period !== "quarterly") {
-      return res.status(400).json({ error: "period must be monthly or quarterly" });
+      return sendError(res, 400, "period must be monthly or quarterly");
     }
 
     const quarterly = period === "quarterly";
@@ -466,7 +467,7 @@ router.get("/summary", async (req, res) => {
     );
   } catch (err) {
     console.error("Transaction summary error:", err);
-    res.status(500).json({ error: "Failed to build transaction summary" });
+    sendError(res, 500, "Failed to build transaction summary");
   }
 });
 

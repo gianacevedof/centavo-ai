@@ -1,3 +1,4 @@
+import { sendError } from "../utils/errors.js";
 import express from "express";
 import pool from "../db.js";
 import {
@@ -110,7 +111,7 @@ router.post("/chat", async (req, res) => {
   const { text } = req.body;
 
   if (typeof text !== "string" || !text.trim()) {
-    return res.status(400).json({ error: "Text is required" });
+    return sendError(res, 400, "Text is required");
   }
   const clean = text.trim();
   const draft = normalizeDraft(req.body.draft);
@@ -202,12 +203,12 @@ router.post("/chat", async (req, res) => {
     });
   } catch (err) {
     if (err instanceof AIParseError || err instanceof AIUnavailableError) {
-      return res.status(err.status).json({ error: err.message });
+      return sendError(res, err.status, err.message, {
+        code: err instanceof AIParseError ? "AI_PARSE_ERROR" : "AI_UNAVAILABLE",
+      });
     }
     console.error("Unexpected AI chat route error:", err);
-    return res
-      .status(500)
-      .json({ error: "Something went wrong while parsing. Try again." });
+    return sendError(res, 500, "Something went wrong while parsing. Try again.");
   }
 });
 
@@ -216,7 +217,7 @@ router.post("/parse", async (req, res) => {
   const { text } = req.body;
 
   if (typeof text !== "string" || !text.trim()) {
-    return res.status(400).json({ error: "Text is required for parsing" });
+    return sendError(res, 400, "Text is required for parsing");
   }
 
   try {
@@ -226,11 +227,7 @@ router.post("/parse", async (req, res) => {
     const result = await parseTransaction(text, mappings);
 
     if (result.amount === null) {
-      return res.status(422).json({
-        error:
-          "I couldn't find an amount. Try something like: spent 12 on lunch.",
-        problems: result.problems,
-      });
+      return sendError(res, 422, "I couldn't find an amount. Try something like: spent 12 on lunch.", { problems: result.problems });
     }
 
     const missing = [];
@@ -246,13 +243,13 @@ router.post("/parse", async (req, res) => {
     return res.status(200).json({ ...result, missing });
   } catch (err) {
     if (err instanceof AIParseError || err instanceof AIUnavailableError) {
-      return res.status(err.status).json({ error: err.message });
+      return sendError(res, err.status, err.message, {
+        code: err instanceof AIParseError ? "AI_PARSE_ERROR" : "AI_UNAVAILABLE",
+      });
     }
 
     console.error("Unexpected AI parse route error:", err);
-    return res
-      .status(500)
-      .json({ error: "Something went wrong while parsing. Try again." });
+    return sendError(res, 500, "Something went wrong while parsing. Try again.");
   }
 });
 
@@ -262,7 +259,7 @@ router.get("/tips", async (req, res) => {
     res.status(200).json(await getMonthlyTips(req.user.id));
   } catch (err) {
     console.error("Tips error:", err);
-    res.status(500).json({ error: "Failed to load tips" });
+    sendError(res, 500, "Failed to load tips");
   }
 });
 

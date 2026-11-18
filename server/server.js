@@ -1,3 +1,4 @@
+import { sendError } from "./utils/errors.js";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -32,7 +33,7 @@ app.get("/api/health", async (req, res) => {
     await pool.query("SELECT 1");
     res.status(200).json({ status: "ok", db: "connected" });
   } catch (err) {
-    res.status(503).json({ status: "error", db: "disconnected" });
+    sendError(res, 503, "Database is not connected.");
   }
 });
 

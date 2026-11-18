@@ -1,3 +1,4 @@
+import { sendError } from "../utils/errors.js";
 import express from "express";
 import pool from "../db.js";
 
@@ -45,7 +46,7 @@ router.get("/", async (req, res) => {
     res.status(200).json(rows);
   } catch (err) {
     console.error("Goal fetch error:", err);
-    res.status(500).json({ error: "Failed to fetch goals" });
+    sendError(res, 500, "Failed to fetch goals");
   }
 });
 
@@ -59,7 +60,7 @@ router.post("/", async (req, res) => {
     checkName(name) ||
     checkAmount(target_amount) ||
     (isValidDate(target_date) ? null : "Target date must be a valid date.");
-  if (error) return res.status(400).json({ error });
+  if (error) return sendError(res, 400, error);
 
   try {
     const [result] = await pool.query(
@@ -72,12 +73,10 @@ router.post("/", async (req, res) => {
     });
   } catch (err) {
     if (err.code === "ER_DUP_ENTRY") {
-      return res
-        .status(409)
-        .json({ error: "A goal with this name already exists" });
+      return sendError(res, 409, "A goal with this name already exists");
     }
     console.error("Goal creation error:", err);
-    res.status(500).json({ error: "Failed to create goal" });
+    sendError(res, 500, "Failed to create goal");
   }
 });
 
@@ -90,25 +89,23 @@ router.patch("/:id", async (req, res) => {
   if (req.body.name !== undefined) {
     const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
     const error = checkName(name);
-    if (error) return res.status(400).json({ error });
+    if (error) return sendError(res, 400, error);
     updates.name = name;
   }
   if (req.body.target_amount !== undefined) {
     const error = checkAmount(req.body.target_amount);
-    if (error) return res.status(400).json({ error });
+    if (error) return sendError(res, 400, error);
     updates.target_amount = Number(req.body.target_amount);
   }
   if (req.body.target_date !== undefined) {
     if (!isValidDate(req.body.target_date)) {
-      return res
-        .status(400)
-        .json({ error: "Target date must be a valid date." });
+      return sendError(res, 400, "Target date must be a valid date.");
     }
     updates.target_date = req.body.target_date;
   }
 
   if (Object.keys(updates).length === 0) {
-    return res.status(400).json({ error: "Nothing to update" });
+    return sendError(res, 400, "Nothing to update");
   }
 
   try {
@@ -117,17 +114,15 @@ router.patch("/:id", async (req, res) => {
       [updates, id, user_id],
     );
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Goal not found or unauthorized" });
+      return sendError(res, 404, "Goal not found or unauthorized");
     }
     res.status(200).json({ message: "Goal updated successfully" });
   } catch (err) {
     if (err.code === "ER_DUP_ENTRY") {
-      return res
-        .status(409)
-        .json({ error: "A goal with this name already exists" });
+      return sendError(res, 409, "A goal with this name already exists");
     }
     console.error("Goal update error:", err);
-    res.status(500).json({ error: "Failed to update goal" });
+    sendError(res, 500, "Failed to update goal");
   }
 });
 
@@ -143,10 +138,10 @@ router.delete("/:id", async (req, res) => {
   const mode = req.query.money;
 
   if (!Number.isInteger(goalId)) {
-    return res.status(400).json({ error: "Invalid goal id" });
+    return sendError(res, 400, "Invalid goal id");
   }
   if (mode !== undefined && mode !== "return" && mode !== "spent") {
-    return res.status(400).json({ error: "money must be return or spent" });
+    return sendError(res, 400, "money must be return or spent");
   }
 
   const connection = await pool.getConnection();
@@ -159,7 +154,7 @@ router.delete("/:id", async (req, res) => {
     );
     if (owned.length === 0) {
       await connection.rollback();
-      return res.status(404).json({ error: "Goal not found or unauthorized" });
+      return sendError(res, 404, "Goal not found or unauthorized");
     }
 
     const [contribs] = await connection.query(
@@ -170,11 +165,7 @@ router.delete("/:id", async (req, res) => {
     if (contribs.length > 0 && mode === undefined) {
       await connection.rollback();
       const total = contribs.reduce((sum, c) => sum + Number(c.amount), 0);
-      return res.status(409).json({
-        error: "Goal has contributions",
-        contributions: contribs.length,
-        total: Number(total.toFixed(2)),
-      });
+      return sendError(res, 409, "Goal has contributions", { contributions: contribs.length, total: Number(total.toFixed(2)) });
     }
 
     if (mode === "return") {
@@ -205,7 +196,7 @@ router.delete("/:id", async (req, res) => {
   } catch (err) {
     await connection.rollback();
     console.error("Goal deletion error:", err);
-    res.status(500).json({ error: "Failed to delete goal" });
+    sendError(res, 500, "Failed to delete goal");
   } finally {
     connection.release();
   }

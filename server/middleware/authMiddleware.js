@@ -1,10 +1,8 @@
+import { sendError } from "../utils/errors.js";
 import jwt from "jsonwebtoken";
 
 const expired = (res) =>
-  res.status(401).json({
-    message: "Your session has expired. Please log in again.",
-    code: "TOKEN_EXPIRED",
-  });
+  sendError(res, 401, "Your session has expired. Please log in again.", { code: "TOKEN_EXPIRED" });
 
 /**
  * Verifies the access token cookie and attaches the user to the request.

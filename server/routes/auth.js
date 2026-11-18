@@ -1,3 +1,4 @@
+import { sendError } from "../utils/errors.js";
 import express from "express";
 import pool from "../db.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
@@ -59,28 +60,20 @@ router.post("/signup", async (req, res) => {
   const email = typeof req.body.email === "string" ? req.body.email.trim() : "";
 
   if (!email || !password || !name) {
-    return res
-      .status(400)
-      .json({ message: "Please provide all required fields." });
+    return sendError(res, 400, "Please provide all required fields.");
   }
 
   if (!isValidEmail(email)) {
-    return res
-      .status(400)
-      .json({ message: "Please enter a valid email address." });
+    return sendError(res, 400, "Please enter a valid email address.");
   }
 
   // NIST SP 800-63-4 inspired password restrictions:
   // Focus on length and avoiding complexity requirements that lead to predictable passwords.
   if (password.length < 8) {
-    return res
-      .status(400)
-      .json({ message: "Password must be at least 8 characters long." });
+    return sendError(res, 400, "Password must be at least 8 characters long.");
   }
   if (password.length > 128) {
-    return res
-      .status(400)
-      .json({ message: "Password must not exceed 128 characters." });
+    return sendError(res, 400, "Password must not exceed 128 characters.");
   }
 
   try {
@@ -90,9 +83,7 @@ router.post("/signup", async (req, res) => {
       [email],
     );
     if (existingUsers.length > 0) {
-      return res
-        .status(409)
-        .json({ message: "This email is already registered." });
+      return sendError(res, 409, "This email is already registered.");
     }
 
     // Hash password and save user + default accounts (all or nothing)
@@ -125,7 +116,7 @@ router.post("/signup", async (req, res) => {
     res.status(201).json({ message: "User created successfully." });
   } catch (error) {
     console.error("Signup error:", error);
-    res.status(500).json({ message: "An internal server error occurred." });
+    sendError(res, 500, "An internal server error occurred.");
   }
 });
 
@@ -138,15 +129,11 @@ router.post("/login", async (req, res) => {
   const email = typeof req.body.email === "string" ? req.body.email.trim() : "";
 
   if (!email || !password) {
-    return res
-      .status(400)
-      .json({ message: "Please provide all required fields." });
+    return sendError(res, 400, "Please provide all required fields.");
   }
 
   if (!isValidEmail(email)) {
-    return res
-      .status(400)
-      .json({ message: "Please enter a valid email address." });
+    return sendError(res, 400, "Please enter a valid email address.");
   }
 
   try {
@@ -157,7 +144,7 @@ router.post("/login", async (req, res) => {
     const user = users[0];
 
     if (!user || !(await verifyPassword(user.password_hash, password))) {
-      return res.status(401).json({ message: "Invalid email or password." });
+      return sendError(res, 401, "Invalid email or password.");
     }
 
     setSessionCookies(res, user);
@@ -168,7 +155,7 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: "An internal server error occurred." });
+    sendError(res, 500, "An internal server error occurred.");
   }
 });
 
@@ -192,10 +179,7 @@ router.post("/refresh", async (req, res) => {
 
   if (!payload) {
     clearSessionCookies(res);
-    return res.status(401).json({
-      message: "Your session has expired. Please log in again.",
-      code: "SESSION_EXPIRED",
-    });
+    return sendError(res, 401, "Your session has expired. Please log in again.", { code: "SESSION_EXPIRED" });
   }
 
   try {
@@ -206,17 +190,14 @@ router.post("/refresh", async (req, res) => {
     );
     if (rows.length === 0) {
       clearSessionCookies(res);
-      return res.status(401).json({
-        message: "Your session has expired. Please log in again.",
-        code: "SESSION_EXPIRED",
-      });
+      return sendError(res, 401, "Your session has expired. Please log in again.", { code: "SESSION_EXPIRED" });
     }
 
     setSessionCookies(res, rows[0]);
     res.status(200).json({ message: "Session refreshed." });
   } catch (error) {
     console.error("Refresh error:", error);
-    res.status(500).json({ message: "An internal server error occurred." });
+    sendError(res, 500, "An internal server error occurred.");
   }
 });
 
@@ -227,12 +208,12 @@ router.get("/me", authMiddleware, async (req, res) => {
       [req.user.id],
     );
     if (rows.length === 0) {
-      return res.status(404).json({ message: "User not found." });
+      return sendError(res, 404, "User not found.");
     }
     res.status(200).json({ user: rows[0] });
   } catch (error) {
     console.error("Me error:", error);
-    res.status(500).json({ message: "An internal server error occurred." });
+    sendError(res, 500, "An internal server error occurred.");
   }
 });
 
