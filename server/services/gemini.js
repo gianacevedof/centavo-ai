@@ -489,3 +489,42 @@ export async function generateTips(facts) {
   }
   return parsed.tips;
 }
+
+// ---------- Budget tips (Segment 6) ----------
+const BUDGET_TIPS_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    tips: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          category: { type: Type.STRING },
+          title: { type: Type.STRING },
+          body: { type: Type.STRING },
+        },
+        required: ["category", "title", "body"],
+      },
+    },
+  },
+  required: ["tips"],
+};
+
+const BUDGET_TIPS_SYSTEM = `You write short, friendly tips about a user's monthly budgets in a personal finance app.
+You are given FACTS that are already calculated. Do not calculate, estimate, or invent any numbers.
+Only use numbers that appear in FACTS, copied exactly.
+Write one tip for each budget that is "near" or "over" (or for the most important budgets if none are). Set "category" to that budget's category name, copied exactly from FACTS.
+Each tip has a short title (under 6 words) and a body of one or two sentences with one specific action.
+Plain language. No greetings.`;
+
+// Returns the raw tips array. The caller checks it before showing anything.
+export async function generateBudgetTips(facts) {
+  const raw = await callGemini(JSON.stringify(facts), BUDGET_TIPS_SYSTEM, BUDGET_TIPS_SCHEMA);
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new AIParseError("Budget tips response was not valid JSON", err);
+  }
+  return parsed.tips;
+}

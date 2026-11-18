@@ -1,8 +1,22 @@
+import { clearAiCache } from "../services/aiCache.js";
 import { sendError } from "../utils/errors.js";
 import express from "express";
 import pool from "../db.js";
+import { buildBudgetOverview, getBudgetTips } from "../services/budgetOverview.js";
 
 const router = express.Router();
+
+// GET /api/budgets/overview - each budget with this month's progress, plus AI tips
+router.get("/overview", async (req, res) => {
+  try {
+    const overview = await buildBudgetOverview(req.user.id);
+    const tips = await getBudgetTips(req.user.id);
+    res.status(200).json({ ...overview, tips });
+  } catch (err) {
+    console.error("Budget overview error:", err);
+    sendError(res, 500, "Failed to load the budget overview");
+  }
+});
 
 // GET /api/budgets - List the user's budgets with this month's spending
 router.get("/", async (req, res) => {
@@ -64,6 +78,7 @@ router.post("/", async (req, res) => {
       "INSERT INTO budgets (user_id, category_id, monthly_limit) VALUES (?, ?, ?)",
       [user_id, category_id, limit],
     );
+    clearAiCache(user_id);
     res.status(201).json({
       message: "Budget created successfully",
       budgetId: result.insertId,
@@ -97,6 +112,7 @@ router.patch("/:id", async (req, res) => {
       return sendError(res, 404, "Budget not found or unauthorized");
     }
 
+    clearAiCache(user_id);
     res.status(200).json({ message: "Budget updated successfully" });
   } catch (err) {
     console.error("Budget update error:", err);
@@ -119,6 +135,7 @@ router.delete("/:id", async (req, res) => {
       return sendError(res, 404, "Budget not found or unauthorized");
     }
 
+    clearAiCache(user_id);
     res.status(200).json({ message: "Budget deleted successfully" });
   } catch (err) {
     console.error("Budget deletion error:", err);

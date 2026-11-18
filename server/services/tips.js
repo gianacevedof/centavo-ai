@@ -1,10 +1,9 @@
 import pool from "../db.js";
 import { buildTrends } from "./trends.js";
 import { generateTips } from "./gemini.js";
+import { getCached, setCached } from "./aiCache.js";
 
 const TIMEOUT_MS = 8000; // the page shouldn't wait longer than this for AI
-const CACHE_MS = 15 * 60 * 1000;
-const cache = new Map(); // userId -> { at, value }
 
 // Shown when the AI is slow, down, or returns something we can't check
 const STATIC_TIPS = [
@@ -128,8 +127,8 @@ function checkTips(tips, facts) {
 
 // Returns { source: "ai" | "static", tips: [{ title, body }] }
 export async function getMonthlyTips(userId) {
-  const hit = cache.get(userId);
-  if (hit && Date.now() - hit.at < CACHE_MS) return hit.value;
+  const cached = getCached("tips", userId);
+  if (cached) return cached;
 
   const facts = await buildFacts(userId);
 
@@ -143,6 +142,6 @@ export async function getMonthlyTips(userId) {
   }
 
   // Only cache AI tips, so a slow day gets retried on the next load
-  if (value.source === "ai") cache.set(userId, { at: Date.now(), value });
+  if (value.source === "ai") setCached("tips", userId, value);
   return value;
 }
