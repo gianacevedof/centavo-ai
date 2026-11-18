@@ -352,6 +352,89 @@
   margin-bottom: var(--space-md);
 }
 
+.cardActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #d6dbd9;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a3a2e;
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  background: #f3f6f4;
+}
+
+.dangerBtn {
+  padding: 6px 14px;
+  border: 1px solid #e0a3a3;
+  border-radius: 8px;
+  background: #fff;
+  color: #c0392b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dangerBtn:hover:not(:disabled) {
+  background: #fdf1f1;
+}
+
+.dangerBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.deleteInModal {
+  margin-right: auto;
+}
+
+.choiceList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.choiceBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #d6dbd9;
+  border-radius: 10px;
+  background: #fff;
+  color: #1a3a2e;
+  text-align: left;
+  cursor: pointer;
+}
+
+.choiceBtn:hover:not(:disabled) {
+  border-color: #1a3a2e;
+}
+
+.choiceBtn span {
+  color: #5b6b65;
+  font-size: 0.85rem;
+}
+
+.choiceBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* ===== Edit / delete actions ===== */
 .cardActions {
   display: flex;
