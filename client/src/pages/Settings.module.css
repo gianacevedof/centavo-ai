@@ -43,20 +43,12 @@
 input:checked + .slider { background-color: var(--color-primary); }
 input:checked + .slider:before { transform: translateX(20px); }
 
-/* Linked Accounts Row */
-.linkedAccountRow { display: flex; align-items: center; gap: var(--space-md); padding: 8px 0; }
-.linkedIcon { width: 40px; height: 40px; border-radius: 8px; background-color: #e8f0ec; display: grid; place-items: center; font-size: 1.2rem; }
-
 /* Buttons */
 .outlineBtn, .outlineBtnFull { background-color: white; border: 1px solid var(--color-border); padding: 8px 16px; border-radius: var(--radius-md); font-size: var(--font-size-sm); font-weight: 600; cursor: pointer; color: var(--color-text); transition: background 0.2s; }
 .outlineBtn:hover, .outlineBtnFull:hover { background-color: var(--color-surface-muted); }
 .outlineBtnFull { width: 100%; display: flex; justify-content: center; align-items: center; }
 .dangerBtnFull { width: 100%; background-color: white; color: var(--color-expense); border: 1px solid #fde2e0; padding: 10px; border-radius: var(--radius-md); font-weight: 600; font-size: var(--font-size-sm); cursor: pointer; }
 .dangerBtnFull:hover { background-color: #fde2e0; }
-
-/* Selects */
-.selectRow { display: flex; justify-content: space-between; align-items: center; font-size: var(--font-size-sm); padding: 12px 0; border-bottom: 1px solid #f0f0eb; }
-.miniSelect { padding: 4px 8px; border: none; background: transparent; font-family: inherit; font-weight: 500; cursor: pointer; color: var(--color-text); }
 
 /* Footer */
 .footerRow { display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-md); padding-top: var(--space-lg); }
@@ -118,7 +110,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* Fix borders and buttons */
 :global(body.dark-mode) .toggleRow { border-bottom: 1px solid var(--color-border); }
-:global(body.dark-mode) .selectRow { border-bottom: 1px solid var(--color-border); }
 :global(body.dark-mode) .table td { border-bottom: 1px solid var(--color-border); }
 
 :global(body.dark-mode) .outlineBtn, 
@@ -147,10 +138,6 @@ input:checked + .slider:before { transform: translateX(20px); }
   background-color: var(--color-surface-muted); 
   color: var(--color-text); 
   border-color: var(--color-border); 
-}
-
-:global(body.dark-mode) .miniSelect {
-  color: var(--color-text);
 }
 
 :global(body.dark-mode) {
@@ -206,14 +193,7 @@ input:checked + .slider:before { transform: translateX(20px); }
       font-size: 0.9rem;
     }
   
-    /* 4. Linked Accounts Row */
-    .linkedAccountRow {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: var(--space-sm);
-    }
-  
-    /* 5. Footer Area (Sign out + Auto-save text) */
+    /* 4. Footer Area (Sign out + Auto-save text) */
     .footerRow {
       flex-direction: column;
       align-items: stretch;

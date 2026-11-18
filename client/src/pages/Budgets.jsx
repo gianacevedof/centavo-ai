@@ -235,7 +235,7 @@ function Budgets() {
   if (loading) return <Layout><div className={styles.loading}>Loading...</div></Layout>;
 
   return (
-    <Layout title="Budgets & Goals" subtitle="Tuesday, September 15 · Your plan is 82% on track">
+    <Layout title="Budgets & Goals" subtitle="Manage your monthly budgets and savings goals.">
       <div className={styles.pageWrapper}>
         
         {/* TOP SECTION: BUDGETS */}

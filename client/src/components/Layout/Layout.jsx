@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
 import { NavLink, Link } from "react-router-dom";
 import ChatPanel from "../ChatPanel/ChatPanel";
-import { api } from "../../services/api";
 import styles from "./Layout.module.css";
 
 const NAV_ITEMS = [
@@ -64,23 +62,6 @@ const NAV_ITEMS = [
 ];
 
 export default function Layout({ children, title, subtitle }) {
-  const [planHealth, setPlanHealth] = useState(0);
-  const [reviewCount, setReviewCount] = useState(0);
-  const [showCheckIn, setShowCheckIn] = useState(false);
-  
-  // Dynamic Account Data
-  const [accountsToReview, setAccountsToReview] = useState([]);
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  // ... (Keep all your existing logic: useEffect for data, handleBalanceChange, etc.)
-  // To save space here, I am assuming you kept the logic from the previous message.
-  // Just make sure the `return` statement matches what's below.
-
-  // Calculate dynamic net total
-  const netTotal = accountsToReview.reduce((sum, acc) => sum + parseFloat(acc.new_balance || 0), 0);
-  
-  const finalSubtitle = `${subtitle ? subtitle + ' · ' : ''}Your plan is ${planHealth}% on track`;
-
   return (
     <div className={styles.layout}>
       
@@ -106,26 +87,16 @@ export default function Layout({ children, title, subtitle }) {
           ))}
         </nav>
 
-        <div className={styles.checkIn}>
-          <div className={styles.checkInTitle}>Weekly check-in</div>
-          <p className={styles.checkInText}>Review and update balances every Sunday.</p>
-          <span className={styles.checkInBadge}>● NOTIFICATIONS ON</span>
-        </div>
       </aside>
 
       <main className={styles.main}>
         <header className={styles.topBar}>
           <div>
             <h1 className={styles.pageTitle}>{title}</h1>
-            <p className={styles.pageSubtitle}>{finalSubtitle}</p>
+            {subtitle && <p className={styles.pageSubtitle}>{subtitle}</p>}
           </div>
 
           <div className={styles.topBarRight}>
-            <input className={styles.search} type="search" placeholder="Search transactions, goals..." />
-            <button className={styles.reviewButton} onClick={() => setShowCheckIn(true)}>
-              Review & corrections
-              {reviewCount > 0 && <span className={styles.reviewCount}>{reviewCount}</span>}
-            </button>
             <Link to="/settings" className={styles.avatar} aria-label="Profile and settings" />
           </div>
         </header>
@@ -153,8 +124,6 @@ export default function Layout({ children, title, subtitle }) {
         ))}
       </nav>
 
-      {/* ================= REVIEW & CORRECTIONS MODAL ================= */}
-      {/* ... (Keep the exact same modal logic you already have here) ... */}
     </div>
   );
 }

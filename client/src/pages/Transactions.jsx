@@ -118,6 +118,10 @@ function Transactions() {
     loadTransactions();
   }, [loadTransactions]);
 
+  async function refreshData() {
+    await Promise.all([loadLookupData(), loadTransactions()]);
+  }
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
@@ -297,7 +301,7 @@ function Transactions() {
   const net = income - expenses;
 
   return (
-    <Layout title="Transactions" subtitle="Tuesday, September 15 · Your plan is 82% on track">
+    <Layout title="Transactions" subtitle="Review your income, expenses, transfers, and savings.">
       <div className={styles.container}>
 
         <div className={styles.topBar}>
@@ -315,6 +319,19 @@ function Transactions() {
               <option value="">Categories</option>
               {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
             </select>
+            <button
+              type="button"
+              className={styles.refreshBtn}
+              onClick={refreshData}
+              disabled={loading}
+              aria-label="Refresh transactions and filters"
+              title="Refresh"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                <path d="M21 3v6h-6" />
+              </svg>
+            </button>
           </div>
           <button className={styles.clearBtn} onClick={clearFilters}>Clear Filters</button>
           <button className={styles.primaryBtn} onClick={openForm}>+ Add transaction</button>

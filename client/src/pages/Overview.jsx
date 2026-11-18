@@ -14,6 +14,19 @@ function greeting() {
   return "Good evening";
 }
 
+function currentDate() {
+  return new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function capitalizeFirst(value) {
+  const name = typeof value === "string" ? value.trim() : "";
+  return name ? `${name[0].toUpperCase()}${name.slice(1)}` : "User";
+}
+
 function Overview() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -57,16 +70,6 @@ function Overview() {
     0
   );
 
-  // Calculate real Plan Health based on budgets
-  const safeBudgets = budgets.filter((b) => parseFloat(b.monthly_limit) > 0);
-  const budgetsOnTrack = safeBudgets.filter(
-    (b) => parseFloat(b.spent || 0) <= parseFloat(b.monthly_limit)
-  ).length;
-  
-  const planHealthPct = safeBudgets.length > 0 
-    ? Math.round((budgetsOnTrack / safeBudgets.length) * 100) 
-    : 0;
-
   const getCategoryColor = (name) => {
     const colors = ["#c4453a", "#2d7a5f", "#d99a2b", "#4a7fc4", "#6b7280", "#8b5cf6"];
     let hash = 0;
@@ -78,8 +81,8 @@ function Overview() {
 
   return (
     <Layout
-      title={`${greeting()}, ${user?.name || "User"}`}
-      subtitle="Your financial dashboard"
+      title={`${greeting()}, ${capitalizeFirst(user?.name)}`}
+      subtitle={currentDate()}
     >
       <div className={styles.dashboardGrid}>
         
@@ -93,67 +96,39 @@ function Overview() {
               <p className={styles.heroAmount}>
                 ${totalBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </p>
-              <span className={styles.heroTrend}>↗ $0.00 this month</span>
-            </div>
-            <div className={styles.heroRight}>
-              <span className={styles.heroLabel}>GOAL PACE</span>
-              <div className={styles.paceToggle}>
-                <button className={styles.paceBtn}>Slow</button>
-                <button className={`${styles.paceBtn} ${styles.paceBtnActive}`}>Moderate</button>
-                <button className={styles.paceBtn}>Fast</button>
-              </div>
-              <span className={styles.heroGoal}>Set a goal to track progress</span>
             </div>
           </section>
 
-          {/* Accounts + Trends Row */}
-          <div className={styles.rowGrid}>
-            <Card title="Accounts" action="Click to edit goals">
-              {accounts.length === 0 ? (
-                <EmptyState 
-                  icon="🏦" 
-                  title="No accounts yet" 
-                  description="Connect your bank or add a manual account to get started."
-                />
-              ) : (
-                <ul className={styles.accountList}>
-                  {accounts.map((acc) => {
-                    const balance = parseFloat(acc.balance || 0);
-                    return (
-                      <li key={acc.id} className={styles.accountRow}>
-                        <div className={styles.accountIcon}>▤</div>
-                        <div className={styles.accountInfo}>
-                          <span className={styles.accountName}>{acc.name}</span>
-                          <div className={styles.accountBarWrapper}>
-                            <ProgressBar value={Math.abs(balance)} max={5000} tone={balance < 0 ? "red" : "green"} />
-                          </div>
-                          <span className={styles.accountMeta}>{acc.type || "Checking"}</span>
+          {/* Accounts */}
+          <Card title="Accounts" action="Click to edit goals">
+            {accounts.length === 0 ? (
+              <EmptyState
+                icon="🏦"
+                title="No accounts yet"
+                description="Connect your bank or add a manual account to get started."
+              />
+            ) : (
+              <ul className={styles.accountList}>
+                {accounts.map((acc) => {
+                  const balance = parseFloat(acc.balance || 0);
+                  return (
+                    <li key={acc.id} className={styles.accountRow}>
+                      <div className={styles.accountIcon}>▤</div>
+                      <div className={styles.accountInfo}>
+                        <span className={styles.accountName}>{acc.name}</span>
+                        <div className={styles.accountBarWrapper}>
+                          <ProgressBar value={Math.abs(balance)} max={5000} tone={balance < 0 ? "red" : "green"} />
                         </div>
-                        <span className={styles.accountBalance}>${balance.toFixed(2)}</span>
-                        <span className={styles.chevron}>›</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </Card>
-
-            <Card title="Trends" action="6 MONTHS">
-              <div className={styles.trendNumber}>0.0%</div>
-              <p className={styles.trendDesc}>Not enough data to calculate trends yet.</p>
-              <div className={styles.chartBars}>
-                <div className={styles.bar} style={{ height: '0%' }}></div>
-                <div className={styles.bar} style={{ height: '0%' }}></div>
-                <div className={styles.bar} style={{ height: '0%' }}></div>
-                <div className={styles.bar} style={{ height: '0%' }}></div>
-                <div className={styles.bar} style={{ height: '0%' }}></div>
-                <div className={`${styles.bar} ${styles.barActive}`} style={{ height: '0%' }}></div>
-              </div>
-              <div className={styles.chartLabels}>
-                <span>A</span><span>M</span><span>J</span><span>J</span><span>A</span><span>S</span>
-              </div>
-            </Card>
-          </div>
+                        <span className={styles.accountMeta}>{acc.type || "Checking"}</span>
+                      </div>
+                      <span className={styles.accountBalance}>${balance.toFixed(2)}</span>
+                      <span className={styles.chevron}>›</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Card>
 
           {/* Budgets */}
           <Card title="Budgets & goals" action="Monthly">
@@ -219,39 +194,11 @@ function Overview() {
 
         {/* ================= RIGHT RAIL ================= */}
         <div className={styles.rightRail}>
-          
-          <Card title="Plan health" action={<span className={planHealthPct > 80 ? styles.textGreen : styles.textAmber}>{planHealthPct}%</span>}>
-            <div className={styles.healthContent}>
-              <div className={styles.donut} style={{ background: `conic-gradient(var(--color-primary) ${planHealthPct}%, #e5e5e0 0)` }}>
-                <div className={styles.donutInner}>{planHealthPct}%</div>
-              </div>
-              <p className={styles.healthText}>
-                {safeBudgets.length === 0 
-                  ? "Add budgets to start tracking your plan health." 
-                  : `You're within range on ${budgetsOnTrack} of ${safeBudgets.length} monthly goals.`}
-              </p>
-            </div>
-          </Card>
-
           <Card title="Centavo-ai tips" action="UPDATED">
             <div className={`${styles.tipCard} ${styles.tipGreen}`}>
               <strong>Ready to get started?</strong>
               <p>Add your first transaction to start receiving personalized AI tips.</p>
               <span className={styles.tipAction}>ADD TRANSACTION →</span>
-            </div>
-          </Card>
-
-          <Card title="Review & corrections" action={<span className={styles.actionRed}>0 ITEMS</span>}>
-            <ul className={styles.reviewList}>
-              <li className={styles.emptyState}>You're all caught up!</li>
-            </ul>
-          </Card>
-
-          <Card title="Ask Centavo-ai">
-            <p className={styles.askText}>Have a question about your finances?</p>
-            <div className={styles.askInput}>
-              <input type="text" placeholder="Try 'how am I doing this month?'" />
-              <button>↑</button>
             </div>
           </Card>
 

@@ -146,7 +146,7 @@ function Trends() {
   const kpis = data.kpis;
 
   return (
-    <Layout title="Trends" subtitle="Tuesday, September 15 · Your plan is 82% on track">
+    <Layout title="Trends" subtitle="Your spending and savings over time">
       <div className={styles.pageWrapper}>
         
         {/* SUMMARY CARDS */}

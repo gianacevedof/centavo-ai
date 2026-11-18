@@ -17,20 +17,13 @@ function getTodayLong() {
   });
 }
 
-function getTodayShort() {
-  return new Date().toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function Settings() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("profile");
   const [user, setUser] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   // Category state
   const [newName, setNewName] = useState("");
@@ -160,6 +153,20 @@ function Settings() {
   }
 
   const targets = modal ? categories.filter((c) => c.id !== modal.category.id) : [];
+  const name = typeof user?.name === "string" ? user.name.trim() : "";
+  const displayName = name ? `${name[0].toUpperCase()}${name.slice(1)}` : "User";
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await api.logout();
+      navigate("/login", { replace: true });
+    } catch (err) {
+      toast.error(err.message || "Failed to sign out.");
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   if (loading) return <Layout><div className={styles.loading}>Loading...</div></Layout>;
 
@@ -185,9 +192,9 @@ function Settings() {
 
           {/* User Banner */}
           <div className={styles.userBanner}>
-            <div className={styles.userAvatar}>{user.name[0]}</div>
+            <div className={styles.userAvatar}>{displayName[0]}</div>
             <div className={styles.userInfo}>
-              <h2>{user.name}</h2>
+              <h2>{displayName}</h2>
               <p>{user.email}</p>
             </div>
             <button className={styles.outlineBtn}>Edit profile</button>
@@ -195,47 +202,6 @@ function Settings() {
 
           {/* Settings Grid */}
           <div className={styles.settingsGrid}>
-            
-            <Card title="Notifications">
-              <div className={styles.toggleRow}>
-                <div>
-                  <span className={styles.toggleLabel}>Weekly check-in</span>
-                  <span className={styles.toggleDesc}>Every Sunday</span>
-                </div>
-                <label className={styles.switch}><input type="checkbox" defaultChecked /><span className={styles.slider}></span></label>
-              </div>
-              <div className={styles.toggleRow}>
-                <div>
-                  <span className={styles.toggleLabel}>Tip alerts</span>
-                  <span className={styles.toggleDesc}>Timely ideas for your plan</span>
-                </div>
-                <label className={styles.switch}><input type="checkbox" defaultChecked /><span className={styles.slider}></span></label>
-              </div>
-            </Card>
-
-            <Card title="Linked accounts">
-              <div className={styles.linkedAccountRow}>
-                <div className={styles.linkedIcon}>🏛️</div>
-                <div>
-                  <span className={styles.toggleLabel}>0 banks synced</span>
-                  <span className={styles.toggleDesc}>No accounts connected yet</span>
-                </div>
-              </div>
-              <button className={styles.outlineBtnFull} style={{ marginTop: '16px' }}>Manage linked accounts</button>
-            </Card>
-
-            <Card title="Currency and date">
-              <div className={styles.selectRow}>
-                <span>Currency</span>
-                <select className={styles.miniSelect}><option>USD</option></select>
-              </div>
-              <div className={styles.selectRow}>
-                <span>Date format</span>
-                <select className={styles.miniSelect}><option>{getTodayShort()}</option></select>
-              </div>
-              <p className={styles.cardDesc} style={{ marginTop: '16px' }}>Used across your balances, goals and activity.</p>
-            </Card>
-
             <Card title="Data and privacy">
               <button className={styles.outlineBtnFull} style={{ marginBottom: "16px" }}>
                 <span style={{ marginRight: '8px' }}>⬇</span> Export my data
@@ -259,8 +225,13 @@ function Settings() {
           </div>
 
           <div className={styles.footerRow}>
-            <button className={styles.outlineBtn} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>→</span> Sign out
+            <button
+              className={styles.outlineBtn}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              onClick={handleLogout}
+              disabled={loggingOut}
+            >
+              <span>→</span> {loggingOut ? "Signing out..." : "Sign out"}
             </button>
             <span className={styles.saveText}>✓ Preferences save automatically</span>
           </div>
