@@ -128,13 +128,6 @@ function ChatPanel() {
         ))}
       </div>
 
-      <div className={styles.suggestionsRow}>
-        <span>You can also ask</span>
-        <button className={styles.suggestionPill} onClick={() => setInput("How will this affect my goal?")}>How will this affect my goal?</button>
-        <button className={styles.suggestionPill} onClick={() => setInput("Change the date")}>Change the date</button>
-        <button className={styles.suggestionPill} onClick={() => setInput("Forecast month-end")}>Forecast month-end</button>
-      </div>
-
       <form
         className={styles.chatForm}
         onSubmit={(e) => {
@@ -182,7 +175,6 @@ function ChatPanel() {
       </form>
 
       <div className={styles.chatFooter}>
-        <span className={styles.manualEntry}>Enter manually</span>
         <span className={styles.trustText}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '2px' }}>
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
