@@ -7,6 +7,11 @@ import { generateBudgetTips } from "./gemini.js";
 import { getCached, setCached } from "./aiCache.js";
 
 const TIMEOUT_MS = 8000;
+const GENERAL_TIP = {
+  category: null,
+  title: "Keep your budgets on track",
+  body: "Check your budget page once a week so a small overspend does not add up.",
+};
 
 const pad = (n) => String(n).padStart(2, "0");
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -113,18 +118,25 @@ function staticTips(overview) {
     }
   }
   if (tips.length === 0) {
-    tips.push({ category: null, title: "Keep your budgets on track", body: "Check your budget page once a week so a small overspend does not add up." });
+    tips.push(GENERAL_TIP);
   }
   return tips.slice(0, 3);
 }
 
-// Returns { source: "ai" | "static" | "none", tips: [{ category, title, body }] }
+function includeGeneralTip(value) {
+  if (value.tips.some((tip) => tip.category === null)) return value;
+  return { ...value, tips: [...value.tips, GENERAL_TIP] };
+}
+
+// Returns { source: "ai" | "static", tips: [{ category, title, body }] }
 export async function getBudgetTips(userId) {
   const cached = getCached("budgetTips", userId);
-  if (cached) return cached;
+  if (cached) return includeGeneralTip(cached);
 
   const overview = await buildBudgetOverview(userId);
-  if (overview.budgets.length === 0) return { source: "none", tips: [] };
+  if (overview.budgets.length === 0) {
+    return { source: "static", tips: [GENERAL_TIP] };
+  }
 
   const facts = buildFacts(overview);
   let value;
@@ -141,5 +153,5 @@ export async function getBudgetTips(userId) {
 
   // Only AI tips are cached, so a slow day is retried on the next load
   if (value.source === "ai") setCached("budgetTips", userId, value);
-  return value;
+  return includeGeneralTip(value);
 }

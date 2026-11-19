@@ -208,19 +208,19 @@
   font-size: var(--font-size-sm);
 }
 
-.tipCard strong { display: block; margin-bottom: 4px; font-size: 0.8rem; }
-.tipCard p { margin: 0 0 var(--space-sm); font-size: 0.75rem; line-height: 1.4; }
-
-.tipAmber { background-color: #fdf3e2; color: #6b5638; }
-.tipGreen { background-color: #e8f0ec; color: #3d5a4c; }
-
-.tipAction {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  cursor: pointer;
+.tipCard h3 {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
 }
+
+.tipCard p {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.tipGreen { background-color: #e8f0ec; color: #3d5a4c; }
+.tipAmber { background-color: #fdf3e2; color: #6b5638; }
 
 /* ===== Responsive ===== */
 @media (max-width: 1024px) {

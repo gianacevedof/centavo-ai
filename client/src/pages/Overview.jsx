@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import Layout from "../components/Layout/Layout";
+import AiTips from "../components/AiTips/AiTips";
 import Card from "../components/Card/Card";
 import ProgressBar from "../components/ProgressBar/ProgressBar";
 import EmptyState from "../components/EmptyState/EmptyState";
@@ -194,14 +195,7 @@ function Overview() {
 
         {/* ================= RIGHT RAIL ================= */}
         <div className={styles.rightRail}>
-          <Card title="Centavo-ai tips" action="UPDATED">
-            <div className={`${styles.tipCard} ${styles.tipGreen}`}>
-              <strong>Ready to get started?</strong>
-              <p>Add your first transaction to start receiving personalized AI tips.</p>
-              <span className={styles.tipAction}>ADD TRANSACTION →</span>
-            </div>
-          </Card>
-
+          <AiTips tipClassName={`${styles.tipCard} ${styles.tipGreen}`} />
         </div>
       </div>
     </Layout>

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../../services/api";
+import Card from "../Card/Card";
 
 // Monthly tips from GET /api/ai/tips. Shows a loading line, an error, or the tips.
-export default function AiTips() {
+export default function AiTips({ tipClassName = "" }) {
   const [loading, setLoading] = useState(true);
   const [tips, setTips] = useState([]);
   const [error, setError] = useState("");
@@ -26,18 +27,21 @@ export default function AiTips() {
   }, []);
 
   return (
-    <section>
-      <h2>Centavo Tips</h2>
-      {loading && <p>Loading tips...</p>}
-      {error && <p role="alert">{error}</p>}
+    <Card title="Centavo Tips" action="UPDATED">
+      {loading && <p className={tipClassName}>Loading tips...</p>}
+      {error && (
+        <p className={tipClassName} role="alert">
+          {error}
+        </p>
+      )}
       {!loading &&
         !error &&
         tips.map((t, i) => (
-          <article key={i}>
+          <article key={i} className={tipClassName}>
             <h3>{t.title}</h3>
             <p>{t.body}</p>
           </article>
         ))}
-    </section>
+    </Card>
   );
 }
