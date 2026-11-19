@@ -82,6 +82,14 @@ export const api = {
       },
     }),
   fetchMe: () => request("/auth/me"),
+  updateProfile: (profile) =>
+    request("/auth/me", {
+      options: { method: "PATCH", body: JSON.stringify(profile) },
+    }),
+  deleteAccount: () =>
+    request("/auth/me", {
+      options: { method: "DELETE" },
+    }),
   fetchAccounts: (params) => request("/accounts", { params }),
   createAccount: (accountData) =>
     request("/accounts", {
@@ -181,7 +189,7 @@ export const api = {
   fetchBudgetOverview: () => request("/budgets/overview"),
   // Opens the HTML report for a period in a new tab. The server replies with HTML,
   // not JSON, so this uses fetch directly.
-  openReport: async (from, to) => {
+  openReport: async (from, to, win) => {
     const query = new URLSearchParams({ from, to }).toString();
     const response = await fetch(`${BASE_URL}/reports?${query}`, { credentials: "include" });
     if (!response.ok) {
@@ -190,6 +198,7 @@ export const api = {
     }
     const html = await response.text();
     const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-    window.open(url, "_blank");
+    if (win) win.location = url;
+    else window.open(url, "_blank");
   },
 };

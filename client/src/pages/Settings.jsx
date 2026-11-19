@@ -8,6 +8,13 @@ import styles from "./Settings.module.css";
 import { PencilIcon } from "../components/Icons/Icons";
 
 const UNCATEGORIZED = "uncategorized";
+const DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_REPORT_DAYS = 366;
+const pad = (n) => String(n).padStart(2, "0");
+const now = new Date();
+const DEFAULT_REPORT_FROM = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
+const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+const DEFAULT_REPORT_TO = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(lastDay)}`;
 
 function getTodayLong() {
   return new Date().toLocaleDateString("en-US", {
@@ -24,6 +31,16 @@ function Settings() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [profileModal, setProfileModal] = useState(false);
+  const [profileForm, setProfileForm] = useState({ name: "", email: "" });
+  const [profileError, setProfileError] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [reportFrom, setReportFrom] = useState(DEFAULT_REPORT_FROM);
+  const [reportTo, setReportTo] = useState(DEFAULT_REPORT_TO);
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportError, setReportError] = useState("");
 
   // Category state
   const [newName, setNewName] = useState("");
@@ -54,7 +71,7 @@ function Settings() {
         navigate("/login");
         return;
       }
-      
+
       try {
         setCategories(await api.fetchCategories());
       } catch (err) {
@@ -83,40 +100,56 @@ function Settings() {
   // --- Category Handlers ---
   async function handleAdd(e) {
     e.preventDefault();
-    setAddError(""); 
+    setAddError("");
     setNotice("");
     const name = newName.trim();
-    if (!name) { setAddError("Type a category name first."); return; }
+    if (!name) {
+      setAddError("Type a category name first.");
+      return;
+    }
     try {
       const created = await api.createCategory(name);
       setCategories((prev) => [...prev, created]);
       setNewName("");
       toast.success(`Added "${created.name}".`);
-    } catch (err) { 
+    } catch (err) {
       toast.error(err.message);
     }
   }
 
-  function startEdit(c) { setEditingId(c.id); setEditName(c.name); }
-  function cancelEdit() { setEditingId(null); setEditName(""); }
+  function startEdit(c) {
+    setEditingId(c.id);
+    setEditName(c.name);
+  }
+  function cancelEdit() {
+    setEditingId(null);
+    setEditName("");
+  }
 
   async function handleRename(e) {
     e?.preventDefault();
     const name = editName.trim();
-    if (!name) { setPageError("Category name is required."); return; }
+    if (!name) {
+      setPageError("Category name is required.");
+      return;
+    }
     setPageError("");
     try {
       const updated = await api.renameCategory(editingId, name);
-      setCategories((prev) => prev.map((c) => (c.id === editingId ? { ...c, name: updated.name } : c)));
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === editingId ? { ...c, name: updated.name } : c,
+        ),
+      );
       toast.success(`Renamed to "${updated.name}".`);
       cancelEdit();
-    } catch (err) { 
+    } catch (err) {
       toast.error(err.message);
     }
   }
 
   async function handleDelete(category) {
-    setPageError(""); 
+    setPageError("");
     setNotice("");
     try {
       await api.deleteCategory(category.id);
@@ -124,9 +157,14 @@ function Settings() {
       toast.success(`Deleted "${category.name}".`);
     } catch (err) {
       if (err.status === 409 && err.data?.transactions !== undefined) {
-        setReassignTo(UNCATEGORIZED); setModalError("");
-        setModal({ category, transactions: err.data.transactions, budgets: err.data.budgets });
-      } else { 
+        setReassignTo(UNCATEGORIZED);
+        setModalError("");
+        setModal({
+          category,
+          transactions: err.data.transactions,
+          budgets: err.data.budgets,
+        });
+      } else {
         toast.error(err.message);
       }
     }
@@ -134,27 +172,35 @@ function Settings() {
 
   async function confirmDelete() {
     if (!modal) return;
-    setBusy(true); setModalError("");
+    setBusy(true);
+    setModalError("");
     try {
       const target = reassignTo === UNCATEGORIZED ? null : Number(reassignTo);
-      const result = await api.deleteCategory(modal.category.id, { reassign_to: target });
+      const result = await api.deleteCategory(modal.category.id, {
+        reassign_to: target,
+      });
       setCategories((prev) => prev.filter((c) => c.id !== modal.category.id));
-      
+
       const parts = [`Deleted "${modal.category.name}".`];
-      if (result.transactions_moved > 0) parts.push(`${result.transactions_moved} transaction(s) moved.`);
-      
+      if (result.transactions_moved > 0)
+        parts.push(`${result.transactions_moved} transaction(s) moved.`);
+
       toast.success(parts.join(" "));
       setModal(null);
-    } catch (err) { 
+    } catch (err) {
       toast.error(err.message);
-    } finally { 
-      setBusy(false); 
+    } finally {
+      setBusy(false);
     }
   }
 
-  const targets = modal ? categories.filter((c) => c.id !== modal.category.id) : [];
+  const targets = modal
+    ? categories.filter((c) => c.id !== modal.category.id)
+    : [];
   const name = typeof user?.name === "string" ? user.name.trim() : "";
-  const displayName = name ? `${name[0].toUpperCase()}${name.slice(1)}` : "User";
+  const displayName = name
+    ? `${name[0].toUpperCase()}${name.slice(1)}`
+    : "User";
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -168,26 +214,117 @@ function Settings() {
     }
   }
 
-  if (loading) return <Layout><div className={styles.loading}>Loading...</div></Layout>;
+  function openProfileModal() {
+    setProfileForm({ name: user?.name || "", email: user?.email || "" });
+    setProfileError("");
+    setDeleteConfirm(false);
+    setProfileModal(true);
+  }
+
+  function closeProfileModal() {
+    if (savingProfile || deletingAccount) return;
+    setProfileModal(false);
+    setDeleteConfirm(false);
+  }
+
+  async function handleProfileSave(e) {
+    e.preventDefault();
+    setProfileError("");
+    setSavingProfile(true);
+    try {
+      const { user: updatedUser } = await api.updateProfile(profileForm);
+      setUser(updatedUser);
+      setProfileModal(false);
+      toast.success("Profile updated.");
+    } catch (err) {
+      setProfileError(err.message || "Could not update your profile.");
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function handleAccountDelete() {
+    setProfileError("");
+    setDeletingAccount(true);
+    try {
+      await api.deleteAccount();
+      toast.success("Your account has been deleted.");
+      navigate("/login", { replace: true });
+    } catch (err) {
+      setProfileError(err.message || "Could not delete your account.");
+      setDeleteConfirm(false);
+    } finally {
+      setDeletingAccount(false);
+    }
+  }
+
+  async function handleOpenReport(e) {
+    e.preventDefault();
+    setReportError("");
+    if (reportFrom > reportTo) {
+      setReportError("The start date must be on or before the end date.");
+      return;
+    }
+    const days =
+      (Date.parse(`${reportTo}T00:00:00Z`) -
+        Date.parse(`${reportFrom}T00:00:00Z`)) /
+        DAY_MS +
+      1;
+    if (days > MAX_REPORT_DAYS) {
+      setReportError("A report can cover at most 366 days.");
+      return;
+    }
+
+    const win = window.open("", "_blank");
+    setReportBusy(true);
+    try {
+      await api.openReport(reportFrom, reportTo, win);
+    } catch (err) {
+      if (win) win.close();
+      setReportError(err.message || "Could not open the report.");
+    } finally {
+      setReportBusy(false);
+    }
+  }
+
+  if (loading)
+    return (
+      <Layout>
+        <div className={styles.loading}>Loading...</div>
+      </Layout>
+    );
 
   return (
-    <Layout 
-      title="Profile and settings" 
-      subtitle={getTodayLong() + " · Manage your profile, preferences and privacy in one place."}
+    <Layout
+      title="Settings"
+      subtitle={
+        getTodayLong() +
+        " · Manage your profile, preferences and reports in one place."
+      }
     >
-      
       <div className={styles.tabs}>
-        <button className={`${styles.tabBtn} ${tab === "profile" ? styles.tabBtnActive : ""}`} onClick={() => setTab("profile")}>Profile & Settings</button>
-        <button className={`${styles.tabBtn} ${tab === "categories" ? styles.tabBtnActive : ""}`} onClick={() => setTab("categories")}>Categories</button>
+        <button
+          className={`${styles.tabBtn} ${tab === "profile" ? styles.tabBtnActive : ""}`}
+          onClick={() => setTab("profile")}
+        >
+          Settings
+        </button>
+        <button
+          className={`${styles.tabBtn} ${tab === "categories" ? styles.tabBtnActive : ""}`}
+          onClick={() => setTab("categories")}
+        >
+          Categories
+        </button>
       </div>
 
       {/* ================= PROFILE TAB ================= */}
       {tab === "profile" && user && (
         <div className={styles.profileWrapper}>
-          
           <div className={styles.profileHeader}>
-            <h1 className={styles.pageTitle}>Make Centavo-ai yours</h1>
-            <p className={styles.pageSubtitle}>Manage your profile, preferences and privacy in one place.</p>
+            <h1 className={styles.pageTitle}>Make Centavo yours</h1>
+            <p className={styles.pageSubtitle}>
+              Manage your profile and preferences in one place.
+            </p>
           </div>
 
           {/* User Banner */}
@@ -197,43 +334,175 @@ function Settings() {
               <h2>{displayName}</h2>
               <p>{user.email}</p>
             </div>
-            <button className={styles.outlineBtn}>Edit profile</button>
+            <button
+              type="button"
+              className={styles.outlineBtn}
+              onClick={openProfileModal}
+            >
+              Edit profile
+            </button>
           </div>
 
           {/* Settings Grid */}
           <div className={styles.settingsGrid}>
-            <Card title="Data and privacy">
-              <button className={styles.outlineBtnFull} style={{ marginBottom: "16px" }}>
-                <span style={{ marginRight: '8px' }}>⬇</span> Export my data
-              </button>
-              <p className={styles.cardDesc}>Account deletion is permanent and asks for confirmation first.</p>
-              <button className={styles.dangerBtnFull}>Delete account</button>
-            </Card>
-
             <Card title="Appearance">
               <div className={styles.toggleRow}>
                 <div>
                   <span className={styles.toggleLabel}>Dark Mode</span>
-                  <span className={styles.toggleDesc}>Switch the app to dark theme</span>
+                  <span className={styles.toggleDesc}>
+                    Switch the app to dark theme
+                  </span>
                 </div>
                 <label className={styles.switch}>
-                  <input type="checkbox" checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={darkMode}
+                    onChange={(e) => setDarkMode(e.target.checked)}
+                  />
                   <span className={styles.slider}></span>
                 </label>
               </div>
+            </Card>
+
+            <Card title="Reports">
+              <p className={styles.cardDesc}>
+                Open a report for any date range of up to 366 days.
+              </p>
+              <form onSubmit={handleOpenReport}>
+                <label>
+                  From{" "}
+                  <input
+                    type="date"
+                    className={styles.textInput}
+                    value={reportFrom}
+                    onChange={(e) => setReportFrom(e.target.value)}
+                    required
+                  />
+                </label>{" "}
+                <label>
+                  To{" "}
+                  <input
+                    type="date"
+                    className={styles.textInput}
+                    value={reportTo}
+                    onChange={(e) => setReportTo(e.target.value)}
+                    required
+                  />
+                </label>{" "}
+                <button
+                  type="submit"
+                  className={styles.primaryBtn}
+                  disabled={reportBusy}
+                >
+                  {reportBusy ? "Opening..." : "Open report"}
+                </button>
+              </form>
+              {reportError && <p role="alert">{reportError}</p>}
             </Card>
           </div>
 
           <div className={styles.footerRow}>
             <button
               className={styles.outlineBtn}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
               onClick={handleLogout}
               disabled={loggingOut}
             >
               <span>→</span> {loggingOut ? "Signing out..." : "Sign out"}
             </button>
-            <span className={styles.saveText}>✓ Preferences save automatically</span>
+            <span className={styles.saveText}>
+              ✓ Preferences save automatically
+            </span>
+          </div>
+        </div>
+      )}
+
+      {profileModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+            <h3 id="profile-modal-title">Edit profile</h3>
+            <form onSubmit={handleProfileSave}>
+              <label className={styles.modalLabel}>
+                Name
+                <input
+                  type="text"
+                  className={styles.textInput}
+                  value={profileForm.name}
+                  maxLength={100}
+                  required
+                  onChange={(e) =>
+                    setProfileForm((current) => ({ ...current, name: e.target.value }))
+                  }
+                />
+              </label>
+              <label className={styles.modalLabel}>
+                Email
+                <input
+                  type="email"
+                  className={styles.textInput}
+                  value={profileForm.email}
+                  maxLength={254}
+                  required
+                  onChange={(e) =>
+                    setProfileForm((current) => ({ ...current, email: e.target.value }))
+                  }
+                />
+              </label>
+              {profileError && <p className={styles.errorText} role="alert">{profileError}</p>}
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.outlineBtn}
+                  onClick={closeProfileModal}
+                  disabled={savingProfile || deletingAccount}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={styles.primaryBtn}
+                  disabled={savingProfile || deletingAccount}
+                >
+                  {savingProfile ? "Saving..." : "Save changes"}
+                </button>
+              </div>
+            </form>
+
+            <hr />
+            {!deleteConfirm ? (
+              <button
+                type="button"
+                className={styles.dangerBtn}
+                onClick={() => setDeleteConfirm(true)}
+                disabled={savingProfile || deletingAccount}
+              >
+                Delete account
+              </button>
+            ) : (
+              <>
+                <p className={styles.modalDesc}>
+                  This permanently deletes your account and its data. This cannot be undone.
+                </p>
+                <div className={styles.modalActions}>
+                  <button
+                    type="button"
+                    className={styles.outlineBtn}
+                    onClick={() => setDeleteConfirm(false)}
+                    disabled={deletingAccount}
+                  >
+                    Keep account
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.dangerBtn}
+                    onClick={handleAccountDelete}
+                    disabled={deletingAccount}
+                  >
+                    {deletingAccount ? "Deleting..." : "Confirm delete"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -242,31 +511,62 @@ function Settings() {
       {tab === "categories" && (
         <div className={styles.categoriesWrapper}>
           <Card title="Manage Categories">
-            <p className={styles.cardDesc}>Set a monthly limit for each category.</p>
+            <p className={styles.cardDesc}>
+              Set a monthly limit for each category.
+            </p>
             <form onSubmit={handleAdd} className={styles.addCategoryForm}>
-              <input type="text" placeholder="Category name" value={newName} maxLength={100} onChange={(e) => setNewName(e.target.value)} className={styles.textInput} />
-              <button type="submit" className={styles.primaryBtn}>Add category</button>
+              <input
+                type="text"
+                placeholder="Category name"
+                value={newName}
+                maxLength={100}
+                onChange={(e) => setNewName(e.target.value)}
+                className={styles.textInput}
+              />
+              <button type="submit" className={styles.primaryBtn}>
+                Add category
+              </button>
             </form>
             {addError && <p className={styles.errorText}>{addError}</p>}
             {pageError && <p className={styles.errorText}>{pageError}</p>}
             <div className={styles.tableWrapper}>
               <table className={styles.table}>
                 <thead>
-                  <tr><th>Category</th><th>Type</th><th className={styles.textRight}>Action</th></tr>
+                  <tr>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th className={styles.textRight}>Action</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {custom.map((c) => (
                     <tr key={c.id}>
-                      <td className={styles.descCell}><span className={styles.dot} />{c.name}</td>
-                      <td><span className={styles.badgeCustom}>Custom</span></td>
+                      <td className={styles.descCell}>
+                        <span className={styles.dot} />
+                        {c.name}
+                      </td>
+                      <td>
+                        <span className={styles.badgeCustom}>Custom</span>
+                      </td>
                       <td className={styles.textRight}>
                         <div className={styles.rowActions}>
-                          <button className={styles.iconBtn} onClick={() => startEdit(c)}><PencilIcon /></button>
+                          <button
+                            className={styles.iconBtn}
+                            onClick={() => startEdit(c)}
+                          >
+                            <PencilIcon />
+                          </button>
                         </div>
                       </td>
                     </tr>
                   ))}
-                  {custom.length === 0 && <tr><td colSpan={3} className={styles.descCell}>No custom categories yet.</td></tr>}
+                  {custom.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className={styles.descCell}>
+                        No custom categories yet.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -279,16 +579,40 @@ function Settings() {
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <h3>Delete "{modal.category.name}"?</h3>
-            <p className={styles.modalDesc}>This category is used by <strong>{modal.transactions} transaction(s)</strong>. Pick where they should go.</p>
+            <p className={styles.modalDesc}>
+              This category is used by{" "}
+              <strong>{modal.transactions} transaction(s)</strong>. Pick where
+              they should go.
+            </p>
             <label className={styles.modalLabel}>Move transactions to</label>
-            <select className={styles.selectInput} value={reassignTo} onChange={(e) => setReassignTo(e.target.value)}>
+            <select
+              className={styles.selectInput}
+              value={reassignTo}
+              onChange={(e) => setReassignTo(e.target.value)}
+            >
               <option value={UNCATEGORIZED}>Uncategorized</option>
-              {targets.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {targets.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
             {modalError && <p className={styles.errorText}>{modalError}</p>}
             <div className={styles.modalActions}>
-              <button className={styles.outlineBtn} onClick={() => setModal(null)} disabled={busy}>Cancel</button>
-              <button className={styles.dangerBtn} onClick={confirmDelete} disabled={busy}>{busy ? "Deleting..." : "Delete category"}</button>
+              <button
+                className={styles.outlineBtn}
+                onClick={() => setModal(null)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.dangerBtn}
+                onClick={confirmDelete}
+                disabled={busy}
+              >
+                {busy ? "Deleting..." : "Delete category"}
+              </button>
             </div>
           </div>
         </div>
@@ -301,11 +625,26 @@ function Settings() {
             <h3>Rename category</h3>
             <form onSubmit={handleRename}>
               <label className={styles.modalLabel}>Category name</label>
-              <input type="text" className={styles.textInput} value={editName} maxLength={100} autoFocus onChange={(e) => setEditName(e.target.value)} />
+              <input
+                type="text"
+                className={styles.textInput}
+                value={editName}
+                maxLength={100}
+                autoFocus
+                onChange={(e) => setEditName(e.target.value)}
+              />
               {pageError && <p className={styles.errorText}>{pageError}</p>}
               <div className={styles.modalActions}>
-                <button type="button" className={styles.outlineBtn} onClick={cancelEdit}>Cancel</button>
-                <button type="submit" className={styles.primaryBtn}>Save</button>
+                <button
+                  type="button"
+                  className={styles.outlineBtn}
+                  onClick={cancelEdit}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className={styles.primaryBtn}>
+                  Save
+                </button>
               </div>
             </form>
           </div>

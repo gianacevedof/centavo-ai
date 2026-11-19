@@ -9,6 +9,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../services/authService.js";
+import { clearAiCache } from "../services/aiCache.js";
 
 const router = express.Router();
 
@@ -215,6 +216,80 @@ router.get("/me", authMiddleware, async (req, res) => {
     console.error("Me error:", error);
     sendError(res, 500, "An internal server error occurred.");
   }
+});
+
+router.patch("/me", authMiddleware, async (req, res) => {
+  const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+  const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
+
+  if (!name || name.length > 100) {
+    return sendError(res, 400, "Name must be between 1 and 100 characters.");
+  }
+  if (!isValidEmail(email)) {
+    return sendError(res, 400, "Please enter a valid email address.");
+  }
+
+  try {
+    await pool.query(
+      "UPDATE users SET email = ?, name = ? WHERE id = ?",
+      [email, name, req.user.id],
+    );
+    const [rows] = await pool.query(
+      "SELECT id, email, name FROM users WHERE id = ?",
+      [req.user.id],
+    );
+    if (rows.length === 0) {
+      return sendError(res, 404, "User not found.");
+    }
+
+    const user = rows[0];
+    setSessionCookies(res, user);
+    res.status(200).json({ user });
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") {
+      return sendError(res, 409, "That email address is already in use.");
+    }
+    console.error("Profile update error:", error);
+    sendError(res, 500, "An internal server error occurred.");
+  }
+});
+
+router.delete("/me", authMiddleware, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    await connection.query("DELETE FROM transactions WHERE user_id = ?", [req.user.id]);
+    await connection.query("DELETE FROM budgets WHERE user_id = ?", [req.user.id]);
+    await connection.query("DELETE FROM savings_goals WHERE user_id = ?", [req.user.id]);
+    await connection.query("DELETE FROM accounts WHERE user_id = ?", [req.user.id]);
+    await connection.query("DELETE FROM categories WHERE user_id = ?", [req.user.id]);
+    const [result] = await connection.query(
+      "DELETE FROM users WHERE id = ?",
+      [req.user.id],
+    );
+    if (result.affectedRows === 0) {
+      await connection.rollback();
+      return sendError(res, 404, "User not found.");
+    }
+    await connection.commit();
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error("Account deletion rollback error:", rollbackError);
+      }
+    }
+    console.error("Account deletion error:", error);
+    return sendError(res, 500, "Could not delete the account.");
+  } finally {
+    connection?.release();
+  }
+
+  clearAiCache(req.user.id);
+  clearSessionCookies(res);
+  res.status(200).json({ message: "Account deleted successfully." });
 });
 
 export default router;
