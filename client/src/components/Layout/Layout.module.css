@@ -47,12 +47,26 @@
   gap: 2px;
 }
 
+.sidebarFooter {
+  margin-top: auto;
+}
+
 .navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
   padding: 10px var(--space-md);
   border-radius: var(--radius-sm);
   color: var(--color-text-on-dark-muted);
   text-decoration: none;
   font-size: var(--font-size-sm);
+}
+
+.navIcon {
+  display: flex;
+  flex: 0 0 20px;
+  align-items: center;
+  justify-content: center;
 }
 
 .navItem:hover {

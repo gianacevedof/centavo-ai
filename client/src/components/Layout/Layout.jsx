@@ -3,9 +3,9 @@ import ChatPanel from "../ChatPanel/ChatPanel";
 import styles from "./Layout.module.css";
 
 const NAV_ITEMS = [
-  { 
-    to: "/", 
-    label: "Overview", 
+  {
+    to: "/",
+    label: "Overview",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7"></rect>
@@ -15,9 +15,19 @@ const NAV_ITEMS = [
       </svg>
     )
   },
-  { 
-    to: "/transactions", 
-    label: "Transactions", 
+  {
+    to: "/budgets",
+    label: "Budgets & Goals",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 2v10h10"></path>
+      </svg>
+    )
+  },
+  {
+    to: "/transactions",
+    label: "Transactions",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -29,19 +39,9 @@ const NAV_ITEMS = [
       </svg>
     )
   },
-  { 
-    to: "/budgets", 
-    label: "Budgets", 
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <polyline points="12 6 12 12 16 14"></polyline>
-      </svg>
-    )
-  },
-  { 
-    to: "/trends", 
-    label: "Trends", 
+  {
+    to: "/trends",
+    label: "Trends",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
@@ -49,17 +49,21 @@ const NAV_ITEMS = [
       </svg>
     )
   },
-  { 
-    to: "/settings", 
-    label: "Settings",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
-      </svg>
-    )
-  },
 ];
+
+const SETTINGS_ITEM = {
+  to: "/settings",
+  label: "Profile and settings",
+  mobileLabel: "Settings",
+  icon: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m12 2 2 2.2 3-.1.8 2.9 2.6 1.6-1 2.8 1 2.8-2.6 1.6-.8 2.9-3-.1L12 21l-2-2.2-3 .1-.8-2.9-2.6-1.6 1-2.8-1-2.8 2.6-1.6.8-2.9 3 .1L12 2Z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+  ),
+};
+
+const ALL_NAV_ITEMS = [...NAV_ITEMS, SETTINGS_ITEM];
 
 export default function Layout({ children, title, subtitle }) {
   return (
@@ -82,9 +86,22 @@ export default function Layout({ children, title, subtitle }) {
                 isActive ? `${styles.navItem} ${styles.navItemActive}` : styles.navItem
               }
             >
-              {item.label}
+              <span className={styles.navIcon}>{item.icon}</span>
+              <span>{item.label}</span>
             </NavLink>
           ))}
+        </nav>
+
+        <nav className={styles.sidebarFooter}>
+          <NavLink
+            to={SETTINGS_ITEM.to}
+            className={({ isActive }) =>
+              isActive ? `${styles.navItem} ${styles.navItemActive}` : styles.navItem
+            }
+          >
+            <span className={styles.navIcon}>{SETTINGS_ITEM.icon}</span>
+            <span>{SETTINGS_ITEM.label}</span>
+          </NavLink>
         </nav>
 
       </aside>
@@ -109,7 +126,7 @@ export default function Layout({ children, title, subtitle }) {
 
       {/* ===== MOBILE BOTTOM NAVIGATION ===== */}
       <nav className={styles.mobileNav}>
-        {NAV_ITEMS.map((item) => (
+        {ALL_NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -119,7 +136,7 @@ export default function Layout({ children, title, subtitle }) {
             }
           >
             <span className={styles.mobileIcon}>{item.icon}</span>
-            <span className={styles.mobileLabel}>{item.label}</span>
+            <span className={styles.mobileLabel}>{item.mobileLabel || item.label}</span>
           </NavLink>
         ))}
       </nav>

@@ -38,7 +38,8 @@ router.get("/", async (req, res) => {
     const [rows] = await pool.query(
       `SELECT id, name, target_amount,
               DATE_FORMAT(target_date, '%Y-%m-%d') AS target_date,
-              current_amount
+              current_amount,
+              DATE_FORMAT(created_at, '%Y-%m-%d') AS created_at
        FROM savings_goals
        WHERE user_id = ?
        ORDER BY target_date, id`,

@@ -25,10 +25,50 @@
   gap: var(--space-lg);
 }
 
+.overviewTopGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+
 .rightRail {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+}
+
+.healthContent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.healthGauge {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.healthGaugeInner {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background-color: var(--color-bg-card);
+  color: var(--color-text-primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.healthMessage {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 /* ===== Hero Card ===== */
@@ -38,7 +78,9 @@
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: var(--space-lg);
 }
 
 .heroLeft {
@@ -59,6 +101,52 @@
   font-size: 2.5rem;
   font-weight: 600;
   margin: 8px 0;
+}
+
+.heroMonthChange {
+  color: #a8d7b8;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.heroMonthNegative { color: #f0aaa3; }
+
+.heroPace {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-sm);
+  max-width: 50%;
+  text-align: right;
+}
+
+.paceOptions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.paceOption {
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #a8b5ae;
+  font-size: 0.7rem;
+}
+
+.paceOptionActive {
+  background-color: white;
+  color: #1a3a2e;
+  font-weight: 600;
+}
+
+.paceNote {
+  color: #a8b5ae;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  margin: 0;
 }
 
 /* ===== Accounts ===== */
@@ -200,6 +288,40 @@
 .txExpense { font-weight: 600; font-size: var(--font-size-sm); }
 .txIncome { font-weight: 600; font-size: var(--font-size-sm); color: var(--color-green); }
 
+/* ===== Trends Widget ===== */
+.trendCard {
+  min-height: 235px;
+}
+
+.trendSummary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.trendValue {
+  color: var(--color-text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.trendUp { color: var(--color-expense); }
+.trendDown { color: var(--color-green); }
+
+.trendDescription {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.trendChartWrapper {
+  height: 110px;
+  margin-top: auto;
+  position: relative;
+  width: 100%;
+}
+
 /* ===== Right Rail: Tips ===== */
 .tipCard {
   padding: var(--space-md);
@@ -225,6 +347,7 @@
 /* ===== Responsive ===== */
 @media (max-width: 1024px) {
   .dashboardGrid { grid-template-columns: 1fr; }
+  .overviewTopGrid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
@@ -242,11 +365,19 @@
   }
   
   @media (max-width: 768px) {
+    .overviewTopGrid { grid-template-columns: 1fr; }
     /* 1. Hero Card Adjustments */
     .hero {
       flex-direction: column;
       padding: var(--space-lg);
       gap: var(--space-md);
+      align-items: stretch;
+    }
+
+    .heroPace {
+      align-items: flex-start;
+      max-width: none;
+      text-align: left;
     }
     
     .heroAmount {
