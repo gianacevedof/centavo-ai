@@ -2,8 +2,6 @@ import { sendError } from "../utils/errors.js";
 import express from "express";
 import pool from "../db.js";
 import {
-  parseTransaction,
-  validateParsedTransaction,
   chatAgent,
   getToday,
   AIParseError,
@@ -20,20 +18,6 @@ import {
 import { getMonthlyTips } from "../services/tips.js";
 
 const router = express.Router();
-
-// The user's accounts (with balances) and the categories they can use (defaults + their own).
-// Used by /parse, which is the one-shot parser.
-async function loadMappings(userId) {
-  const [accounts] = await pool.query(
-    "SELECT id, name, type, balance FROM accounts WHERE user_id = ?",
-    [userId],
-  );
-  const [categories] = await pool.query(
-    "SELECT id, name FROM categories WHERE user_id IS NULL OR user_id = ?",
-    [userId],
-  );
-  return { accounts, categories };
-}
 
 // Everything the chat needs to check a change: accounts, categories, budgets,
 // savings goals and the 60 most recent transactions (so the user can change one).
@@ -208,47 +192,6 @@ router.post("/chat", async (req, res) => {
       });
     }
     console.error("Unexpected AI chat route error:", err);
-    return sendError(res, 500, "Something went wrong while parsing. Try again.");
-  }
-});
-
-// POST /api/ai/parse (one-shot parse, no chat)
-router.post("/parse", async (req, res) => {
-  const { text } = req.body;
-
-  if (typeof text !== "string" || !text.trim()) {
-    return sendError(res, 400, "Text is required for parsing");
-  }
-
-  try {
-    const user_id = req.user.id;
-    const mappings = await loadMappings(user_id);
-
-    const result = await parseTransaction(text, mappings);
-
-    if (result.amount === null) {
-      return sendError(res, 422, "I couldn't find an amount. Try something like: spent 12 on lunch.", { problems: result.problems });
-    }
-
-    const missing = [];
-    if (result.type === null) missing.push("type");
-    if (result.account_id === null) missing.push("account");
-    if (result.type === "transfer") {
-      if (result.to_account_id === null) missing.push("to_account");
-    } else if (result.category_id === null) {
-      missing.push("category");
-    }
-    if (result.date === null) missing.push("date");
-
-    return res.status(200).json({ ...result, missing });
-  } catch (err) {
-    if (err instanceof AIParseError || err instanceof AIUnavailableError) {
-      return sendError(res, err.status, err.message, {
-        code: err instanceof AIParseError ? "AI_PARSE_ERROR" : "AI_UNAVAILABLE",
-      });
-    }
-
-    console.error("Unexpected AI parse route error:", err);
     return sendError(res, 500, "Something went wrong while parsing. Try again.");
   }
 });

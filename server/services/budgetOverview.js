@@ -82,19 +82,23 @@ const normalize = (s) => s.replace(/[$,]/g, "");
 
 // Checks the AI's tips: shape, length, a real budget category, and only numbers from the facts
 function checkBudgetTips(tips, facts) {
-  if (!Array.isArray(tips) || tips.length < 1 || tips.length > facts.budgets.length) {
+  const categories = new Set(facts.budgets.map((b) => b.category));
+  if (!Array.isArray(tips) || tips.length !== categories.size) {
     throw new Error("AI returned the wrong number of budget tips");
   }
   const allowed = new Set((JSON.stringify(facts).match(NUMBER_TOKEN) || []).map(normalize));
-  const categories = new Set(facts.budgets.map((b) => b.category));
+  const usedCategories = new Set();
 
   return tips.map((t) => {
     if (typeof t?.category !== "string" || typeof t?.title !== "string" || typeof t?.body !== "string") {
       throw new Error("AI budget tip has the wrong shape");
     }
+    if (!categories.has(t.category) || usedCategories.has(t.category)) {
+      throw new Error("AI budget tips must cover each budget category exactly once");
+    }
+    usedCategories.add(t.category);
     const title = t.title.trim();
     const body = t.body.trim();
-    if (!categories.has(t.category)) throw new Error("AI tip names an unknown budget");
     if (!title || !body || title.length > 60 || body.length > 300) {
       throw new Error("AI budget tip is the wrong length");
     }
@@ -109,18 +113,19 @@ function checkBudgetTips(tips, facts) {
 
 // Plain tips for when the AI is slow or down. They use no numbers.
 function staticTips(overview) {
-  const tips = [];
-  for (const b of overview.budgets) {
+  return overview.budgets.map((b) => {
     if (b.status === "over") {
-      tips.push({ category: b.category, title: `Over budget on ${b.category}`, body: "Look at this month's entries here and decide what to cut before the month ends." });
-    } else if (b.status === "near") {
-      tips.push({ category: b.category, title: `Close to your ${b.category} limit`, body: "Slow down on this category for the rest of the month, or move the limit if it no longer fits." });
+      return { category: b.category, title: `Over budget on ${b.category}`, body: "Review this month's purchases and decide what to cut before the month ends." };
     }
-  }
-  if (tips.length === 0) {
-    tips.push(GENERAL_TIP);
-  }
-  return tips.slice(0, 3);
+    if (b.status === "near") {
+      return { category: b.category, title: `Close to your ${b.category} limit`, body: "Slow down on this category for the rest of the month, or adjust the limit if it no longer fits." };
+    }
+    return {
+      category: b.category,
+      title: `On track for ${b.category}`,
+      body: "Keep recording purchases in this category so you can adjust the limit if your spending pattern changes.",
+    };
+  });
 }
 
 function includeGeneralTip(value) {

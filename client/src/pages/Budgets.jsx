@@ -4,6 +4,7 @@ import { api } from "../services/api";
 import Layout from "../components/Layout/Layout";
 import ProgressBar from "../components/ProgressBar/ProgressBar";
 import EmptyState from "../components/EmptyState/EmptyState";
+import Card from "../components/Card/Card";
 import styles from "./Budgets.module.css";
 import { PencilIcon } from "../components/Icons/Icons";
 
@@ -78,8 +79,7 @@ function Budgets() {
   const availableCategories = editingBudget
     ? categories.filter((cat) => Number(cat.id) === Number(editingBudget.category_id))
     : categories.filter((cat) => !budgets.some((b) => Number(b.category_id) === Number(cat.id)));
-  const tipFor = (categoryName) =>
-    overview?.tips?.tips?.find((tip) => tip.category === categoryName);
+  const overviewTips = overview?.tips?.tips ?? [];
 
   const closeBudgetModal = () => {
     setShowBudgetModal(false);
@@ -289,7 +289,6 @@ function Budgets() {
                 const pct = limit > 0 ? Math.round((spent / limit) * 100) : 0;
                 const isOver = pct > 100;
                 const icon = CATEGORY_ICONS[bg.category_name] || CATEGORY_ICONS.Default;
-                const tip = tipFor(bg.category_name);
 
                 return (
                   <div key={bg.id} className={styles.budgetCard}>
@@ -304,13 +303,9 @@ function Budgets() {
                       <span className={styles.spentAmount}>${spent}</span>
                       <span className={styles.limitAmount}>of ${limit}</span>
                     </div>
-                    <ProgressBar value={spent} max={limit} tone={isOver ? "red" : "blue"} />
-                    {tip && (
-                      <>
-                        <p><strong>{tip.title}</strong></p>
-                        <p>{tip.body}</p>
-                      </>
-                    )}
+                    <div>
+                      <ProgressBar value={spent} max={limit} tone={isOver ? "red" : "blue"} />
+                    </div>
                     <div className={styles.cardActions}>
                       <button className={styles.iconBtn} onClick={() => openEditBudget(bg)} aria-label="Edit budget" title="Edit"><PencilIcon /></button>
                     </div>
@@ -321,18 +316,17 @@ function Budgets() {
           )}
         </div>
 
-        {overview?.tips?.tips?.some((tip) => tip.category === null) && (
-          <section>
-            <h2>Tips</h2>
-            {overview.tips.tips
-              .filter((tip) => tip.category === null)
-              .map((tip, index) => (
-                <div key={`${tip.title}-${index}`}>
-                  <p><strong>{tip.title}</strong></p>
-                  <p>{tip.body}</p>
-                </div>
-              ))}
-          </section>
+        {overviewTips.length > 0 && (
+          <Card title="Tips">
+            {overviewTips.map((tip, index) => (
+              <article key={`${tip.category ?? "general"}-${tip.title}-${index}`}>
+                <p>
+                  <strong>{tip.category ? `${tip.category}: ` : ""}{tip.title}</strong>
+                </p>
+                <p>{tip.body}</p>
+              </article>
+            ))}
+          </Card>
         )}
 
         {/* BOTTOM SECTION: GOALS */}

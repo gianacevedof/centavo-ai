@@ -91,14 +91,6 @@ export const api = {
       options: { method: "DELETE" },
     }),
   fetchAccounts: (params) => request("/accounts", { params }),
-  createAccount: (accountData) =>
-    request("/accounts", {
-      params: {},
-      options: {
-        method: "POST",
-        body: JSON.stringify(accountData),
-      },
-    }),
   fetchTransactions: (params) => request("/transactions", { params }),
   fetchCategories: () => request("/categories"),
   createCategory: (name) =>
@@ -165,13 +157,6 @@ export const api = {
       options: {
         method: "POST",
         body: JSON.stringify(data),
-      },
-    }),
-  parseAIInput: (text) =>
-    request("/ai/parse", {
-      options: {
-        method: "POST",
-        body: JSON.stringify({ text }),
       },
     }),
   chatAI: (text, draft) =>
