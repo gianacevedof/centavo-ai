@@ -1,232 +1,284 @@
 /* components/ChatPanel/ChatPanel.module.css */
 
 /* =========================================
-   1. THE CLOSED FLOATING BUTTON
+   1. THE CLOSED STATE (The Card)
    ========================================= */
-.chatToggleBtn {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  box-shadow: var(--shadow-lg);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  z-index: 1000;
-  transition: transform 0.2s, background-color 0.2s;
-}
-
-.chatToggleBtn:hover {
-  transform: scale(1.05);
-  background-color: var(--color-primary-hover);
-}
-
-/* If your team has text inside the button, hide it on desktop to keep it a clean circle */
-.chatToggleBtn span {
-  font-size: 1.5rem; /* Adjust this if the icon looks too small */
-}
-
-/* =========================================
-   2. THE OPEN FLOATING WINDOW
-   ========================================= */
-.chatPanel {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 380px;
-  height: 600px;
-  max-height: 80vh;
-  background-color: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  z-index: 1000;
-  overflow: hidden;
-}
-
-/* Header */
-.chatHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--color-border);
-  background-color: var(--color-surface);
-}
-
-.chatHeader h2 {
-  margin: 0;
-  font-size: var(--font-size-h3);
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.closeBtn {
-  background: transparent;
-  border: none;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-
-/* Messages Area */
-.messagesContainer {
-  flex: 1;
-  padding: var(--space-lg);
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  background-color: var(--color-surface-muted);
-}
-
-.message {
-  max-width: 85%;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-body);
-  line-height: 1.4;
-  margin: 0;
-}
-
-.messageAi {
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  align-self: flex-start;
-  border-bottom-left-radius: 4px;
-  border: 1px solid var(--color-border);
-}
-
-.messageUser {
-  background-color: var(--color-primary);
-  color: white;
-  align-self: flex-end;
-  border-bottom-right-radius: 4px;
-}
-
-/* Suggestions Row */
-.suggestionsRow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  flex-wrap: wrap;
-  padding: var(--space-sm) var(--space-lg);
-  background-color: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-}
-
-.suggestionPill {
-  background-color: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  padding: 6px 14px;
-  border-radius: var(--radius-pill);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-green);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.suggestionPill:hover {
-  background-color: var(--color-accent-soft);
-}
-
-/* Input Form */
-.chatForm {
-  background-color: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-}
-
-.inputRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px 12px 24px;
-  border-bottom: 1px solid #f0f0eb;
-}
-
-.chatInput {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: var(--font-size-body);
-  font-family: inherit;
-  color: var(--color-text);
-  outline: none;
-}
-
-.sendBtn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background-color: var(--color-primary);
-  color: white;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.inputHint {
-  padding: 12px 24px;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-subtle);
-}
-
-/* Footer */
-.chatFooter {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: var(--font-size-sm);
-  padding: var(--space-sm) var(--space-lg);
-  background-color: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-}
-
-.manualEntry {
-  color: var(--color-green);
-  text-decoration: none;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.trustText {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--color-green);
-  font-size: var(--font-size-xs);
-}
-
-/* =========================================
-   3. MOBILE RESPONSIVE (Full screen chat)
-   ========================================= */
-@media (max-width: 768px) {
-  .chatPanel {
+   .chatToggleBtn {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s, box-shadow 0.2s;
     width: 100%;
-    height: 100%;
-    max-height: 100vh;
-    bottom: 0;
-    right: 0;
-    border-radius: 0;
-    z-index: 9999; /* Ensure it covers the mobile nav bar */
+    text-align: left;
+    font-family: inherit;
   }
   
-  .chatToggleBtn {
-    /* Move it up slightly so it doesn't overlap the mobile bottom nav */
-    bottom: 90px; 
+  .chatToggleBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
   }
-}
+  
+  .toggleHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: var(--font-size-body);
+  }
+  
+  .toggleIcon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background-color: var(--color-primary);
+    color: white;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  
+  .toggleText {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    margin: 4px 0 var(--space-sm);
+  }
+  
+  .toggleInputFake {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-md);
+  }
+  
+  .toggleInputFake span {
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-sm);
+  }
+  
+  .toggleArrow {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: white;
+    display: grid;
+    place-items: center;
+  }
+  
+  /* =========================================
+     2. THE OPEN STATE (The Modal)
+     ========================================= */
+  .modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    z-index: 9999;
+    padding: 40px;
+  }
+  
+  .chatPanel {
+    width: 450px;
+    height: 85vh;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  /* Header (Dark Green) */
+  .chatHeader {
+    background-color: var(--color-bg-sidebar);
+    color: white;
+    padding: var(--space-md) var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .headerTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  
+  .headerLeft {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  
+  .headerIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background-color: #8fd4b5;
+    color: var(--color-bg-sidebar);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+  
+  .chatHeader h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  
+  .activeStatus {
+    font-size: 0.75rem;
+    color: #8fd4b5;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .headerControls {
+    display: flex;
+    gap: 4px;
+  }
+  
+  .controlBtn {
+    background-color: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 1rem;
+  }
+  
+  .controlBtn:hover {
+    background-color: rgba(255,255,255,0.2);
+  }
+  
+  .headerTags {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+  
+  .headerTag {
+    background-color: rgba(255,255,255,0.1);
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    color: #8fd4b5;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  /* Messages Area */
+  .messagesContainer {
+    flex: 1;
+    padding: var(--space-lg);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    background-color: var(--color-surface-muted);
+  }
+  
+  .message {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-body);
+    line-height: 1.4;
+    margin: 0;
+  }
+  
+  .messageAi {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    border: 1px solid var(--color-border);
+  }
+  
+  .messageUser {
+    background-color: var(--color-primary);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  
+  /* Input Form */
+  .chatForm {
+    background-color: var(--color-surface);
+    padding: var(--space-md);
+    border-top: 1px solid var(--color-border);
+  }
+  
+  .inputRow {
+    display: flex;
+    align-items: center;
+    background-color: var(--color-surface-muted);
+    border-radius: var(--radius-pill);
+    padding: 6px 6px 6px 16px;
+    border: 1px solid var(--color-border);
+  }
+  
+  .chatInput {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    outline: none;
+  }
+  
+  .sendBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--color-primary);
+    color: white;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  
+  /* Footer */
+  .chatFooter {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: var(--font-size-xs);
+    padding: var(--space-sm) var(--space-lg);
+    background-color: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+  
+  .trustText {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-text-muted);
+  }
+  
+  /* Hide stuff not in the mockup */
+  .suggestionsRow, .inputHint {
+    display: none;
+  }
