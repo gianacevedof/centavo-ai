@@ -16,6 +16,7 @@ import Card from "../components/Card/Card";
 import ProgressBar from "../components/ProgressBar/ProgressBar";
 import Skeleton from "../components/Skeleton/Skeleton";
 import EmptyState from "../components/EmptyState/EmptyState";
+import ChatPanel from "../components/ChatPanel/ChatPanel";
 import styles from "./Trends.module.css";
 
 Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Filler, Tooltip, Legend);
@@ -149,7 +150,6 @@ function Trends() {
     <Layout title="Trends" subtitle="Your spending and savings over time">
       <div className={styles.pageWrapper}>
         
-        {/* SUMMARY CARDS */}
         <div className={styles.summaryGrid}>
           <Card className={styles.summaryCard}>
             <span className={styles.summaryLabel}>Monthly Spend Average</span>
@@ -183,7 +183,6 @@ function Trends() {
           </Card>
         </div>
 
-        {/* CHART */}
         <Card className={styles.chartCard}>
           <div className={styles.chartHeader}>
             <div>
@@ -200,7 +199,6 @@ function Trends() {
           </div>
         </Card>
 
-        {/* BOTTOM ROW */}
         <div className={styles.bottomGrid}>
           <Card title="Category Spend Breakdown">
             <div className={styles.breakdownList}>
@@ -247,6 +245,10 @@ function Trends() {
               </table>
             </div>
           </Card>
+        </div>
+
+        <div style={{ marginTop: "var(--space-xl)" }}>
+          <ChatPanel />
         </div>
       </div>
     </Layout>
