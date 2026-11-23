@@ -4,6 +4,7 @@ import { api } from "../services/api";
 import Layout from "../components/Layout/Layout";
 import Card from "../components/Card/Card";
 import EmptyState from "../components/EmptyState/EmptyState";
+import ChatPanel from "../components/ChatPanel/ChatPanel";
 import styles from "./Transactions.module.css";
 import { PencilIcon } from "../components/Icons/Icons";
 
@@ -435,9 +436,12 @@ function Transactions() {
             </div>
           </div>
         </Card>
+
+        <div style={{ marginTop: "var(--space-xl)" }}>
+          <ChatPanel />
+        </div>
       </div>
 
-      {/* ===== REDESIGNED MODAL ===== */}
       {showForm && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
