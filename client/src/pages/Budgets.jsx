@@ -175,13 +175,20 @@ function Budgets() {
         </div>
 
         {overviewTips.length > 0 && (
-          <Card title="Tips">
-            {overviewTips.map((tip, index) => (
-              <article key={`${tip.category ?? "general"}-${tip.title}-${index}`}>
-                <p><strong>{tip.category ? `${tip.category}: ` : ""}{tip.title}</strong></p>
-                <p>{tip.body}</p>
-              </article>
-            ))}
+          <Card title="Centavo Tips" action="UPDATED">
+            <div className={styles.tipList}>
+              {overviewTips.map((tip, index) => {
+                const isWarning = tip.title.toLowerCase().includes("over") || tip.title.toLowerCase().includes("review");
+                const tipStyle = isWarning ? styles.tipAmber : styles.tipGreen;
+                
+                return (
+                  <div key={`${tip.category ?? "general"}-${tip.title}-${index}`} className={`${styles.tipCard} ${tipStyle}`}>
+                    <strong>{tip.category ? `${tip.category}: ` : ""}{tip.title}</strong>
+                    <p>{tip.body}</p>
+                  </div>
+                );
+              })}
+            </div>
           </Card>
         )}
 
