@@ -1,5 +1,4 @@
 import { NavLink, Link } from "react-router-dom";
-import ChatPanel from "../ChatPanel/ChatPanel";
 import styles from "./Layout.module.css";
 
 const NAV_ITEMS = [
@@ -69,7 +68,6 @@ export default function Layout({ children, title, subtitle }) {
   return (
     <div className={styles.layout}>
       
-      {/* Desktop Sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
           <div className={styles.brandMark}>C</div>
@@ -103,7 +101,6 @@ export default function Layout({ children, title, subtitle }) {
             <span>{SETTINGS_ITEM.label}</span>
           </NavLink>
         </nav>
-
       </aside>
 
       <main className={styles.main}>
@@ -120,11 +117,9 @@ export default function Layout({ children, title, subtitle }) {
 
         <div className={styles.content}>
           {children}
-          <ChatPanel />
         </div>
       </main>
 
-      {/* ===== MOBILE BOTTOM NAVIGATION ===== */}
       <nav className={styles.mobileNav}>
         {ALL_NAV_ITEMS.map((item) => (
           <NavLink
