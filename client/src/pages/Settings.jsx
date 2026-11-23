@@ -64,7 +64,7 @@ function Settings() {
   useEffect(() => {
     async function load() {
       try {
-        // AUTH CHECK
+        // AUTH CHECK RESTORED
         const { user: me } = await api.fetchMe();
         setUser(me);
       } catch {
