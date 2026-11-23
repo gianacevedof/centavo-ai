@@ -3,10 +3,8 @@ import { useState } from "react";
 import { api } from "../../services/api";
 import styles from "./ChatPanel.module.css";
 
-// Runs the actions from a confirmed card, in order. New categories are created
-// first, and items that use them wait for the id. A failed item doesn't stop the rest.
 async function runActions(actions) {
-  const newIds = {}; // "new:<name>" -> id of the category created for it
+  const newIds = {};
   const failures = [];
   let saved = 0;
   let total = 0;
@@ -96,94 +94,132 @@ function ChatPanel() {
     }
   }
 
+  // =========================================
+  // 1. THE CLOSED STATE (Card in Right Rail)
+  // =========================================
   if (!open) {
     return (
-      <button className={styles.chatToggleBtn} onClick={() => setOpen(true)}>
-        <span style={{ fontSize: "1.2rem" }}>✦</span> Ask Centavo
-      </button>
+      <div className={styles.chatToggleBtn} onClick={() => setOpen(true)}>
+        <div className={styles.toggleHeader}>
+          <div className={styles.toggleIcon}>C</div>
+          Ask Centavo-ai
+        </div>
+        <p className={styles.toggleText}>
+          How can I get my shopping budget back on track?
+        </p>
+        <div className={styles.toggleInputFake}>
+          <span>Try "forecast my year"</span>
+          <div className={styles.toggleArrow}>↑</div>
+        </div>
+      </div>
     );
   }
 
+  // =========================================
+  // 2. THE OPEN STATE (Floating Modal)
+  // =========================================
   return (
-    <section className={styles.chatPanel} role="dialog" aria-label="Ask Centavo">
-      <header className={styles.chatHeader}>
-        <h2>Ask Centavo</h2>
-        <button className={styles.closeBtn} onClick={() => setOpen(false)}>
-          Close
-        </button>
-      </header>
-
-      <div className={styles.messagesContainer}>
-        {messages.map((m, i) => (
-          <p
-            key={i}
-            className={
-              m.from === "user"
-                ? `${styles.message} ${styles.messageUser}`
-                : `${styles.message} ${styles.messageAi}`
-            }
-          >
-            {m.text}
-          </p>
-        ))}
-      </div>
-
-      <form
-        className={styles.chatForm}
-        onSubmit={(e) => {
-          e.preventDefault();
-          const text = input;
-          setInput("");
-          send(text);
-        }}
+    <div className={styles.modalOverlay} onClick={() => setOpen(false)}>
+      <section 
+        className={styles.chatPanel} 
+        role="dialog" 
+        aria-label="Ask Centavo"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className={styles.inputRow}>
-          <input
-            type="text"
-            className={styles.chatInput}
-            placeholder="Type a message..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
+        <header className={styles.chatHeader}>
+          <div className={styles.headerTop}>
+            <div className={styles.headerLeft}>
+              <div className={styles.headerIcon}>C</div>
+              <div>
+                <h2>Ask Centavo-ai</h2>
+                <span className={styles.activeStatus}>● Active · Overview</span>
+              </div>
+            </div>
+            <div className={styles.headerControls}>
+              <button className={styles.controlBtn}>−</button>
+              <button className={styles.controlBtn}>⤢</button>
+              <button className={styles.controlBtn} onClick={() => setOpen(false)}>✕</button>
+            </div>
+          </div>
           
-          <button type="submit" className={styles.sendBtn} disabled={busy}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="19" x2="12" y2="5"></line>
-              <polyline points="5 12 12 5 19 12"></polyline>
-            </svg>
-          </button>
+          <div className={styles.headerTags}>
+            <span className={styles.headerTag}>⊞ Overview page</span>
+            <span className={styles.headerTag}>✓ Shopping · Over budget</span>
+          </div>
+        </header>
 
-          {draft && draft.awaiting === "confirm" && (
-            <button
-              type="button"
-              className={styles.cancelBtn}
-              onClick={() => {
-                setDraft(null);
-                setInput("");
-                addMessage("ai", "No problem, I didn't save it.");
-              }}
-              disabled={busy}
+        <div className={styles.messagesContainer}>
+          {messages.map((m, i) => (
+            <p
+              key={i}
+              className={
+                m.from === "user"
+                  ? `${styles.message} ${styles.messageUser}`
+                  : `${styles.message} ${styles.messageAi}`
+              }
             >
-              Cancel
-            </button>
-          )}
+              {m.text}
+            </p>
+          ))}
         </div>
-        
-        <div className={styles.inputHint}>
-          Enter to send · Shift + Enter for a new line
-        </div>
-      </form>
 
-      <div className={styles.chatFooter}>
-        <span className={styles.trustText}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '2px' }}>
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            <polyline points="9 12 11 14 15 10"></polyline>
-          </svg>
-          Always review AI suggestions. You're in control.
-        </span>
-      </div>
-    </section>
+        <form
+          className={styles.chatForm}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const text = input;
+            setInput("");
+            send(text);
+          }}
+        >
+          <div className={styles.inputRow}>
+            <input
+              type="text"
+              className={styles.chatInput}
+              placeholder="Type a message..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+            />
+            
+            <button type="submit" className={styles.sendBtn} disabled={busy}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+              </svg>
+            </button>
+
+            {draft && draft.awaiting === "confirm" && (
+              <button
+                type="button"
+                className={styles.cancelBtn}
+                onClick={() => {
+                  setDraft(null);
+                  setInput("");
+                  addMessage("ai", "No problem, I didn't save it.");
+                }}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+          
+          <div className={styles.inputHint}>
+            Enter to send · Shift + Enter for a new line
+          </div>
+        </form>
+
+        <div className={styles.chatFooter}>
+          <span className={styles.trustText}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '2px' }}>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <polyline points="9 12 11 14 15 10"></polyline>
+            </svg>
+            Always review AI suggestions. You're in control.
+          </span>
+        </div>
+      </section>
+    </div>
   );
 }
 
