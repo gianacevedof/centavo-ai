@@ -417,92 +417,120 @@ function Settings() {
         </div>
       )}
 
+      {/* ================= EDIT PROFILE MODAL ================= */}
       {profileModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
-            <h3 id="profile-modal-title">Edit profile</h3>
-            <form onSubmit={handleProfileSave}>
-              <label className={styles.modalLabel}>
-                Name
-                <input
-                  type="text"
-                  className={styles.textInput}
-                  value={profileForm.name}
-                  maxLength={100}
-                  required
-                  onChange={(e) =>
-                    setProfileForm((current) => ({ ...current, name: e.target.value }))
-                  }
-                />
-              </label>
-              <label className={styles.modalLabel}>
-                Email
-                <input
-                  type="email"
-                  className={styles.textInput}
-                  value={profileForm.email}
-                  maxLength={254}
-                  required
-                  onChange={(e) =>
-                    setProfileForm((current) => ({ ...current, email: e.target.value }))
-                  }
-                />
-              </label>
-              {profileError && <p className={styles.errorText} role="alert">{profileError}</p>}
-              <div className={styles.modalActions}>
-                <button
-                  type="button"
-                  className={styles.outlineBtn}
-                  onClick={closeProfileModal}
-                  disabled={savingProfile || deletingAccount}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={styles.primaryBtn}
-                  disabled={savingProfile || deletingAccount}
-                >
-                  {savingProfile ? "Saving..." : "Save changes"}
-                </button>
+            
+            <div className={styles.modalHeader}>
+              <div>
+                <h2 id="profile-modal-title">Edit profile</h2>
+                <p className={styles.modalSubtitle}>A few details to make Centavo-ai yours.</p>
               </div>
-            </form>
-
-            <hr />
-            {!deleteConfirm ? (
-              <button
-                type="button"
-                className={styles.dangerBtn}
-                onClick={() => setDeleteConfirm(true)}
-                disabled={savingProfile || deletingAccount}
-              >
-                Delete account
+              <button className={styles.closeBtn} onClick={closeProfileModal} disabled={savingProfile || deletingAccount}>
+                ✕
               </button>
-            ) : (
-              <>
-                <p className={styles.modalDesc}>
-                  This permanently deletes your account and its data. This cannot be undone.
-                </p>
-                <div className={styles.modalActions}>
-                  <button
-                    type="button"
-                    className={styles.outlineBtn}
-                    onClick={() => setDeleteConfirm(false)}
-                    disabled={deletingAccount}
-                  >
-                    Keep account
+            </div>
+
+            <form onSubmit={handleProfileSave} className={styles.profileForm}>
+              
+              {/* 1. Avatar Section */}
+              <div className={styles.avatarSection}>
+                <div className={styles.avatarLarge}>{displayName[0]}</div>
+                <div>
+                  <button type="button" className={styles.outlineBtn}>Change photo</button>
+                  <p className={styles.avatarHint}>JPG or PNG · Up to 5 MB</p>
+                </div>
+              </div>
+
+              {/* 2. Account Details */}
+              <div className={styles.formSection}>
+                <h3 className={styles.sectionTitle}>Account details</h3>
+                <div className={styles.formGrid}>
+                  <label className={styles.formGroup}>
+                    <span>Full name</span>
+                    <input
+                      type="text"
+                      placeholder="Enter your name"
+                      value={profileForm.name}
+                      maxLength={100}
+                      required
+                      onChange={(e) => setProfileForm((current) => ({ ...current, name: e.target.value }))}
+                    />
+                  </label>
+                  <label className={styles.formGroup}>
+                    <span>Username</span>
+                    <input type="text" placeholder="Choose a username" disabled />
+                  </label>
+                  <label className={styles.formGroup}>
+                    <span>Email address</span>
+                    <input
+                      type="email"
+                      placeholder="Enter your email address"
+                      value={profileForm.email}
+                      maxLength={254}
+                      required
+                      onChange={(e) => setProfileForm((current) => ({ ...current, email: e.target.value }))}
+                    />
+                  </label>
+                  <label className={styles.formGroup}>
+                    <span>Phone number</span>
+                    <input type="tel" placeholder="Enter your phone number" disabled />
+                  </label>
+                </div>
+              </div>
+
+              {/* 3. Update Password */}
+              <div className={styles.formSection}>
+                <h3 className={styles.sectionTitle}>Update password</h3>
+                <p className={styles.sectionDesc}>Leave these fields blank to keep your password.</p>
+                <div className={styles.formGrid}>
+                  <label className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+                    <span>Current password</span>
+                    <input type="password" placeholder="••••••••••••" disabled />
+                  </label>
+                  <label className={styles.formGroup}>
+                    <span>New password</span>
+                    <input type="password" placeholder="••••••••••••" disabled />
+                  </label>
+                  <label className={styles.formGroup}>
+                    <span>Re-enter new password</span>
+                    <input type="password" placeholder="••••••••••••" disabled />
+                  </label>
+                </div>
+                <p className={styles.passwordHint}>Use at least 12 characters, including a number and a symbol.</p>
+              </div>
+
+              {profileError && <p className={styles.errorText} role="alert">{profileError}</p>}
+
+              {/* 4. Footer / Delete Account */}
+              <div className={styles.modalFooter}>
+                <div>
+                   {!deleteConfirm ? (
+                    <button type="button" className={styles.dangerBtn} onClick={() => setDeleteConfirm(true)} disabled={savingProfile || deletingAccount}>
+                      Delete account
+                    </button>
+                  ) : (
+                    <div className={styles.deleteConfirmRow}>
+                       <span className={styles.deleteWarning}>Are you sure? This cannot be undone.</span>
+                       <button type="button" className={styles.outlineBtn} onClick={() => setDeleteConfirm(false)} disabled={deletingAccount}>Cancel</button>
+                       <button type="button" className={styles.dangerBtn} onClick={handleAccountDelete} disabled={deletingAccount}>
+                         {deletingAccount ? "Deleting..." : "Confirm"}
+                       </button>
+                    </div>
+                  )}
+                </div>
+                
+                <div className={styles.footerActions}>
+                  <button type="button" className={styles.outlineBtn} onClick={closeProfileModal} disabled={savingProfile || deletingAccount}>
+                    Discard
                   </button>
-                  <button
-                    type="button"
-                    className={styles.dangerBtn}
-                    onClick={handleAccountDelete}
-                    disabled={deletingAccount}
-                  >
-                    {deletingAccount ? "Deleting..." : "Confirm delete"}
+                  <button type="submit" className={styles.primaryBtn} disabled={savingProfile || deletingAccount}>
+                    {savingProfile ? "Saving..." : "Save changes"}
                   </button>
                 </div>
-              </>
-            )}
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -574,7 +602,7 @@ function Settings() {
         </div>
       )}
 
-      {/* --- DELETE MODAL --- */}
+      {/* --- DELETE CATEGORY MODAL --- */}
       {modal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
@@ -618,7 +646,7 @@ function Settings() {
         </div>
       )}
 
-      {/* --- RENAME MODAL --- */}
+      {/* --- RENAME CATEGORY MODAL --- */}
       {editingId !== null && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
