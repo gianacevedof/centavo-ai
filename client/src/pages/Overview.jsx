@@ -109,7 +109,7 @@ function Overview() {
     async function load() {
       setLoading(true);
       try {
-        // AUTH CHECK
+        // AUTH CHECK RESTORED
         const { user: me } = await api.fetchMe();
         setUser(me);
       } catch {
@@ -267,7 +267,6 @@ function Overview() {
     >
       <div className={styles.dashboardGrid}>
         
-        {/* ================= LEFT COLUMN ================= */}
         <div className={styles.mainColumn}>
           
           <section className={styles.hero}>
@@ -463,7 +462,6 @@ function Overview() {
           </Card>
           <AiTips tipClassName={`${styles.tipCard} ${styles.tipGreen}`} />
           
-          {/* CHAT PANEL MOVED HERE */}
           <ChatPanel />
         </div>
       </div>
