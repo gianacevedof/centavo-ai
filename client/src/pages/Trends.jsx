@@ -135,11 +135,16 @@ function Trends() {
   if (error || !data || !data.kpis) {
     return (
       <Layout title="Trends" subtitle="Your spending and savings over time">
-        <EmptyState
-          icon="📈"
-          title="Not enough data yet"
-          description="Add some transactions to see your spending and savings trends over time."
-        />
+        <div className={styles.pageWrapper}>
+          <EmptyState
+            icon="📈"
+            title="Not enough data yet"
+            description="Add some transactions to see your spending and savings trends over time."
+          />
+          <div style={{ marginTop: "var(--space-xl)" }}>
+            <ChatPanel />
+          </div>
+        </div>
       </Layout>
     );
   }
