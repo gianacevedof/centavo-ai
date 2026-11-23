@@ -1,35 +1,54 @@
 /* components/ChatPanel/ChatPanel.module.css */
 
+/* =========================================
+   1. THE CLOSED FLOATING BUTTON
+   ========================================= */
 .chatToggleBtn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
   background-color: var(--color-primary);
   color: white;
   border: none;
-  border-radius: var(--radius-pill);
-  padding: 12px 24px;
-  font-size: var(--font-size-body);
-  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  place-items: center;
   cursor: pointer;
-  box-shadow: var(--shadow-md);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: var(--space-xl);
-  margin-bottom: var(--space-xl);
-  transition: background-color 0.2s;
+  z-index: 1000;
+  transition: transform 0.2s, background-color 0.2s;
 }
 
 .chatToggleBtn:hover {
+  transform: scale(1.05);
   background-color: var(--color-primary-hover);
 }
 
-/* ===== The Open Panel ===== */
+/* If your team has text inside the button, hide it on desktop to keep it a clean circle */
+.chatToggleBtn span {
+  font-size: 1.5rem; /* Adjust this if the icon looks too small */
+}
+
+/* =========================================
+   2. THE OPEN FLOATING WINDOW
+   ========================================= */
 .chatPanel {
-  margin-top: var(--space-xl);
-  margin-bottom: var(--space-xl);
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 380px;
+  height: 600px;
+  max-height: 80vh;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  font-family: var(--font-family);
+  z-index: 1000;
+  overflow: hidden;
 }
 
 /* Header */
@@ -37,11 +56,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
 }
 
 .chatHeader h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--font-size-h3);
   font-weight: 600;
   color: var(--color-text);
 }
@@ -54,27 +76,32 @@
   cursor: pointer;
 }
 
-/* Messages */
+/* Messages Area */
 .messagesContainer {
+  flex: 1;
+  padding: var(--space-lg);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+  background-color: var(--color-surface-muted);
 }
 
 .message {
-  max-width: 80%;
-  padding: 12px 16px;
+  max-width: 85%;
+  padding: 10px 14px;
   border-radius: var(--radius-md);
   font-size: var(--font-size-body);
-  line-height: 1.5;
+  line-height: 1.4;
   margin: 0;
 }
 
 .messageAi {
-  background-color: var(--color-surface-muted);
+  background-color: var(--color-surface);
   color: var(--color-text);
   align-self: flex-start;
   border-bottom-left-radius: 4px;
+  border: 1px solid var(--color-border);
 }
 
 .messageUser {
@@ -84,7 +111,7 @@
   border-bottom-right-radius: 4px;
 }
 
-/* Suggestions */
+/* Suggestions Row */
 .suggestionsRow {
   display: flex;
   align-items: center;
@@ -92,11 +119,13 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   flex-wrap: wrap;
-  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
 }
 
 .suggestionPill {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-muted);
   border: 1px solid var(--color-border);
   padding: 6px 14px;
   border-radius: var(--radius-pill);
@@ -108,17 +137,15 @@
 }
 
 .suggestionPill:hover {
-  background-color: var(--color-surface-muted);
+  background-color: var(--color-accent-soft);
 }
 
-/* ===== Input Box ===== */
+/* Input Form */
 .chatForm {
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 24px;
+  border-top: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-sm);
 }
 
 .inputRow {
@@ -139,11 +166,6 @@
   outline: none;
 }
 
-.chatInput::placeholder {
-  color: var(--color-text-subtle);
-  font-size: var(--font-size-sm);
-}
-
 .sendBtn {
   width: 32px;
   height: 32px;
@@ -154,28 +176,7 @@
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: background-color 0.2s;
   flex-shrink: 0;
-}
-
-.sendBtn:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.sendBtn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.cancelBtn {
-  background-color: transparent;
-  color: var(--color-expense);
-  border: 1px solid var(--color-expense);
-  padding: 8px 16px;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  cursor: pointer;
-  margin-left: 8px;
 }
 
 .inputHint {
@@ -184,13 +185,15 @@
   color: var(--color-text-subtle);
 }
 
-/* ===== Footer ===== */
+/* Footer */
 .chatFooter {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: var(--font-size-sm);
-  padding-top: var(--space-xs);
+  padding: var(--space-sm) var(--space-lg);
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
 }
 
 .manualEntry {
@@ -206,4 +209,24 @@
   gap: 4px;
   color: var(--color-green);
   font-size: var(--font-size-xs);
+}
+
+/* =========================================
+   3. MOBILE RESPONSIVE (Full screen chat)
+   ========================================= */
+@media (max-width: 768px) {
+  .chatPanel {
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    bottom: 0;
+    right: 0;
+    border-radius: 0;
+    z-index: 9999; /* Ensure it covers the mobile nav bar */
+  }
+  
+  .chatToggleBtn {
+    /* Move it up slightly so it doesn't overlap the mobile bottom nav */
+    bottom: 90px; 
+  }
 }
