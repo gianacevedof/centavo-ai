@@ -8,7 +8,6 @@
 
 /* ===== Profile View ===== */
 .profileWrapper { display: flex; flex-direction: column; gap: var(--space-lg); }
-
 .profileHeader { margin-bottom: var(--space-md); }
 .pageTitle { font-size: 1.5rem; font-weight: 500; margin: 0 0 4px; color: var(--color-text); }
 .pageSubtitle { font-size: var(--font-size-body); color: var(--color-text-muted); margin: 0; }
@@ -20,14 +19,7 @@
 .userInfo p { margin: 4px 0 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
 
 /* 2-Column Grid */
-.settingsGrid { 
-  display: grid; 
-  grid-template-columns: 1fr 1fr; 
-  gap: var(--space-lg); 
-  align-items: start;
-}
-
-/* Cards */
+.settingsGrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); align-items: start; }
 .cardDesc { font-size: var(--font-size-xs); color: var(--color-text-muted); margin: 0 0 var(--space-sm); line-height: 1.4; }
 
 /* Toggles */
@@ -35,7 +27,6 @@
 .toggleRow:last-child { border-bottom: none; padding-bottom: 0; }
 .toggleLabel { display: block; font-size: var(--font-size-sm); font-weight: 600; margin-bottom: 2px; }
 .toggleDesc { display: block; font-size: var(--font-size-xs); color: var(--color-text-muted); }
-
 .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; inset: 0; background-color: #d1d5db; transition: .2s; border-radius: 34px; }
@@ -59,7 +50,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 .addCategoryForm { display: flex; gap: var(--space-sm); margin-bottom: var(--space-md); }
 .textInput { flex: 1; padding: 10px var(--space-md); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-family: inherit; font-size: var(--font-size-sm); }
 .primaryBtn { background-color: var(--color-primary); color: white; border: none; padding: 10px 20px; border-radius: var(--radius-md); font-weight: 600; font-size: var(--font-size-sm); cursor: pointer; }
-
 .tableWrapper { margin-top: var(--space-md); }
 .table { width: 100%; border-collapse: collapse; }
 .table th { text-align: left; padding: 12px; font-size: var(--font-size-sm); color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); }
@@ -69,13 +59,12 @@ input:checked + .slider:before { transform: translateX(20px); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-primary); }
 .badgeCustom { background-color: #e8f0ec; color: var(--color-green); padding: 2px 8px; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: 600; }
 .iconBtn { background: transparent; border: none; color: var(--color-text-muted); cursor: pointer; }
-
 .errorText { color: var(--color-expense); font-size: var(--font-size-sm); margin: 8px 0; }
 .successText { color: var(--color-green); font-size: var(--font-size-sm); margin: 8px 0; }
 
-/* ===== Modals ===== */
-.modalOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: grid; place-items: center; z-index: 1000; }
-.modalContent { background: var(--color-bg-card); padding: var(--space-xl); border-radius: var(--radius-lg); width: 90%; max-width: 500px; }
+/* ===== General Modals (Categories) ===== */
+.modalOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: grid; place-items: center; z-index: 1000; padding: var(--space-md); }
+.modalContent { background: var(--color-bg-card); padding: var(--space-xl); border-radius: var(--radius-lg); width: 100%; max-width: 500px; }
 .modalContent h3 { margin-top: 0; color: var(--color-text); }
 .modalDesc { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-lg); }
 .modalLabel { display: block; font-size: var(--font-size-sm); font-weight: 600; margin-bottom: 8px; color: var(--color-text); }
@@ -83,130 +72,85 @@ input:checked + .slider:before { transform: translateX(20px); }
 .modalActions { display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-lg); }
 .dangerBtn { background-color: var(--color-expense); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; font-size: var(--font-size-sm); cursor: pointer; }
 
+/* ===== NEW Edit Profile Modal ===== */
+.profileForm { display: flex; flex-direction: column; }
+.avatarSection { display: flex; align-items: center; gap: var(--space-lg); padding: 0 var(--space-xl) var(--space-lg); border-bottom: 1px solid var(--color-border); }
+.avatarLarge { width: 64px; height: 64px; border-radius: 50%; background-color: var(--color-primary); color: white; display: grid; place-items: center; font-size: 1.5rem; font-weight: 600; }
+.avatarHint { margin: 4px 0 0; font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.formSection { padding: var(--space-lg) var(--space-xl); border-bottom: 1px solid var(--color-border); }
+.sectionTitle { margin: 0 0 4px; font-size: 1rem; font-weight: 600; }
+.sectionDesc { margin: 0 0 var(--space-md); font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-top: var(--space-md); }
+.formGroup { display: flex; flex-direction: column; gap: 6px; }
+.formGroup span { font-size: var(--font-size-sm); font-weight: 600; }
+.formGroup input { padding: 10px var(--space-md); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-family: inherit; font-size: var(--font-size-sm); }
+.formGroup input:disabled { background-color: var(--color-surface-muted); cursor: not-allowed; }
+.passwordHint { margin: var(--space-sm) 0 0; font-size: var(--font-size-xs); color: var(--color-text-muted); }
+
+/* Overriding modal Header for the wide Edit Profile Modal */
+.modalContent .modalHeader { display: flex; justify-content: space-between; align-items: flex-start; padding: var(--space-xl) var(--space-xl) var(--space-md); margin-bottom: 0; }
+.modalContent .modalHeader h2 { font-size: 1.5rem; margin-bottom: 4px; }
+.modalContent .modalHeader .modalSubtitle { margin: 0; font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.modalContent .closeBtn { background: transparent; border: 1px solid var(--color-border); width: 32px; height: 32px; border-radius: 6px; cursor: pointer; color: var(--color-text-muted); }
+
+/* Override modal width ONLY for the Edit Profile modal */
+.modalContent:has(.profileForm) {
+  max-width: 700px;
+  padding: 0;
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+.modalFooter { display: flex; justify-content: space-between; align-items: center; padding: var(--space-lg) var(--space-xl); background-color: var(--color-surface-muted); border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg); }
+.footerActions { display: flex; gap: var(--space-sm); }
+.deleteConfirmRow { display: flex; align-items: center; gap: var(--space-sm); }
+.deleteWarning { font-size: var(--font-size-xs); color: var(--color-expense); font-weight: 500; }
+
 /* ===== Responsive ===== */
 @media (max-width: 1024px) { .settingsGrid { grid-template-columns: 1fr; } }
 
+@media (max-width: 768px) {
+  .userBanner { flex-direction: column; align-items: flex-start; padding: var(--space-md); gap: var(--space-sm); }
+  .userAvatar { width: 48px; height: 48px; font-size: 1.25rem; }
+  .userBanner .outlineBtn { width: 100%; margin-top: var(--space-sm); }
+  .settingsGrid { gap: var(--space-md); }
+  .profileWrapper { gap: var(--space-md); }
+  .toggleRow { flex-direction: row; align-items: center; padding: 12px 0; }
+  .toggleLabel { font-size: 0.9rem; }
+  .footerRow { flex-direction: column; align-items: stretch; gap: var(--space-md); }
+  .outlineBtn { width: 100%; text-align: center; justify-content: center; }
+  .saveText { text-align: center; }
+  .formGrid { grid-template-columns: 1fr; }
+  .modalFooter { flex-direction: column; align-items: stretch; gap: var(--space-md); }
+  .footerActions { justify-content: flex-end; }
+}
+
 /* ============================================================
-   DARK MODE OVERRIDES (UPDATED FOR CONTRAST)
+   DARK MODE OVERRIDES
    ============================================================ */
 :global(body.dark-mode) {
   --color-bg: #111827;
-  --color-bg-card: #1f2937;       /* Card background becomes dark grey */
+  --color-bg-card: #1f2937;
   --color-surface: #1f2937;
   --color-surface-muted: #374151;
   --color-border: #374151;
-  --color-text: #f9fafb;          /* Text becomes white */
+  --color-text: #f9fafb;
   --color-text-primary: #f9fafb;
   --color-text-muted: #9ca3af;
   --color-text-subtle: #6b7280;
+  background-color: #111827;
 }
 
-/* Force cards and banners to use the new dark surface */
 :global(body.dark-mode) .userBanner,
 :global(body.dark-mode) .card, 
-:global(body.dark-mode) .modalContent { 
-  background-color: var(--color-bg-card); 
-}
+:global(body.dark-mode) .modalContent { background-color: var(--color-bg-card); }
 
-/* Fix borders and buttons */
 :global(body.dark-mode) .toggleRow { border-bottom: 1px solid var(--color-border); }
 :global(body.dark-mode) .table td { border-bottom: 1px solid var(--color-border); }
-
 :global(body.dark-mode) .outlineBtn, 
-:global(body.dark-mode) .outlineBtnFull { 
-  background-color: transparent; 
-  color: var(--color-text);
-  border-color: var(--color-border);
-}
-
+:global(body.dark-mode) .outlineBtnFull { background-color: transparent; color: var(--color-text); border-color: var(--color-border); }
 :global(body.dark-mode) .outlineBtn:hover, 
-:global(body.dark-mode) .outlineBtnFull:hover { 
-  background-color: var(--color-surface-muted); 
-}
-
-:global(body.dark-mode) .dangerBtnFull { 
-  background-color: transparent; 
-  border-color: #ef4444;
-  color: #ef4444;
-}
-
-:global(body.dark-mode) .dangerBtnFull:hover { 
-  background-color: rgba(239, 68, 68, 0.1); 
-}
-
-:global(body.dark-mode) .selectInput { 
-  background-color: var(--color-surface-muted); 
-  color: var(--color-text); 
-  border-color: var(--color-border); 
-}
-
-:global(body.dark-mode) {
-  /* ... existing variables ... */
-  background-color: #111827; /* The dark page background */
-}
-/* ============================================================
-   MOBILE RESPONSIVE SETTINGS
-   ============================================================ */
-   @media (max-width: 1024px) {
-    .settingsGrid {
-      grid-template-columns: 1fr; /* Stack all cards vertically */
-    }
-  }
-  
-  @media (max-width: 768px) {
-    /* 1. User Banner (Avatar + Name + Edit Button) */
-    .userBanner {
-      flex-direction: column;
-      align-items: flex-start;
-      padding: var(--space-md);
-      gap: var(--space-sm);
-    }
-  
-    .userAvatar {
-      width: 48px;
-      height: 48px;
-      font-size: 1.25rem;
-    }
-  
-    .userBanner .outlineBtn {
-      width: 100%;
-      margin-top: var(--space-sm);
-    }
-  
-    /* 2. Settings Grid Cards */
-    .settingsGrid {
-      gap: var(--space-md);
-    }
-  
-    .profileWrapper {
-      gap: var(--space-md);
-    }
-  
-    /* 3. Toggle Rows (Labels and switches) */
-    .toggleRow {
-      flex-direction: row; /* Keep it row, but ensure spacing */
-      align-items: center;
-      padding: 12px 0;
-    }
-  
-    .toggleLabel {
-      font-size: 0.9rem;
-    }
-  
-    /* 4. Footer Area (Sign out + Auto-save text) */
-    .footerRow {
-      flex-direction: column;
-      align-items: stretch;
-      gap: var(--space-md);
-    }
-  
-    .outlineBtn {
-      width: 100%;
-      text-align: center;
-      justify-content: center;
-    }
-  
-    .saveText {
-      text-align: center;
-    }
-  }
+:global(body.dark-mode) .outlineBtnFull:hover { background-color: var(--color-surface-muted); }
+:global(body.dark-mode) .dangerBtnFull { background-color: transparent; border-color: #ef4444; color: #ef4444; }
+:global(body.dark-mode) .dangerBtnFull:hover { background-color: rgba(239, 68, 68, 0.1); }
+:global(body.dark-mode) .selectInput { background-color: var(--color-surface-muted); color: var(--color-text); border-color: var(--color-border); }
