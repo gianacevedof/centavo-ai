@@ -10,6 +10,12 @@
   text-align: center;
 }
 
+.emptyState {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: var(--space-md) 0;
+}
+
 /* ===== Section Headers ===== */
 .sectionHeader {
   display: flex;
@@ -177,6 +183,60 @@
   color: var(--color-text-secondary);
 }
 
+.cardActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-sm);
+}
+
+.iconBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.iconBtn:hover {
+  background-color: var(--color-surface-muted);
+}
+
+/* ===== Tips Section ===== */
+.tipList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.tipCard {
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.tipCard strong {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.tipCard p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.tipGreen {
+  background-color: var(--color-accent-soft); /* Light green */
+  color: #3d5a4c;
+}
+
+.tipAmber {
+  background-color: #fdf3e2; /* Light amber */
+  color: #6b5638;
+}
+
 /* ===== Goals Grid ===== */
 .goalGrid {
   display: grid;
@@ -247,11 +307,12 @@
   .goalGrid { grid-template-columns: 1fr; }
   .sectionHeader { flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
 }
-/* ===== Modal Styles (Add to bottom of file) ===== */
+
+/* ===== Modals ===== */
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.5);
   display: grid;
   place-items: center;
   z-index: 1000;
@@ -259,7 +320,7 @@
 }
 
 .modalContent {
-  background: var(--color-surface);
+  background: var(--color-bg-card);
   padding: var(--space-xl);
   border-radius: var(--radius-lg);
   width: 100%;
@@ -346,281 +407,46 @@
   cursor: pointer;
 }
 
+.dangerBtn {
+  background-color: var(--color-expense);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.deleteInModal {
+  margin-right: auto;
+}
+
 .errorText {
   color: var(--color-expense);
   font-size: var(--font-size-sm);
   margin-bottom: var(--space-md);
 }
 
-.cardActions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 14px;
-}
-
-.iconBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid #d6dbd9;
-  border-radius: 8px;
-  background: #fff;
-  color: #1a3a2e;
-  cursor: pointer;
-}
-
-.iconBtn:hover {
-  background: #f3f6f4;
-}
-
-.dangerBtn {
-  padding: 6px 14px;
-  border: 1px solid #e0a3a3;
-  border-radius: 8px;
-  background: #fff;
-  color: #c0392b;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.dangerBtn:hover:not(:disabled) {
-  background: #fdf1f1;
-}
-
-.dangerBtn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.deleteInModal {
-  margin-right: auto;
-}
-
+/* Choice list for goal deletion */
 .choiceList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
 }
 
 .choiceBtn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 12px 14px;
-  border: 1px solid #d6dbd9;
-  border-radius: 10px;
-  background: #fff;
-  color: #1a3a2e;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
   text-align: left;
   cursor: pointer;
-}
-
-.choiceBtn:hover:not(:disabled) {
-  border-color: #1a3a2e;
-}
-
-.choiceBtn span {
-  color: #5b6b65;
-  font-size: 0.85rem;
-}
-
-.choiceBtn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-/* ===== Edit / delete actions ===== */
-.cardActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 14px;
-}
-.editBtn,
-.dangerBtn {
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  background: #fff;
-}
-.editBtn {
-  border: 1px solid #d6dbd9;
-  color: #1a3a2e;
-}
-.editBtn:hover {
-  background: #f3f6f4;
-}
-.dangerBtn {
-  border: 1px solid #e0a3a3;
-  color: #c0392b;
-}
-.dangerBtn:hover:not(:disabled) {
-  background: #fdf1f1;
-}
-.dangerBtn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-/* Money choice in the goal delete prompt */
-.choiceList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-.choiceBtn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
   gap: 4px;
-  padding: 12px 14px;
-  text-align: left;
-  background: #fff;
-  border: 1px solid #d6dbd9;
-  border-radius: 10px;
-  cursor: pointer;
-  color: #1a3a2e;
-}
-.choiceBtn:hover:not(:disabled) {
-  border-color: #1a3a2e;
-}
-.choiceBtn span {
-  font-size: 0.85rem;
-  color: #5b6b65;
-}
-.choiceBtn:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 
-/* ===== Icon row buttons ===== */
-.iconBtn,
-.iconDangerBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid #d6dbd9;
-  border-radius: 8px;
-  background: #fff;
-  color: #1a3a2e;
-  cursor: pointer;
-}
-.iconBtn:hover {
-  background: #f3f6f4;
-}
-.iconDangerBtn {
-  border-color: #e0a3a3;
-  color: #c0392b;
-}
-.iconDangerBtn:hover:not(:disabled) {
-  background: #fdf1f1;
-}
-.iconBtn:disabled,
-.iconDangerBtn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-/* Delete sits on the left of the edit modal footer */
-.deleteInModal {
-  margin-right: auto;
-}
-/* ============================================================
-   MOBILE RESPONSIVE BUDGETS
-   ============================================================ */
-   @media (max-width: 1024px) {
-    .budgetGrid { 
-      grid-template-columns: repeat(2, 1fr); 
-    }
-    .donutCard { 
-      grid-column: span 2; 
-    }
-    .goalGrid { 
-      grid-template-columns: repeat(2, 1fr); 
-    }
-  }
-  
-  @media (max-width: 768px) {
-    /* 1. Stack everything to a single column */
-    .budgetGrid,
-    .goalGrid {
-      grid-template-columns: 1fr;
-    }
-  
-    .donutCard {
-      grid-column: span 1;
-      flex-direction: column; /* Stack donut and stats vertically */
-      text-align: center;
-      gap: var(--space-md);
-      padding: var(--space-lg) var(--space-md);
-    }
-  
-    .donutStats {
-      width: 100%;
-      border-top: 1px solid var(--color-border);
-      padding-top: var(--space-md);
-    }
-  
-    .statRow {
-      align-items: center;
-    }
-  
-    /* 2. Adjust Section Headers */
-    .sectionHeader {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: var(--space-sm);
-    }
-  
-    .addBtn {
-      width: 100%;
-      text-align: center;
-    }
-  
-    /* 3. Budget Cards Mobile Adjustments */
-    .budgetCard {
-      padding: var(--space-md);
-    }
-  
-    .cardHeader {
-      margin-bottom: var(--space-sm);
-    }
-  
-    /* 4. Goals Grid Adjustments */
-    .goalCard {
-      padding: var(--space-md);
-    }
-  
-    .goalAmounts {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 4px;
-    }
-  
-    .goalTarget {
-      margin-left: 0;
-    }
-  
-    /* 5. Modal Adjustments for Mobile */
-    .modalContent {
-      padding: var(--space-lg);
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-  
-    .formRow {
-      grid-template-columns: 1fr;
-    }
-  }
+.choiceBtn strong { font-size: var(--font-size-sm); }
+.choiceBtn span { font-size: var(--font-size-xs); color: var(--color-text-muted); }
