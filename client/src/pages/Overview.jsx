@@ -17,6 +17,7 @@ import AiTips from "../components/AiTips/AiTips";
 import Card from "../components/Card/Card";
 import ProgressBar from "../components/ProgressBar/ProgressBar";
 import EmptyState from "../components/EmptyState/EmptyState";
+import ChatPanel from "../components/ChatPanel/ChatPanel";
 import styles from "./Overview.module.css";
 
 Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Filler, Legend, Tooltip);
@@ -269,7 +270,6 @@ function Overview() {
         {/* ================= LEFT COLUMN ================= */}
         <div className={styles.mainColumn}>
           
-          {/* Hero Card */}
           <section className={styles.hero}>
             <div className={styles.heroLeft}>
               <span className={styles.heroLabel}>TOTAL BALANCE</span>
@@ -315,7 +315,6 @@ function Overview() {
           </section>
 
           <div className={styles.overviewTopGrid}>
-            {/* Accounts */}
             <Card title="Accounts" action="Click to edit goals">
               {accounts.length === 0 ? (
                 <EmptyState
@@ -373,7 +372,6 @@ function Overview() {
             </Card>
           </div>
 
-          {/* Budgets */}
           <Card title="Budgets & goals" action="Monthly">
             {budgets.length === 0 ? (
               <EmptyState 
@@ -404,7 +402,6 @@ function Overview() {
             )}
           </Card>
 
-          {/* Recent Transactions */}
           <Card title="Recent transactions" action="View all">
             {transactions.length === 0 ? (
               <EmptyState 
@@ -435,7 +432,6 @@ function Overview() {
           </Card>
         </div>
 
-        {/* ================= RIGHT RAIL ================= */}
         <div className={styles.rightRail}>
           <Card
             title="Plan health"
@@ -466,6 +462,9 @@ function Overview() {
             )}
           </Card>
           <AiTips tipClassName={`${styles.tipCard} ${styles.tipGreen}`} />
+          
+          {/* CHAT PANEL MOVED HERE */}
+          <ChatPanel />
         </div>
       </div>
     </Layout>
