@@ -52,14 +52,13 @@ async function runActions(actions) {
 
 function summarize({ saved, total, failures }) {
   if (total === 0 && failures.length === 0) return "Nothing to save.";
-  if (failures.length === 0)
-    return total === 1 ? "Saved." : `Saved all ${total}.`;
+  if (failures.length === 0) return total === 1 ? "Saved." : `Saved all ${total}.`;
   return `Saved ${saved} of ${total}. Could not save: ${failures.join("; ")}.`;
 }
 
 function ChatPanel() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([]); 
   const [input, setInput] = useState("");
   const [draft, setDraft] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -103,7 +102,7 @@ function ChatPanel() {
       <div className={styles.chatToggleBtn} onClick={() => setOpen(true)}>
         <div className={styles.toggleHeader}>
           <div className={styles.toggleIcon}>C</div>
-          Ask Centavo AI
+          Ask Centavo-ai
         </div>
         <p className={styles.toggleText}>
           How can I get my shopping budget back on track?
@@ -121,9 +120,9 @@ function ChatPanel() {
   // =========================================
   return (
     <div className={styles.modalOverlay} onClick={() => setOpen(false)}>
-      <section
-        className={styles.chatPanel}
-        role="dialog"
+      <section 
+        className={styles.chatPanel} 
+        role="dialog" 
         aria-label="Ask Centavo"
         onClick={(e) => e.stopPropagation()}
       >
@@ -132,19 +131,20 @@ function ChatPanel() {
             <div className={styles.headerLeft}>
               <div className={styles.headerIcon}>C</div>
               <div>
-                <h2>Ask Centavo AI</h2>
+                <h2>Ask Centavo-ai</h2>
+                <span className={styles.activeStatus}>● Active · Overview</span>
               </div>
             </div>
             <div className={styles.headerControls}>
-              <button
-                type="button"
-                className={styles.controlBtn}
-                onClick={() => setOpen(false)}
-                aria-label="Close chat"
-              >
-                ✕
-              </button>
+              <button className={styles.controlBtn}>−</button>
+              <button className={styles.controlBtn}>⤢</button>
+              <button className={styles.controlBtn} onClick={() => setOpen(false)}>✕</button>
             </div>
+          </div>
+          
+          <div className={styles.headerTags}>
+            <span className={styles.headerTag}>⊞ Overview page</span>
+            <span className={styles.headerTag}>✓ Shopping · Over budget</span>
           </div>
         </header>
 
@@ -167,8 +167,7 @@ function ChatPanel() {
           className={styles.chatForm}
           onSubmit={(e) => {
             e.preventDefault();
-            if (busy || !input.trim()) return;
-            const text = input.trim();
+            const text = input;
             setInput("");
             send(text);
           }}
@@ -181,29 +180,30 @@ function ChatPanel() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
             />
-
-            <button
-              type="submit"
-              className={styles.sendBtn}
-              disabled={busy || !input.trim()}
-              aria-label="Send message"
-              title="Send message"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+            
+            <button type="submit" className={styles.sendBtn} disabled={busy}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="19" x2="12" y2="5"></line>
                 <polyline points="5 12 12 5 19 12"></polyline>
               </svg>
             </button>
 
+            {draft && draft.awaiting === "confirm" && (
+              <button
+                type="button"
+                className={styles.cancelBtn}
+                onClick={() => {
+                  setDraft(null);
+                  setInput("");
+                  addMessage("ai", "No problem, I didn't save it.");
+                }}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+            )}
           </div>
-
+          
           <div className={styles.inputHint}>
             Enter to send · Shift + Enter for a new line
           </div>
@@ -211,17 +211,7 @@ function ChatPanel() {
 
         <div className={styles.chatFooter}>
           <span className={styles.trustText}>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ marginRight: "2px" }}
-            >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '2px' }}>
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
               <polyline points="9 12 11 14 15 10"></polyline>
             </svg>
