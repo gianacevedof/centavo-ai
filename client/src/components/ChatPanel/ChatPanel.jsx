@@ -102,7 +102,7 @@ function ChatPanel() {
       <div className={styles.chatToggleBtn} onClick={() => setOpen(true)}>
         <div className={styles.toggleHeader}>
           <div className={styles.toggleIcon}>C</div>
-          Ask Centavo-ai
+          Ask Centavo AI
         </div>
         <p className={styles.toggleText}>
           How can I get my shopping budget back on track?
@@ -131,20 +131,19 @@ function ChatPanel() {
             <div className={styles.headerLeft}>
               <div className={styles.headerIcon}>C</div>
               <div>
-                <h2>Ask Centavo-ai</h2>
-                <span className={styles.activeStatus}>● Active · Overview</span>
+                <h2>Ask Centavo AI</h2>
               </div>
             </div>
             <div className={styles.headerControls}>
-              <button className={styles.controlBtn}>−</button>
-              <button className={styles.controlBtn}>⤢</button>
-              <button className={styles.controlBtn} onClick={() => setOpen(false)}>✕</button>
+              <button
+                type="button"
+                className={styles.controlBtn}
+                onClick={() => setOpen(false)}
+                aria-label="Close chat"
+              >
+                ✕
+              </button>
             </div>
-          </div>
-          
-          <div className={styles.headerTags}>
-            <span className={styles.headerTag}>⊞ Overview page</span>
-            <span className={styles.headerTag}>✓ Shopping · Over budget</span>
           </div>
         </header>
 
@@ -167,7 +166,8 @@ function ChatPanel() {
           className={styles.chatForm}
           onSubmit={(e) => {
             e.preventDefault();
-            const text = input;
+            if (busy || !input.trim()) return;
+            const text = input.trim();
             setInput("");
             send(text);
           }}
@@ -181,27 +181,25 @@ function ChatPanel() {
               onChange={(e) => setInput(e.target.value)}
             />
             
-            <button type="submit" className={styles.sendBtn} disabled={busy}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <button
+              type="submit"
+              className={styles.sendBtn}
+              disabled={busy || !input.trim()}
+              aria-label="Send message"
+              title="Send message"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="12" y1="19" x2="12" y2="5"></line>
                 <polyline points="5 12 12 5 19 12"></polyline>
               </svg>
             </button>
-
-            {draft && draft.awaiting === "confirm" && (
-              <button
-                type="button"
-                className={styles.cancelBtn}
-                onClick={() => {
-                  setDraft(null);
-                  setInput("");
-                  addMessage("ai", "No problem, I didn't save it.");
-                }}
-                disabled={busy}
-              >
-                Cancel
-              </button>
-            )}
           </div>
           
           <div className={styles.inputHint}>
