@@ -49,6 +49,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 .categoriesWrapper { max-width: 800px; }
 .addCategoryForm { display: flex; align-items: flex-end; gap: var(--space-sm); margin-bottom: var(--space-md); }
 .addCategoryField { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; }
+.addCategoryField .textInput { width: 100%; flex: none; }
 .addCategoryLabel { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text); }
 .textInput { flex: 1; padding: 10px var(--space-md); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-family: inherit; font-size: var(--font-size-sm); }
 .primaryBtn { background-color: var(--color-primary); color: white; border: none; padding: 10px 20px; border-radius: var(--radius-md); font-weight: 600; font-size: var(--font-size-sm); cursor: pointer; }
@@ -56,10 +57,10 @@ input:checked + .slider:before { transform: translateX(20px); }
 .table { width: 100%; border-collapse: collapse; }
 .table th { text-align: left; padding: 12px; font-size: var(--font-size-sm); color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); }
 .table td { padding: 12px; border-bottom: 1px solid #f0f0eb; font-size: var(--font-size-sm); }
-.textRight { text-align: right; }
 .descCell { font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.categoryCell { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); }
+.categoryName { display: flex; align-items: center; gap: 8px; font-weight: 500; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-primary); }
-.rowActions { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-sm); }
 .iconBtn { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; color: var(--color-text-muted); cursor: pointer; }
 .errorText { color: var(--color-expense); font-size: var(--font-size-sm); margin: 8px 0; }
 .successText { color: var(--color-green); font-size: var(--font-size-sm); margin: 8px 0; }

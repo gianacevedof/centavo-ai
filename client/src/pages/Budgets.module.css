@@ -59,6 +59,7 @@
 .donutCard {
   grid-column: span 2;
   background-color: var(--color-bg-card);
+  border: var(--border-width) solid var(--color-border);
   border-radius: 12px;
   padding: var(--space-lg);
   display: flex;
@@ -125,6 +126,7 @@
 /* 2. Individual Budget Cards */
 .budgetCard {
   background-color: var(--color-bg-card);
+  border: var(--border-width) solid var(--color-border);
   border-radius: 12px;
   padding: var(--space-lg);
   display: flex;
@@ -246,6 +248,7 @@
 
 .goalCard {
   background-color: var(--color-bg-card);
+  border: var(--border-width) solid var(--color-border);
   border-radius: 12px;
   padding: var(--space-lg);
   display: flex;

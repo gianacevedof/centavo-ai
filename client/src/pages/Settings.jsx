@@ -433,7 +433,7 @@ function Settings() {
               <div>
                 <h2 id="profile-modal-title">Edit profile</h2>
                 <p className={styles.modalSubtitle}>
-                  A few details to make Centavo AI yours.
+                  A few details to make Centavo-ai yours.
                 </p>
               </div>
               <button
@@ -631,7 +631,7 @@ function Settings() {
                   htmlFor="new-category-name"
                   className={styles.addCategoryLabel}
                 >
-                  Add your own category:
+                  Add a new category
                 </label>
                 <input
                   id="new-category-name"
@@ -654,34 +654,31 @@ function Settings() {
                 <thead>
                   <tr>
                     <th>Category</th>
-                    <th className={styles.textRight}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {custom.map((c) => (
                     <tr key={c.id}>
-                      <td className={styles.descCell}>
-                        <span className={styles.dot} />
-                        {c.name}
-                      </td>
-                      <td className={styles.textRight}>
-                        <div className={styles.rowActions}>
-                          <button
-                            type="button"
-                            className={styles.iconBtn}
-                            onClick={() => startEdit(c)}
-                            aria-label={`Edit ${c.name}`}
-                          >
-                            <PencilIcon />
-                            <span>Edit</span>
-                          </button>
-                        </div>
+                      <td className={styles.categoryCell}>
+                        <span className={styles.categoryName}>
+                          <span className={styles.dot} />
+                          {c.name}
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.iconBtn}
+                          onClick={() => startEdit(c)}
+                          aria-label={`Edit ${c.name}`}
+                        >
+                          <PencilIcon />
+                          <span>Edit</span>
+                        </button>
                       </td>
                     </tr>
                   ))}
                   {custom.length === 0 && (
                     <tr>
-                      <td colSpan={2} className={styles.descCell}>
+                      <td className={styles.descCell}>
                         No custom categories yet.
                       </td>
                     </tr>
