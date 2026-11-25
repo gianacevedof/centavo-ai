@@ -1,6 +1,7 @@
 /* components/Card/Card.module.css */
 .card {
   background-color: var(--color-bg-card);
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
   display: flex;
