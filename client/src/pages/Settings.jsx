@@ -420,25 +420,36 @@ function Settings() {
       {/* ================= EDIT PROFILE MODAL ================= */}
       {profileModal && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
-            
+          <div
+            className={styles.modalContent}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-modal-title"
+          >
             <div className={styles.modalHeader}>
               <div>
                 <h2 id="profile-modal-title">Edit profile</h2>
-                <p className={styles.modalSubtitle}>A few details to make Centavo-ai yours.</p>
+                <p className={styles.modalSubtitle}>
+                  A few details to make Centavo-ai yours.
+                </p>
               </div>
-              <button className={styles.closeBtn} onClick={closeProfileModal} disabled={savingProfile || deletingAccount}>
+              <button
+                className={styles.closeBtn}
+                onClick={closeProfileModal}
+                disabled={savingProfile || deletingAccount}
+              >
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleProfileSave} className={styles.profileForm}>
-              
               {/* 1. Avatar Section */}
               <div className={styles.avatarSection}>
                 <div className={styles.avatarLarge}>{displayName[0]}</div>
                 <div>
-                  <button type="button" className={styles.outlineBtn}>Change photo</button>
+                  <button type="button" className={styles.outlineBtn}>
+                    Change photo
+                  </button>
                   <p className={styles.avatarHint}>JPG or PNG · Up to 5 MB</p>
                 </div>
               </div>
@@ -455,12 +466,21 @@ function Settings() {
                       value={profileForm.name}
                       maxLength={100}
                       required
-                      onChange={(e) => setProfileForm((current) => ({ ...current, name: e.target.value }))}
+                      onChange={(e) =>
+                        setProfileForm((current) => ({
+                          ...current,
+                          name: e.target.value,
+                        }))
+                      }
                     />
                   </label>
                   <label className={styles.formGroup}>
                     <span>Username</span>
-                    <input type="text" placeholder="Choose a username" disabled />
+                    <input
+                      type="text"
+                      placeholder="Choose a username"
+                      disabled
+                    />
                   </label>
                   <label className={styles.formGroup}>
                     <span>Email address</span>
@@ -470,12 +490,21 @@ function Settings() {
                       value={profileForm.email}
                       maxLength={254}
                       required
-                      onChange={(e) => setProfileForm((current) => ({ ...current, email: e.target.value }))}
+                      onChange={(e) =>
+                        setProfileForm((current) => ({
+                          ...current,
+                          email: e.target.value,
+                        }))
+                      }
                     />
                   </label>
                   <label className={styles.formGroup}>
                     <span>Phone number</span>
-                    <input type="tel" placeholder="Enter your phone number" disabled />
+                    <input
+                      type="tel"
+                      placeholder="Enter your phone number"
+                      disabled
+                    />
                   </label>
                 </div>
               </div>
@@ -483,49 +512,100 @@ function Settings() {
               {/* 3. Update Password */}
               <div className={styles.formSection}>
                 <h3 className={styles.sectionTitle}>Update password</h3>
-                <p className={styles.sectionDesc}>Leave these fields blank to keep your password.</p>
+                <p className={styles.sectionDesc}>
+                  Leave these fields blank to keep your password.
+                </p>
                 <div className={styles.formGrid}>
-                  <label className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+                  <label
+                    className={styles.formGroup}
+                    style={{ gridColumn: "1 / -1" }}
+                  >
                     <span>Current password</span>
-                    <input type="password" placeholder="••••••••••••" disabled />
+                    <input
+                      type="password"
+                      placeholder="••••••••••••"
+                      disabled
+                    />
                   </label>
                   <label className={styles.formGroup}>
                     <span>New password</span>
-                    <input type="password" placeholder="••••••••••••" disabled />
+                    <input
+                      type="password"
+                      placeholder="••••••••••••"
+                      disabled
+                    />
                   </label>
                   <label className={styles.formGroup}>
                     <span>Re-enter new password</span>
-                    <input type="password" placeholder="••••••••••••" disabled />
+                    <input
+                      type="password"
+                      placeholder="••••••••••••"
+                      disabled
+                    />
                   </label>
                 </div>
-                <p className={styles.passwordHint}>Use at least 12 characters, including a number and a symbol.</p>
+                <p className={styles.passwordHint}>
+                  Use at least 12 characters, including a number and a symbol.
+                </p>
               </div>
 
-              {profileError && <p className={styles.errorText} role="alert">{profileError}</p>}
+              {profileError && (
+                <p className={styles.errorText} role="alert">
+                  {profileError}
+                </p>
+              )}
 
               {/* 4. Footer / Delete Account */}
               <div className={styles.modalFooter}>
                 <div>
-                   {!deleteConfirm ? (
-                    <button type="button" className={styles.dangerBtn} onClick={() => setDeleteConfirm(true)} disabled={savingProfile || deletingAccount}>
+                  {!deleteConfirm ? (
+                    <button
+                      type="button"
+                      className={styles.dangerBtn}
+                      onClick={() => setDeleteConfirm(true)}
+                      disabled={savingProfile || deletingAccount}
+                    >
                       Delete account
                     </button>
                   ) : (
                     <div className={styles.deleteConfirmRow}>
-                       <span className={styles.deleteWarning}>Are you sure? This cannot be undone.</span>
-                       <button type="button" className={styles.outlineBtn} onClick={() => setDeleteConfirm(false)} disabled={deletingAccount}>Cancel</button>
-                       <button type="button" className={styles.dangerBtn} onClick={handleAccountDelete} disabled={deletingAccount}>
-                         {deletingAccount ? "Deleting..." : "Confirm"}
-                       </button>
+                      <span className={styles.deleteWarning}>
+                        Are you sure? This cannot be undone.
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.outlineBtn}
+                        onClick={() => setDeleteConfirm(false)}
+                        disabled={deletingAccount}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.dangerBtn}
+                        onClick={handleAccountDelete}
+                        disabled={deletingAccount}
+                      >
+                        {deletingAccount ? "Deleting..." : "Confirm"}
+                      </button>
                     </div>
                   )}
                 </div>
-                
+
                 <div className={styles.footerActions}>
-                  <button type="button" className={styles.outlineBtn} onClick={closeProfileModal} disabled={savingProfile || deletingAccount}>
+                  <button
+                    type="button"
+                    className={styles.outlineBtn}
+                    onClick={closeProfileModal}
+                    disabled={savingProfile || deletingAccount}
+                  >
                     Discard
                   </button>
-                  <button type="submit" className={styles.primaryBtn} disabled={savingProfile || deletingAccount}>
+                  <button
+                    type="submit"
+                    className={styles.primaryBtn}
+                    disabled={savingProfile || deletingAccount}
+                  >
                     {savingProfile ? "Saving..." : "Save changes"}
                   </button>
                 </div>
@@ -540,7 +620,7 @@ function Settings() {
         <div className={styles.categoriesWrapper}>
           <Card title="Manage Categories">
             <p className={styles.cardDesc}>
-              Set a monthly limit for each category.
+              Add and manage your own categories.
             </p>
             <form onSubmit={handleAdd} className={styles.addCategoryForm}>
               <input
