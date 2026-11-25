@@ -12,6 +12,7 @@ import aiRoutes from "./routes/ai.js";
 import authRoutes from "./routes/auth.js";
 import trendsRoutes from "./routes/trends.js";
 import reportsRoutes from "./routes/reports.js";
+import explanationsRoutes from "./routes/explanations.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 
 const app = express();
@@ -29,6 +30,7 @@ app.use("/api/categories", authMiddleware, categoriesRoutes);
 app.use("/api/ai", authMiddleware, aiRoutes);
 app.use("/api/trends", authMiddleware, trendsRoutes);
 app.use("/api/reports", authMiddleware, reportsRoutes);
+app.use("/api/explanations", authMiddleware, explanationsRoutes);
 
 app.get("/api/health", async (req, res) => {
   try {

@@ -1,3 +1,4 @@
+import { createHash, randomUUID } from 'node:crypto';
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 
@@ -23,6 +24,9 @@ export const verifyPassword = async (hash, password) => {
 const ACCESS_TTL = "15m";
 const REFRESH_TTL = "7d";
 
+export const hashRefreshToken = (token) =>
+  createHash('sha256').update(token).digest('hex');
+
 const getSecret = () => {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not defined in environment variables");
@@ -46,7 +50,7 @@ export const generateAccessToken = (user) =>
  * @returns {string} The signed refresh token.
  */
 export const generateRefreshToken = (user) =>
-  jwt.sign({ id: user.id, type: "refresh" }, getSecret(), {
+  jwt.sign({ id: user.id, type: "refresh", jti: randomUUID() }, getSecret(), {
     expiresIn: REFRESH_TTL,
   });
 

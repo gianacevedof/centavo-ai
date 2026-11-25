@@ -41,6 +41,8 @@ function Budgets() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [budgetExplanation, setBudgetExplanation] = useState(null);
+  const [explainingBudgetId, setExplainingBudgetId] = useState(null);
 
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
@@ -94,6 +96,22 @@ function Budgets() {
         (cat) => !budgets.some((b) => Number(b.category_id) === Number(cat.id)),
       );
   const overviewTips = overview?.tips?.tips ?? [];
+
+  const handleExplainBudget = async (budgetId) => {
+    setExplainingBudgetId(budgetId);
+    setBudgetExplanation(null);
+    try {
+      const result = await api.explainBudget(budgetId);
+      setBudgetExplanation({ budgetId, text: result.explanation });
+    } catch (err) {
+      setBudgetExplanation({
+        budgetId,
+        text: err.message || "Could not explain this budget.",
+      });
+    } finally {
+      setExplainingBudgetId(null);
+    }
+  };
 
   const closeBudgetModal = () => {
     setShowBudgetModal(false);
@@ -322,7 +340,10 @@ function Budgets() {
                 const limit = parseFloat(bg.monthly_limit || 0);
                 const spent = parseFloat(bg.spent || 0);
                 const pct = limit > 0 ? Math.round((spent / limit) * 100) : 0;
-                const isOver = pct > 100;
+                const spentCents = Math.round(spent * 100);
+                const limitCents = Math.round(limit * 100);
+                const isOver = spentCents > limitCents;
+                const canExplain = spentCents !== limitCents;
                 const icon =
                   CATEGORY_ICONS[bg.category_name] || CATEGORY_ICONS.Default;
                 return (
@@ -352,7 +373,20 @@ function Budgets() {
                       />
                     </div>
                     <div className={styles.cardActions}>
+                      {canExplain && (
+                        <button
+                          type="button"
+                          className={styles.explainButton}
+                          onClick={() => handleExplainBudget(bg.id)}
+                          disabled={explainingBudgetId !== null}
+                        >
+                          {explainingBudgetId === bg.id
+                            ? "Explaining..."
+                            : "Explain this"}
+                        </button>
+                      )}
                       <button
+                        type="button"
                         className={styles.iconBtn}
                         onClick={() => openEditBudget(bg)}
                         aria-label="Edit budget"
@@ -361,6 +395,11 @@ function Budgets() {
                         <PencilIcon />
                       </button>
                     </div>
+                    {budgetExplanation?.budgetId === bg.id && (
+                      <p className={styles.explanationText} role="status">
+                        {budgetExplanation.text}
+                      </p>
+                    )}
                   </div>
                 );
               })}

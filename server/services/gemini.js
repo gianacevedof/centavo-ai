@@ -334,3 +334,37 @@ export async function generateBudgetTips(facts) {
   }
   return parsed.tips;
 }
+
+const EXPLANATION_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    explanation: { type: Type.STRING },
+  },
+  required: ["explanation"],
+};
+
+const EXPLANATION_SYSTEM = `You write one short, plain-language explanation for exactly one account balance or exactly one budget.
+The backend has already calculated every fact. Do not calculate, estimate, or invent numbers.
+Use only numeric values present in FACTS, copied exactly.
+For account balances, describe the current balance and the recorded activity. Do not present net recorded activity as the whole explanation. Mention amount_before_tracked_activity only when the fact is nonzero.
+For budgets, explain only why the category is over or under its limit using the supplied facts.
+Do not give advice, discuss other accounts or budgets, or add any other explanation type. No greetings.`;
+
+export async function generateExplanation(kind, facts) {
+  if (kind !== "account_balance" && kind !== "budget") {
+    throw new AIParseError("Unsupported explanation type");
+  }
+
+  const raw = await callGemini(
+    JSON.stringify({ kind, facts }),
+    EXPLANATION_SYSTEM,
+    EXPLANATION_SCHEMA,
+  );
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new AIParseError("Explanation response was not valid JSON", err);
+  }
+  return parsed.explanation;
+}

@@ -187,8 +187,33 @@
 
 .cardActions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: var(--space-sm);
   margin-top: var(--space-sm);
+}
+
+.explainButton {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.explainButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.explanationText {
+  margin: var(--space-sm) 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.45;
 }
 
 .iconBtn {

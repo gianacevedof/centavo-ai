@@ -196,6 +196,30 @@
   color: var(--color-text-muted);
 }
 
+.explainButton {
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.explainButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.explanationText {
+  margin: 6px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
 .accountBalance {
   font-size: var(--font-size-sm);
   font-weight: 600;

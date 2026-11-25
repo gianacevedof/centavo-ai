@@ -7,6 +7,7 @@ import {
   verifyPassword,
   generateAccessToken,
   generateRefreshToken,
+  hashRefreshToken,
   verifyRefreshToken,
 } from "../services/authService.js";
 import { clearAiCache } from "../services/aiCache.js";
@@ -21,18 +22,90 @@ const COOKIE_BASE = {
 const ACCESS_MAX_AGE = 15 * 60 * 1000; // 15 minutes
 const REFRESH_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-function setSessionCookies(res, user) {
+function setAccessCookie(res, user) {
   res.cookie("access_token", generateAccessToken(user), {
     ...COOKIE_BASE,
     path: "/",
     maxAge: ACCESS_MAX_AGE,
   });
+}
+
+function setSessionCookies(res, user, refreshToken) {
+  setAccessCookie(res, user);
   // Refresh cookie is only sent to /api/auth routes
-  res.cookie("refresh_token", generateRefreshToken(user), {
+  res.cookie("refresh_token", refreshToken, {
     ...COOKIE_BASE,
     path: "/api/auth",
     maxAge: REFRESH_MAX_AGE,
   });
+}
+
+async function createRefreshSession(user) {
+  const refreshToken = generateRefreshToken(user);
+  const expiresAt = new Date(Date.now() + REFRESH_MAX_AGE);
+  await pool.query(
+    "INSERT INTO sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)",
+    [user.id, hashRefreshToken(refreshToken), expiresAt],
+  );
+  return refreshToken;
+}
+
+async function rotateRefreshSession(refreshToken, userId) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [sessions] = await connection.query(
+      `SELECT id FROM sessions
+       WHERE user_id = ? AND token_hash = ? AND is_logged_out = FALSE
+         AND expires_at > CURRENT_TIMESTAMP
+       FOR UPDATE`,
+      [userId, hashRefreshToken(refreshToken)],
+    );
+    if (sessions.length === 0) {
+      await connection.rollback();
+      return null;
+    }
+
+    const [users] = await connection.query(
+      "SELECT id, email FROM users WHERE id = ?",
+      [userId],
+    );
+    if (users.length === 0) {
+      await connection.rollback();
+      return null;
+    }
+
+    const user = users[0];
+    const nextRefreshToken = generateRefreshToken(user);
+    const expiresAt = new Date(Date.now() + REFRESH_MAX_AGE);
+    const [result] = await connection.query(
+      `UPDATE sessions
+       SET token_hash = ?, expires_at = ?
+       WHERE id = ? AND token_hash = ? AND is_logged_out = FALSE`,
+      [
+        hashRefreshToken(nextRefreshToken),
+        expiresAt,
+        sessions[0].id,
+        hashRefreshToken(refreshToken),
+      ],
+    );
+    if (result.affectedRows !== 1) {
+      await connection.rollback();
+      return null;
+    }
+
+    await connection.commit();
+    return { user, refreshToken: nextRefreshToken };
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch (rollbackError) {
+      console.error("Refresh rollback error:", rollbackError);
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 function clearSessionCookies(res) {
@@ -148,7 +221,8 @@ router.post("/login", async (req, res) => {
       return sendError(res, 401, "Invalid email or password.");
     }
 
-    setSessionCookies(res, user);
+    const refreshToken = await createRefreshSession(user);
+    setSessionCookies(res, user, refreshToken);
 
     res.status(200).json({
       message: "Login successful",
@@ -162,11 +236,23 @@ router.post("/login", async (req, res) => {
 
 /**
  * POST /api/auth/logout
- * Clears the auth cookie.
+ * Revokes the refresh session and clears the auth cookies.
  */
-router.post("/logout", (req, res) => {
-  clearSessionCookies(res);
-  res.status(200).json({ message: "Logged out successfully." });
+router.post("/logout", async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refresh_token;
+    if (refreshToken) {
+      await pool.query(
+        "UPDATE sessions SET is_logged_out = TRUE WHERE token_hash = ?",
+        [hashRefreshToken(refreshToken)],
+      );
+    }
+    clearSessionCookies(res);
+    res.status(200).json({ message: "Logged out successfully." });
+  } catch (error) {
+    console.error("Logout error:", error);
+    sendError(res, 500, "Could not log out.");
+  }
 });
 
 /**
@@ -174,9 +260,8 @@ router.post("/logout", (req, res) => {
  * Uses the refresh cookie to issue a new access token and refresh token.
  */
 router.post("/refresh", async (req, res) => {
-  const payload = req.cookies.refresh_token
-    ? verifyRefreshToken(req.cookies.refresh_token)
-    : null;
+  const refreshToken = req.cookies.refresh_token;
+  const payload = refreshToken ? verifyRefreshToken(refreshToken) : null;
 
   if (!payload) {
     clearSessionCookies(res);
@@ -184,17 +269,13 @@ router.post("/refresh", async (req, res) => {
   }
 
   try {
-    // Make sure the user still exists before issuing new tokens
-    const [rows] = await pool.query(
-      "SELECT id, email FROM users WHERE id = ?",
-      [payload.id],
-    );
-    if (rows.length === 0) {
+    const session = await rotateRefreshSession(refreshToken, payload.id);
+    if (!session) {
       clearSessionCookies(res);
       return sendError(res, 401, "Your session has expired. Please log in again.", { code: "SESSION_EXPIRED" });
     }
 
-    setSessionCookies(res, rows[0]);
+    setSessionCookies(res, session.user, session.refreshToken);
     res.status(200).json({ message: "Session refreshed." });
   } catch (error) {
     console.error("Refresh error:", error);
@@ -243,7 +324,7 @@ router.patch("/me", authMiddleware, async (req, res) => {
     }
 
     const user = rows[0];
-    setSessionCookies(res, user);
+    setAccessCookie(res, user);
     res.status(200).json({ user });
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") {

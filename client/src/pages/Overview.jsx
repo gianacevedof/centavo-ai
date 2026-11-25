@@ -110,8 +110,26 @@ function Overview() {
   const [goalError, setGoalError] = useState("");
   const [trendData, setTrendData] = useState(null);
   const [trendError, setTrendError] = useState("");
+  const [accountExplanation, setAccountExplanation] = useState(null);
+  const [explainingAccountId, setExplainingAccountId] = useState(null);
   const trendCanvasRef = useRef(null);
   const trendChartRef = useRef(null);
+
+  async function handleExplainAccount(accountId) {
+    setExplainingAccountId(accountId);
+    setAccountExplanation(null);
+    try {
+      const result = await api.explainAccountBalance(accountId);
+      setAccountExplanation({ accountId, text: result.explanation });
+    } catch (err) {
+      setAccountExplanation({
+        accountId,
+        text: err.message || "Could not explain this account balance.",
+      });
+    } finally {
+      setExplainingAccountId(null);
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -369,6 +387,21 @@ function Overview() {
                         <span className={styles.accountMeta}>
                           {acc.type || "Checking"}
                         </span>
+                        <button
+                          type="button"
+                          className={styles.explainButton}
+                          onClick={() => handleExplainAccount(acc.id)}
+                          disabled={explainingAccountId !== null}
+                        >
+                          {explainingAccountId === acc.id
+                            ? "Explaining..."
+                            : "Explain this"}
+                        </button>
+                        {accountExplanation?.accountId === acc.id && (
+                          <p className={styles.explanationText} role="status">
+                            {accountExplanation.text}
+                          </p>
+                        )}
                       </div>
                       <span className={styles.accountBalance}>
                         {balance < 0

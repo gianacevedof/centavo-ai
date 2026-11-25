@@ -2,7 +2,11 @@ import { clearAiCache } from "../services/aiCache.js";
 import { sendError } from "../utils/errors.js";
 import express from "express";
 import pool from "../db.js";
-import { buildBudgetOverview, getBudgetTips } from "../services/budgetOverview.js";
+import {
+  buildBudgetOverview,
+  buildBudgetProgress,
+  getBudgetTips,
+} from "../services/budgetOverview.js";
 
 const router = express.Router();
 
@@ -22,26 +26,7 @@ router.get("/overview", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const user_id = req.user.id;
-
-    // spent = expenses in the current calendar month, per category.
-    // Transfers and income are excluded: a transfer moves money between
-    // the user's own accounts, it isn't spending.
-    const [rows] = await pool.query(
-      `SELECT b.*, c.name AS category_name, COALESCE(s.spent, 0) AS spent
-       FROM budgets b
-       JOIN categories c ON b.category_id = c.id
-       LEFT JOIN (
-         SELECT category_id, SUM(amount) AS spent
-         FROM transactions
-         WHERE user_id = ?
-           AND type = 'expense'
-           AND date >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
-           AND date < DATE_FORMAT(CURDATE() + INTERVAL 1 MONTH, '%Y-%m-01')
-         GROUP BY category_id
-       ) s ON s.category_id = b.category_id
-       WHERE b.user_id = ?`,
-      [user_id, user_id],
-    );
+    const rows = await buildBudgetProgress(user_id);
     res.status(200).json(rows);
   } catch (err) {
     console.error("Budget fetch error:", err);

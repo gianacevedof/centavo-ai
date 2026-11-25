@@ -91,6 +91,13 @@ export const api = {
       options: { method: "DELETE" },
     }),
   fetchAccounts: (params) => request("/accounts", { params }),
+    explainAccountBalance: (accountId) =>
+      request("/explanations/account-balance", {
+        options: {
+          method: "POST",
+          body: JSON.stringify({ account_id: accountId }),
+        },
+      }),
   fetchTransactions: (params) => request("/transactions", { params }),
   fetchCategories: () => request("/categories"),
   createCategory: (name) =>
@@ -127,6 +134,13 @@ export const api = {
       options: { method: "PATCH", body: JSON.stringify({ name }) },
     }),
   fetchBudgets: (params) => request("/budgets", { params }),
+  explainBudget: (budgetId) =>
+    request("/explanations/budget", {
+      options: {
+        method: "POST",
+        body: JSON.stringify({ budget_id: budgetId }),
+      },
+    }),
   updateBudget: (id, monthly_limit) =>
     request(`/budgets/${id}`, {
       options: { method: "PATCH", body: JSON.stringify({ monthly_limit }) },
