@@ -20,7 +20,16 @@ import EmptyState from "../components/EmptyState/EmptyState";
 import ChatPanel from "../components/ChatPanel/ChatPanel";
 import styles from "./Overview.module.css";
 
-Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Filler, Legend, Tooltip);
+Chart.register(
+  LineController,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Filler,
+  Legend,
+  Tooltip,
+);
 
 function greeting() {
   const h = new Date().getHours();
@@ -71,9 +80,8 @@ function getGoalPace(goals) {
     const deadline = dateAtMidnight(goal.target_date);
     const duration = deadline.getTime() - created.getTime();
     const elapsed = today.getTime() - created.getTime();
-    const expectedProgress = duration <= 0
-      ? 1
-      : Math.max(0, Math.min(1, elapsed / duration));
+    const expectedProgress =
+      duration <= 0 ? 1 : Math.max(0, Math.min(1, elapsed / duration));
     const actualProgress = Math.max(
       0,
       Math.min(1, Number(goal.current_amount || 0) / target),
@@ -137,14 +145,17 @@ function Overview() {
 
   useEffect(() => {
     let cancelled = false;
-    api.fetchTrends().then((data) => {
-      if (!cancelled) setTrendData(data);
-    }).catch((err) => {
-      if (!cancelled) {
-        console.error("Overview trends load error:", err);
-        setTrendError(err.message || "Could not load trends.");
-      }
-    });
+    api
+      .fetchTrends()
+      .then((data) => {
+        if (!cancelled) setTrendData(data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error("Overview trends load error:", err);
+          setTrendError(err.message || "Could not load trends.");
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -152,14 +163,17 @@ function Overview() {
 
   useEffect(() => {
     let cancelled = false;
-    api.fetchSavingsGoals().then((data) => {
-      if (!cancelled) setGoals(data);
-    }).catch((err) => {
-      if (!cancelled) {
-        console.error("Overview goals load error:", err);
-        setGoalError(err.message || "Could not load savings goals.");
-      }
-    });
+    api
+      .fetchSavingsGoals()
+      .then((data) => {
+        if (!cancelled) setGoals(data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error("Overview goals load error:", err);
+          setGoalError(err.message || "Could not load savings goals.");
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -219,26 +233,33 @@ function Overview() {
 
   const totalBalance = accounts.reduce(
     (sum, a) => sum + parseFloat(a.balance || 0),
-    0
+    0,
   );
-  const goalTarget = goals?.reduce(
-    (sum, goal) => sum + Number(goal.target_amount || 0),
-    0,
-  ) || 0;
-  const goalSaved = goals?.reduce(
-    (sum, goal) => sum + Number(goal.current_amount || 0),
-    0,
-  ) || 0;
-  const goalHealth = goalTarget > 0
-    ? Math.max(0, Math.min(100, Math.round((goalSaved / goalTarget) * 100)))
-    : 0;
+  const goalTarget =
+    goals?.reduce((sum, goal) => sum + Number(goal.target_amount || 0), 0) || 0;
+  const goalSaved =
+    goals?.reduce((sum, goal) => sum + Number(goal.current_amount || 0), 0) ||
+    0;
+  const goalHealth =
+    goalTarget > 0
+      ? Math.max(0, Math.min(100, Math.round((goalSaved / goalTarget) * 100)))
+      : 0;
   const goalPace = getGoalPace(goals);
-  const currentMonthNet = trendData?.monthly?.[trendData.monthly.length - 1]?.net;
+  const currentMonthNet =
+    trendData?.monthly?.[trendData.monthly.length - 1]?.net;
 
   const getCategoryColor = (name) => {
-    const colors = ["#c4453a", "#2d7a5f", "#d99a2b", "#4a7fc4", "#6b7280", "#8b5cf6"];
+    const colors = [
+      "#c4453a",
+      "#2d7a5f",
+      "#d99a2b",
+      "#4a7fc4",
+      "#6b7280",
+      "#8b5cf6",
+    ];
     let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    for (let i = 0; i < name.length; i++)
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
   };
   const trendChange = trendData?.month_over_month?.[0]?.change_percent;
@@ -258,7 +279,12 @@ function Overview() {
         ? `Spending decreased by ${Math.abs(trendChange).toFixed(1)}% since last month.`
         : "Spending is unchanged from last month.";
 
-  if (loading) return <Layout><div className={styles.loading}>Loading...</div></Layout>;
+  if (loading)
+    return (
+      <Layout>
+        <div className={styles.loading}>Loading...</div>
+      </Layout>
+    );
 
   return (
     <Layout
@@ -266,28 +292,38 @@ function Overview() {
       subtitle={currentDate()}
     >
       <div className={styles.dashboardGrid}>
-        
         <div className={styles.mainColumn}>
-          
           <section className={styles.hero}>
             <div className={styles.heroLeft}>
               <span className={styles.heroLabel}>TOTAL BALANCE</span>
               <p className={styles.heroAmount}>
-                ${totalBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                $
+                {totalBalance.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                })}
               </p>
               {typeof currentMonthNet === "number" && (
-                <p className={`${styles.heroMonthChange} ${currentMonthNet < 0 ? styles.heroMonthNegative : ""}`}>
+                <p
+                  className={`${styles.heroMonthChange} ${currentMonthNet < 0 ? styles.heroMonthNegative : ""}`}
+                >
                   {currentMonthNet < 0 ? "↘ −" : "↗ "}$
                   {Math.abs(currentMonthNet).toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
-                  })} this month
+                  })}{" "}
+                  this month
                 </p>
               )}
             </div>
             <div className={styles.heroPace}>
               <span className={styles.heroLabel}>GOAL PACE</span>
-              <div className={styles.paceOptions} role="img" aria-label={goalPace ? `Goal pace: ${goalPace}` : "No goal pace available"}>
+              <div
+                className={styles.paceOptions}
+                role="img"
+                aria-label={
+                  goalPace ? `Goal pace: ${goalPace}` : "No goal pace available"
+                }
+              >
                 {["slow", "moderate", "fast"].map((pace) => (
                   <span
                     key={pace}
@@ -314,39 +350,42 @@ function Overview() {
           </section>
 
           <div className={styles.overviewTopGrid}>
-            <Card title="Accounts" action="Click to edit goals">
-              {accounts.length === 0 ? (
-                <EmptyState
-                  icon="🏦"
-                  title="No accounts yet"
-                  description="Connect your bank or add a manual account to get started."
-                />
-              ) : (
-                <ul className={styles.accountList}>
-                  {accounts.map((acc) => {
-                    const balance = parseFloat(acc.balance || 0);
-                    return (
-                      <li key={acc.id} className={styles.accountRow}>
-                        <div className={styles.accountIcon}>▤</div>
-                        <div className={styles.accountInfo}>
-                          <span className={styles.accountName}>{acc.name}</span>
-                          <div className={styles.accountBarWrapper}>
-                            <ProgressBar value={Math.abs(balance)} max={5000} tone={balance < 0 ? "red" : "green"} />
-                          </div>
-                          <span className={styles.accountMeta}>{acc.type || "Checking"}</span>
+            <Card title="Accounts">
+              <ul className={styles.accountList}>
+                {accounts.map((acc) => {
+                  const balance = parseFloat(acc.balance || 0);
+                  return (
+                    <li key={acc.id} className={styles.accountRow}>
+                      <div className={styles.accountIcon}>▤</div>
+                      <div className={styles.accountInfo}>
+                        <span className={styles.accountName}>{acc.name}</span>
+                        <div className={styles.accountBarWrapper}>
+                          <ProgressBar
+                            value={Math.abs(balance)}
+                            max={5000}
+                            tone={balance < 0 ? "red" : "green"}
+                          />
                         </div>
-                        <span className={styles.accountBalance}>${balance.toFixed(2)}</span>
-                        <span className={styles.chevron}>›</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+                        <span className={styles.accountMeta}>
+                          {acc.type || "Checking"}
+                        </span>
+                      </div>
+                      <span className={styles.accountBalance}>
+                        {balance < 0
+                          ? `-$${Math.abs(balance).toFixed(2)}`
+                          : `$${balance.toFixed(2)}`}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             </Card>
 
             <Card title="Trends" action="6 MONTHS" className={styles.trendCard}>
               {trendError ? (
-                <p className={styles.trendDescription} role="alert">{trendError}</p>
+                <p className={styles.trendDescription} role="alert">
+                  {trendError}
+                </p>
               ) : !trendData ? (
                 <p className={styles.trendDescription}>Loading trends...</p>
               ) : (
@@ -357,7 +396,9 @@ function Overview() {
                         ? `${trendChange > 0 ? "+" : ""}${trendChange.toFixed(1)}%`
                         : "0.0%"}
                     </strong>
-                    <p className={styles.trendDescription}>{trendDescription}</p>
+                    <p className={styles.trendDescription}>
+                      {trendDescription}
+                    </p>
                   </div>
                   <div className={styles.trendChartWrapper}>
                     <canvas
@@ -373,9 +414,9 @@ function Overview() {
 
           <Card title="Budgets & goals" action="Monthly">
             {budgets.length === 0 ? (
-              <EmptyState 
-                icon="🎯" 
-                title="No budgets set" 
+              <EmptyState
+                icon="🎯"
+                title="No budgets set"
                 description="Set a monthly limit for your categories to track spending."
               />
             ) : (
@@ -384,16 +425,29 @@ function Overview() {
                   const limit = parseFloat(bg.monthly_limit || 0);
                   const spent = parseFloat(bg.spent || 0);
                   const pct = limit ? (spent / limit) * 100 : 0;
-                  const status = pct > 100 ? "Over budget" : pct > 85 ? "Close" : "On target";
+                  const status =
+                    pct > 100
+                      ? "Over budget"
+                      : pct > 85
+                        ? "Close"
+                        : "On target";
                   const tone = pct > 100 ? "red" : pct > 85 ? "amber" : "green";
                   return (
                     <li key={bg.id} className={styles.budgetRow}>
-                      <span className={styles.budgetName}>{bg.category_name}</span>
+                      <span className={styles.budgetName}>
+                        {bg.category_name}
+                      </span>
                       <div className={styles.budgetBarWrapper}>
                         <ProgressBar value={spent} max={limit} tone={tone} />
                       </div>
-                      <span className={styles.budgetMeta}>${spent} / ${limit}</span>
-                      <span className={`${styles.budgetStatus} ${styles[tone]}`}>{status}</span>
+                      <span className={styles.budgetMeta}>
+                        ${spent} / ${limit}
+                      </span>
+                      <span
+                        className={`${styles.budgetStatus} ${styles[tone]}`}
+                      >
+                        {status}
+                      </span>
                     </li>
                   );
                 })}
@@ -403,25 +457,39 @@ function Overview() {
 
           <Card title="Recent transactions" action="View all">
             {transactions.length === 0 ? (
-              <EmptyState 
-                icon="💸" 
-                title="No recent transactions" 
+              <EmptyState
+                icon="💸"
+                title="No recent transactions"
                 description="Your latest transactions will appear here."
               />
             ) : (
               <ul className={styles.txList}>
                 {transactions.map((tx) => {
                   const isExpense = tx.type === "expense";
-                  const catColor = getCategoryColor(tx.category_name || "Uncategorized");
+                  const catColor = getCategoryColor(
+                    tx.category_name || "Uncategorized",
+                  );
                   return (
                     <li key={tx.id} className={styles.txRow}>
-                      <div className={styles.txAvatar} style={{ backgroundColor: catColor }} />
+                      <div
+                        className={styles.txAvatar}
+                        style={{ backgroundColor: catColor }}
+                      />
                       <div className={styles.txInfo}>
-                        <span className={styles.txNote}>{tx.note || "No note"}</span>
-                        <span className={styles.txCategory}>{tx.category_name || "Uncategorized"}</span>
+                        <span className={styles.txNote}>
+                          {tx.note || "No note"}
+                        </span>
+                        <span className={styles.txCategory}>
+                          {tx.category_name || "Uncategorized"}
+                        </span>
                       </div>
-                      <span className={isExpense ? styles.txExpense : styles.txIncome}>
-                        {isExpense ? "−" : "+"}${parseFloat(tx.amount).toFixed(2)}
+                      <span
+                        className={
+                          isExpense ? styles.txExpense : styles.txIncome
+                        }
+                      >
+                        {isExpense ? "−" : "+"}$
+                        {parseFloat(tx.amount).toFixed(2)}
                       </span>
                     </li>
                   );
@@ -437,7 +505,9 @@ function Overview() {
             action={goals && !goalError ? `${goalHealth}%` : undefined}
           >
             {goalError ? (
-              <p className={styles.healthMessage} role="alert">{goalError}</p>
+              <p className={styles.healthMessage} role="alert">
+                {goalError}
+              </p>
             ) : goals === null ? (
               <p className={styles.healthMessage}>Loading goal health...</p>
             ) : (
@@ -461,7 +531,7 @@ function Overview() {
             )}
           </Card>
           <AiTips tipClassName={`${styles.tipCard} ${styles.tipGreen}`} />
-          
+
           <ChatPanel />
         </div>
       </div>
