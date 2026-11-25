@@ -15,6 +15,7 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS budgets;
 DROP TABLE IF EXISTS savings_goals;
@@ -36,7 +37,23 @@ CREATE TABLE users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
--- 2. ACCOUNTS
+-- 2. SESSIONS
+-- Stores active login sessions. Token hash is stored, not the raw token.
+-- ============================================================
+CREATE TABLE sessions (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    user_id       INT NOT NULL,
+    token_hash    VARCHAR(255) NOT NULL,
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at    TIMESTAMP NOT NULL,
+    is_logged_out BOOLEAN NOT NULL DEFAULT FALSE,
+    UNIQUE KEY uq_session_token (token_hash),
+    CONSTRAINT fk_sessions_user
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================================
+-- 3. ACCOUNTS
 -- balance is a stored cache of current balance; the app owns sync.
 -- ============================================================
 CREATE TABLE accounts (
@@ -53,7 +70,7 @@ CREATE TABLE accounts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
--- 3. CATEGORIES
+-- 4. CATEGORIES
 -- user_id NULL = system default, shared across all users.
 -- ============================================================
 CREATE TABLE categories (
@@ -69,7 +86,7 @@ CREATE TABLE categories (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
--- 4. SAVINGS GOALS
+-- 5. SAVINGS GOALS
 -- current_amount is a stored cache of contributions; app owns sync.
 -- Goal names are unique per user.
 -- ============================================================
@@ -88,7 +105,7 @@ CREATE TABLE savings_goals (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
--- 5. TRANSACTIONS
+-- 6. TRANSACTIONS
 -- Rules enforced here:
 --   * amount > 0 always (direction is encoded by `type`).
 --   * transfers MUST have to_account_id set and != account_id.
@@ -141,7 +158,7 @@ CREATE INDEX idx_user_account       ON transactions(user_id, account_id);
 CREATE INDEX idx_user_date          ON transactions(user_id, date);
 
 -- ============================================================
--- 6. BUDGETS
+-- 7. BUDGETS
 -- ============================================================
 CREATE TABLE budgets (
     id            INT AUTO_INCREMENT PRIMARY KEY,
