@@ -455,7 +455,7 @@ function Overview() {
             )}
           </Card>
 
-          <Card title="Recent transactions" action="View all">
+          <Card title="Recent transactions">
             {transactions.length === 0 ? (
               <EmptyState
                 icon="💸"

@@ -139,14 +139,7 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-  }
-  
-  .activeStatus {
-    font-size: 0.75rem;
-    color: #8fd4b5;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    color: #fff;
   }
   
   .headerControls {
@@ -169,23 +162,6 @@
   
   .controlBtn:hover {
     background-color: rgba(255,255,255,0.2);
-  }
-  
-  .headerTags {
-    display: flex;
-    gap: var(--space-sm);
-    flex-wrap: wrap;
-  }
-  
-  .headerTag {
-    background-color: rgba(255,255,255,0.1);
-    padding: 4px 12px;
-    border-radius: var(--radius-pill);
-    font-size: 0.75rem;
-    color: #8fd4b5;
-    display: flex;
-    align-items: center;
-    gap: 4px;
   }
   
   /* Messages Area */

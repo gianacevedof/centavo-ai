@@ -155,8 +155,10 @@ function Settings() {
       await api.deleteCategory(category.id);
       setCategories((prev) => prev.filter((c) => c.id !== category.id));
       toast.success(`Deleted "${category.name}".`);
+      cancelEdit();
     } catch (err) {
       if (err.status === 409 && err.data?.transactions !== undefined) {
+        cancelEdit();
         setReassignTo(UNCATEGORIZED);
         setModalError("");
         setModal({
@@ -197,6 +199,7 @@ function Settings() {
   const targets = modal
     ? categories.filter((c) => c.id !== modal.category.id)
     : [];
+  const editingCategory = categories.find((c) => c.id === editingId);
   const name = typeof user?.name === "string" ? user.name.trim() : "";
   const displayName = name
     ? `${name[0].toUpperCase()}${name.slice(1)}`
@@ -299,7 +302,7 @@ function Settings() {
       title="Settings"
       subtitle={
         getTodayLong() +
-        " · Manage your profile, preferences and reports in one place."
+        " · Manage your profile, categories and reports in one place."
       }
     >
       <div className={styles.tabs}>
@@ -430,7 +433,7 @@ function Settings() {
               <div>
                 <h2 id="profile-modal-title">Edit profile</h2>
                 <p className={styles.modalSubtitle}>
-                  A few details to make Centavo-ai yours.
+                  A few details to make Centavo AI yours.
                 </p>
               </div>
               <button
@@ -623,14 +626,23 @@ function Settings() {
               Add and manage your own categories.
             </p>
             <form onSubmit={handleAdd} className={styles.addCategoryForm}>
-              <input
-                type="text"
-                placeholder="Category name"
-                value={newName}
-                maxLength={100}
-                onChange={(e) => setNewName(e.target.value)}
-                className={styles.textInput}
-              />
+              <div className={styles.addCategoryField}>
+                <label
+                  htmlFor="new-category-name"
+                  className={styles.addCategoryLabel}
+                >
+                  Add your own category:
+                </label>
+                <input
+                  id="new-category-name"
+                  type="text"
+                  placeholder="Category name"
+                  value={newName}
+                  maxLength={100}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className={styles.textInput}
+                />
+              </div>
               <button type="submit" className={styles.primaryBtn}>
                 Add category
               </button>
@@ -642,7 +654,6 @@ function Settings() {
                 <thead>
                   <tr>
                     <th>Category</th>
-                    <th>Type</th>
                     <th className={styles.textRight}>Action</th>
                   </tr>
                 </thead>
@@ -653,16 +664,16 @@ function Settings() {
                         <span className={styles.dot} />
                         {c.name}
                       </td>
-                      <td>
-                        <span className={styles.badgeCustom}>Custom</span>
-                      </td>
                       <td className={styles.textRight}>
                         <div className={styles.rowActions}>
                           <button
+                            type="button"
                             className={styles.iconBtn}
                             onClick={() => startEdit(c)}
+                            aria-label={`Edit ${c.name}`}
                           >
                             <PencilIcon />
+                            <span>Edit</span>
                           </button>
                         </div>
                       </td>
@@ -670,7 +681,7 @@ function Settings() {
                   ))}
                   {custom.length === 0 && (
                     <tr>
-                      <td colSpan={3} className={styles.descCell}>
+                      <td colSpan={2} className={styles.descCell}>
                         No custom categories yet.
                       </td>
                     </tr>
@@ -743,6 +754,15 @@ function Settings() {
               />
               {pageError && <p className={styles.errorText}>{pageError}</p>}
               <div className={styles.modalActions}>
+                {editingCategory && (
+                  <button
+                    type="button"
+                    className={`${styles.dangerBtn} ${styles.modalDeleteBtn}`}
+                    onClick={() => handleDelete(editingCategory)}
+                  >
+                    Delete category
+                  </button>
+                )}
                 <button
                   type="button"
                   className={styles.outlineBtn}
