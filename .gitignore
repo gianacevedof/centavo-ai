@@ -46,6 +46,7 @@ feedback.txt
 architecture.zip
 logs/
 /logs
+/qa
 client.zip
 server.zip
 pages.zip
