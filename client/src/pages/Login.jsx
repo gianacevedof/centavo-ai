@@ -5,11 +5,14 @@ import styles from "./Login.module.css";
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
+    setMessageType("");
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -19,12 +22,19 @@ const Login = () => {
       const data = await response.json();
       if (response.ok) {
         setMessage("Login successful! Redirecting...");
+        setMessageType("success");
         setTimeout(() => navigate("/"), 2000);
       } else {
-        setMessage(data.message || "Login failed");
+        setMessage(
+          data.error?.message ||
+            data.message ||
+            "Incorrect email or password. Please try again.",
+        );
+        setMessageType("error");
       }
-    } catch (err) {
-      setMessage("An error occurred during login.");
+    } catch {
+      setMessage("Could not reach the server. Check your connection and try again.");
+      setMessageType("error");
     }
   };
 
@@ -39,7 +49,11 @@ const Login = () => {
 
         <h1 className={styles.title}>Welcome back</h1>
 
-        {message && <div className={styles.message}>{message}</div>}
+        {message && (
+          <div className={`${styles.message} ${styles[`message${messageType}`]}`}>
+            {message}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
