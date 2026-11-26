@@ -94,37 +94,26 @@ function ChatPanel() {
     }
   }
 
-  // =========================================
-  // 1. THE CLOSED STATE (Card in Right Rail)
-  // =========================================
   if (!open) {
     return (
-      <div className={styles.chatToggleBtn} onClick={() => setOpen(true)}>
-        <div className={styles.toggleHeader}>
-          <div className={styles.toggleIcon}>C</div>
-          Ask Centavo AI
-        </div>
-        <p className={styles.toggleText}>
-          How can I get my shopping budget back on track?
-        </p>
-        <div className={styles.toggleInputFake}>
-          <span>Try "forecast my year"</span>
-          <div className={styles.toggleArrow}>↑</div>
-        </div>
-      </div>
+      <button
+        type="button"
+        className={styles.chatToggleBtn}
+        onClick={() => setOpen(true)}
+        aria-label="Open Ask Centavo AI chat"
+      >
+        <span className={styles.toggleIcon}>C</span>
+        <span>Ask Centavo AI</span>
+      </button>
     );
   }
 
-  // =========================================
-  // 2. THE OPEN STATE (Floating Modal)
-  // =========================================
   return (
-    <div className={styles.modalOverlay} onClick={() => setOpen(false)}>
-      <section 
-        className={styles.chatPanel} 
+      <section
+        className={styles.chatPanel}
         role="dialog" 
         aria-label="Ask Centavo"
-        onClick={(e) => e.stopPropagation()}
+        aria-modal="false"
       >
         <header className={styles.chatHeader}>
           <div className={styles.headerTop}>
@@ -217,7 +206,6 @@ function ChatPanel() {
           </span>
         </div>
       </section>
-    </div>
   );
 }
 

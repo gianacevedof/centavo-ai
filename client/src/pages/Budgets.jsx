@@ -5,7 +5,6 @@ import Layout from "../components/Layout/Layout";
 import ProgressBar from "../components/ProgressBar/ProgressBar";
 import EmptyState from "../components/EmptyState/EmptyState";
 import Card from "../components/Card/Card";
-import ChatPanel from "../components/ChatPanel/ChatPanel";
 import styles from "./Budgets.module.css";
 import { PencilIcon } from "../components/Icons/Icons";
 
@@ -493,9 +492,6 @@ function Budgets() {
           </div>
         )}
 
-        <div style={{ marginTop: "var(--space-xl)" }}>
-          <ChatPanel />
-        </div>
       </div>
 
       {showBudgetModal && (

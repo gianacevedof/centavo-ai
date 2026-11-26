@@ -17,7 +17,6 @@ import AiTips from "../components/AiTips/AiTips";
 import Card from "../components/Card/Card";
 import ProgressBar from "../components/ProgressBar/ProgressBar";
 import EmptyState from "../components/EmptyState/EmptyState";
-import ChatPanel from "../components/ChatPanel/ChatPanel";
 import styles from "./Overview.module.css";
 
 Chart.register(
@@ -564,8 +563,6 @@ function Overview() {
             )}
           </Card>
           <AiTips tipClassName={`${styles.tipCard} ${styles.tipGreen}`} />
-
-          <ChatPanel />
         </div>
       </div>
     </Layout>

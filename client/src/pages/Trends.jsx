@@ -16,7 +16,6 @@ import Card from "../components/Card/Card";
 import ProgressBar from "../components/ProgressBar/ProgressBar";
 import Skeleton from "../components/Skeleton/Skeleton";
 import EmptyState from "../components/EmptyState/EmptyState";
-import ChatPanel from "../components/ChatPanel/ChatPanel";
 import styles from "./Trends.module.css";
 
 Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Filler, Tooltip, Legend);
@@ -141,9 +140,6 @@ function Trends() {
             title="Not enough data yet"
             description="Add some transactions to see your spending and savings trends over time."
           />
-          <div style={{ marginTop: "var(--space-xl)" }}>
-            <ChatPanel />
-          </div>
         </div>
       </Layout>
     );
@@ -252,9 +248,6 @@ function Trends() {
           </Card>
         </div>
 
-        <div style={{ marginTop: "var(--space-xl)" }}>
-          <ChatPanel />
-        </div>
       </div>
     </Layout>
   );
