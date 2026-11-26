@@ -35,6 +35,13 @@ function Settings() {
   const [profileForm, setProfileForm] = useState({ name: "", email: "" });
   const [profileError, setProfileError] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    current: "",
+    next: "",
+    confirm: "",
+  });
+  const [passwordError, setPasswordError] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [reportFrom, setReportFrom] = useState(DEFAULT_REPORT_FROM);
@@ -220,14 +227,18 @@ function Settings() {
   function openProfileModal() {
     setProfileForm({ name: user?.name || "", email: user?.email || "" });
     setProfileError("");
+    setPasswordForm({ current: "", next: "", confirm: "" });
+    setPasswordError("");
     setDeleteConfirm(false);
     setProfileModal(true);
   }
 
   function closeProfileModal() {
-    if (savingProfile || deletingAccount) return;
+    if (savingProfile || deletingAccount || changingPassword) return;
     setProfileModal(false);
     setDeleteConfirm(false);
+    setPasswordForm({ current: "", next: "", confirm: "" });
+    setPasswordError("");
   }
 
   async function handleProfileSave(e) {
@@ -243,6 +254,37 @@ function Settings() {
       setProfileError(err.message || "Could not update your profile.");
     } finally {
       setSavingProfile(false);
+    }
+  }
+
+  async function handlePasswordChange() {
+    setPasswordError("");
+    if (!passwordForm.current) {
+      setPasswordError("Enter your current password.");
+      return;
+    }
+    if (!passwordForm.next || !passwordForm.confirm) {
+      setPasswordError("Enter and confirm your new password.");
+      return;
+    }
+    if (passwordForm.next !== passwordForm.confirm) {
+      setPasswordError("The new passwords do not match.");
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await api.changePassword(passwordForm.current, passwordForm.next);
+      setPasswordForm({ current: "", next: "", confirm: "" });
+      toast.success("Password changed. Other devices have been signed out.");
+    } catch (err) {
+      setPasswordError(
+        err.name === "TypeError"
+          ? "Could not reach the server. Check your connection and try again."
+          : err.message || "Password change failed. Please try again.",
+      );
+    } finally {
+      setChangingPassword(false);
     }
   }
 
@@ -413,9 +455,6 @@ function Settings() {
             >
               <span>→</span> {loggingOut ? "Signing out..." : "Sign out"}
             </button>
-            <span className={styles.saveText}>
-              ✓ Preferences save automatically
-            </span>
           </div>
         </div>
       )}
@@ -433,36 +472,25 @@ function Settings() {
               <div>
                 <h2 id="profile-modal-title">Edit profile</h2>
                 <p className={styles.modalSubtitle}>
-                  A few details to make Centavo-ai yours.
+                  A few details to make Centavo AI yours.
                 </p>
               </div>
               <button
                 className={styles.closeBtn}
                 onClick={closeProfileModal}
-                disabled={savingProfile || deletingAccount}
+                disabled={savingProfile || deletingAccount || changingPassword}
               >
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleProfileSave} className={styles.profileForm}>
-              {/* 1. Avatar Section */}
-              <div className={styles.avatarSection}>
-                <div className={styles.avatarLarge}>{displayName[0]}</div>
-                <div>
-                  <button type="button" className={styles.outlineBtn}>
-                    Change photo
-                  </button>
-                  <p className={styles.avatarHint}>JPG or PNG · Up to 5 MB</p>
-                </div>
-              </div>
-
-              {/* 2. Account Details */}
+              {/* Account Details */}
               <div className={styles.formSection}>
                 <h3 className={styles.sectionTitle}>Account details</h3>
                 <div className={styles.formGrid}>
                   <label className={styles.formGroup}>
-                    <span>Full name</span>
+                    <span>Username</span>
                     <input
                       type="text"
                       placeholder="Enter your name"
@@ -477,14 +505,7 @@ function Settings() {
                       }
                     />
                   </label>
-                  <label className={styles.formGroup}>
-                    <span>Username</span>
-                    <input
-                      type="text"
-                      placeholder="Choose a username"
-                      disabled
-                    />
-                  </label>
+
                   <label className={styles.formGroup}>
                     <span>Email address</span>
                     <input
@@ -501,22 +522,14 @@ function Settings() {
                       }
                     />
                   </label>
-                  <label className={styles.formGroup}>
-                    <span>Phone number</span>
-                    <input
-                      type="tel"
-                      placeholder="Enter your phone number"
-                      disabled
-                    />
-                  </label>
                 </div>
               </div>
 
-              {/* 3. Update Password */}
+              {/* Update Password */}
               <div className={styles.formSection}>
                 <h3 className={styles.sectionTitle}>Update password</h3>
                 <p className={styles.sectionDesc}>
-                  Leave these fields blank to keep your password.
+                  Other signed-in devices will be signed out after the change.
                 </p>
                 <div className={styles.formGrid}>
                   <label
@@ -526,30 +539,64 @@ function Settings() {
                     <span>Current password</span>
                     <input
                       type="password"
-                      placeholder="••••••••••••"
-                      disabled
+                      autoComplete="current-password"
+                      value={passwordForm.current}
+                      maxLength={128}
+                      onChange={(e) =>
+                        setPasswordForm((current) => ({
+                          ...current,
+                          current: e.target.value,
+                        }))
+                      }
                     />
                   </label>
                   <label className={styles.formGroup}>
                     <span>New password</span>
                     <input
                       type="password"
-                      placeholder="••••••••••••"
-                      disabled
+                      autoComplete="new-password"
+                      value={passwordForm.next}
+                      maxLength={128}
+                      onChange={(e) =>
+                        setPasswordForm((current) => ({
+                          ...current,
+                          next: e.target.value,
+                        }))
+                      }
                     />
                   </label>
                   <label className={styles.formGroup}>
                     <span>Re-enter new password</span>
                     <input
                       type="password"
-                      placeholder="••••••••••••"
-                      disabled
+                      autoComplete="new-password"
+                      value={passwordForm.confirm}
+                      maxLength={128}
+                      onChange={(e) =>
+                        setPasswordForm((current) => ({
+                          ...current,
+                          confirm: e.target.value,
+                        }))
+                      }
                     />
                   </label>
                 </div>
-                <p className={styles.passwordHint}>
-                  Use at least 12 characters, including a number and a symbol.
-                </p>
+                <p className={styles.passwordHint}>Use 8 to 128 characters.</p>
+                {passwordError && (
+                  <p className={styles.errorText} role="alert">
+                    {passwordError}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  className={styles.primaryBtn}
+                  onClick={handlePasswordChange}
+                  disabled={
+                    savingProfile || deletingAccount || changingPassword
+                  }
+                >
+                  {changingPassword ? "Changing..." : "Change password"}
+                </button>
               </div>
 
               {profileError && (
@@ -566,7 +613,9 @@ function Settings() {
                       type="button"
                       className={styles.dangerBtn}
                       onClick={() => setDeleteConfirm(true)}
-                      disabled={savingProfile || deletingAccount}
+                      disabled={
+                        savingProfile || deletingAccount || changingPassword
+                      }
                     >
                       Delete account
                     </button>
@@ -600,14 +649,18 @@ function Settings() {
                     type="button"
                     className={styles.outlineBtn}
                     onClick={closeProfileModal}
-                    disabled={savingProfile || deletingAccount}
+                    disabled={
+                      savingProfile || deletingAccount || changingPassword
+                    }
                   >
                     Discard
                   </button>
                   <button
                     type="submit"
                     className={styles.primaryBtn}
-                    disabled={savingProfile || deletingAccount}
+                    disabled={
+                      savingProfile || deletingAccount || changingPassword
+                    }
                   >
                     {savingProfile ? "Saving..." : "Save changes"}
                   </button>
