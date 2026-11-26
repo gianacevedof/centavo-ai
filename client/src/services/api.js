@@ -86,6 +86,16 @@ export const api = {
     request("/auth/me", {
       options: { method: "PATCH", body: JSON.stringify(profile) },
     }),
+  changePassword: (currentPassword, newPassword) =>
+    request("/auth/change-password", {
+      options: {
+        method: "POST",
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
+      },
+    }),
   deleteAccount: () =>
     request("/auth/me", {
       options: { method: "DELETE" },

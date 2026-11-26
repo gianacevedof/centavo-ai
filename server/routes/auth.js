@@ -10,6 +10,7 @@ import {
   hashRefreshToken,
   verifyRefreshToken,
 } from "../services/authService.js";
+import { getPasswordValidationError } from "../services/passwordValidation.js";
 import { clearAiCache } from "../services/aiCache.js";
 
 const router = express.Router();
@@ -141,14 +142,8 @@ router.post("/signup", async (req, res) => {
     return sendError(res, 400, "Please enter a valid email address.");
   }
 
-  // NIST SP 800-63-4 inspired password restrictions:
-  // Focus on length and avoiding complexity requirements that lead to predictable passwords.
-  if (password.length < 8) {
-    return sendError(res, 400, "Password must be at least 8 characters long.");
-  }
-  if (password.length > 128) {
-    return sendError(res, 400, "Password must not exceed 128 characters.");
-  }
+  const passwordError = getPasswordValidationError(password);
+  if (passwordError) return sendError(res, 400, passwordError);
 
   try {
     // Check if user already exists
@@ -218,7 +213,11 @@ router.post("/login", async (req, res) => {
     const user = users[0];
 
     if (!user || !(await verifyPassword(user.password_hash, password))) {
-      return sendError(res, 401, "Invalid email or password.");
+      return sendError(
+        res,
+        401,
+        "Incorrect email or password. Please check your credentials and try again.",
+      );
     }
 
     const refreshToken = await createRefreshSession(user);
@@ -231,6 +230,103 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     sendError(res, 500, "An internal server error occurred.");
+  }
+});
+
+router.post("/change-password", authMiddleware, async (req, res) => {
+  const currentPassword =
+    typeof req.body?.current_password === "string"
+      ? req.body.current_password
+      : "";
+  const newPassword = req.body?.new_password;
+
+  if (!currentPassword) {
+    return sendError(res, 400, "Current password is required.");
+  }
+  const passwordError = getPasswordValidationError(newPassword);
+  if (passwordError) return sendError(res, 400, passwordError);
+
+  const refreshToken = req.cookies.refresh_token;
+  const refreshPayload = refreshToken
+    ? verifyRefreshToken(refreshToken)
+    : null;
+  if (!refreshPayload || Number(refreshPayload.id) !== Number(req.user.id)) {
+    return sendError(res, 401, "Your current session is invalid. Please log in again.");
+  }
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const [users] = await connection.query(
+      "SELECT id, email, name, password_hash FROM users WHERE id = ? FOR UPDATE",
+      [req.user.id],
+    );
+    if (users.length === 0) {
+      await connection.rollback();
+      return sendError(res, 404, "User not found.");
+    }
+
+    const user = users[0];
+    if (!(await verifyPassword(user.password_hash, currentPassword))) {
+      await connection.rollback();
+      return sendError(res, 401, "Current password is incorrect.");
+    }
+    if (await verifyPassword(user.password_hash, newPassword)) {
+      await connection.rollback();
+      return sendError(
+        res,
+        400,
+        "New password must be different from your current password.",
+      );
+    }
+
+    const currentTokenHash = hashRefreshToken(refreshToken);
+    const [sessions] = await connection.query(
+      `SELECT id FROM sessions
+       WHERE user_id = ? AND token_hash = ? AND is_logged_out = FALSE
+         AND expires_at > CURRENT_TIMESTAMP
+       FOR UPDATE`,
+      [req.user.id, currentTokenHash],
+    );
+    if (sessions.length === 0) {
+      await connection.rollback();
+      return sendError(res, 401, "Your current session has expired. Please log in again.");
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+    await connection.query(
+      "UPDATE users SET password_hash = ? WHERE id = ?",
+      [passwordHash, req.user.id],
+    );
+    await connection.query(
+      "UPDATE sessions SET is_logged_out = TRUE WHERE user_id = ? AND id <> ?",
+      [req.user.id, sessions[0].id],
+    );
+    await connection.commit();
+
+    setSessionCookies(res, user, refreshToken);
+    res.status(200).json({ message: "Password changed successfully." });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch {
+        console.error("Password change rollback failed.");
+      }
+    }
+    console.error(
+      "Password change failed:",
+      error?.code || error?.name || "Unknown error",
+    );
+    sendError(
+      res,
+      500,
+      "Could not change your password because of a server error. Please try again.",
+    );
+  } finally {
+    connection?.release();
   }
 });
 
