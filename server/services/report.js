@@ -16,7 +16,12 @@ export function esc(value) {
     .replace(/'/g, "&#39;");
 }
 
-const TYPE_LABEL = { expense: "Expense", income: "Income", transfer: "Transfer", savings: "Savings" };
+const TYPE_LABEL = {
+  expense: "Expense",
+  income: "Income",
+  transfer: "Transfer",
+  savings: "Savings",
+};
 
 export async function buildReportHtml(userId, from, to) {
   const [totals] = await pool.query(
@@ -26,7 +31,12 @@ export async function buildReportHtml(userId, from, to) {
      GROUP BY type`,
     [userId, from, to],
   );
-  const byType = Object.fromEntries(totals.map((t) => [t.type, { total: Number(t.total), count: Number(t.count) }]));
+  const byType = Object.fromEntries(
+    totals.map((t) => [
+      t.type,
+      { total: Number(t.total), count: Number(t.count) },
+    ]),
+  );
   const income = byType.income?.total ?? 0;
   const expenses = byType.expense?.total ?? 0;
   const saved = byType.savings?.total ?? 0;
@@ -69,11 +79,12 @@ export async function buildReportHtml(userId, from, to) {
 
   const txRows = rows
     .map((t) => {
-      const where = t.type === "transfer"
-        ? `${esc(t.account)} to ${esc(t.to_account)}`
-        : t.type === "savings"
-          ? `${esc(t.account)} to ${esc(t.goal)}`
-          : esc(t.account);
+      const where =
+        t.type === "transfer"
+          ? `${esc(t.account)} to ${esc(t.to_account)}`
+          : t.type === "savings"
+            ? `${esc(t.account)} to ${esc(t.goal)}`
+            : esc(t.account);
       return `<tr><td>${esc(t.date)}</td><td>${TYPE_LABEL[t.type] ?? esc(t.type)}</td><td>${where}</td><td>${esc(t.category ?? "")}</td><td>${money(t.amount)}</td><td>${esc(t.note ?? "")}</td></tr>`;
     })
     .join("");
@@ -82,23 +93,25 @@ export async function buildReportHtml(userId, from, to) {
     .map((g) => {
       const target = Number(g.target_amount);
       const current = Number(g.current_amount);
-      const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+      const percent =
+        target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
       return `<tr><td>${esc(g.name)}</td><td>${money(current)} of ${money(target)} (${percent}%)</td><td>${esc(g.target_date)}</td></tr>`;
     })
     .join("");
 
-  const truncated = rows.length === 1000
-    ? "<p>This report shows the first 1,000 transactions in the period.</p>"
-    : "";
+  const truncated =
+    rows.length === 1000
+      ? "<p>This report shows the first 1,000 transactions in the period.</p>"
+      : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Centavo report, ${esc(from)} to ${esc(to)}</title>
+<title>Centavo AI report, ${esc(from)} to ${esc(to)}</title>
 </head>
 <body>
-<h1>Centavo report</h1>
+<h1>Centavo AI report</h1>
 <p>Period: ${esc(from)} to ${esc(to)}</p>
 
 <h2>Summary</h2>
