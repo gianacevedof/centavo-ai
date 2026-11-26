@@ -10,6 +10,7 @@ const Signup = () => {
     confirmPassword: "",
   });
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
@@ -17,9 +18,11 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
+    setMessageType("");
 
     if (formData.password !== formData.confirmPassword) {
       setMessage("Passwords do not match");
+      setMessageType("error");
       return;
     }
 
@@ -37,12 +40,15 @@ const Signup = () => {
 
       if (response.ok) {
         setMessage("Account created! Redirecting to login...");
+        setMessageType("success");
         setTimeout(() => navigate("/login"), 2000);
       } else {
-        setMessage(data.message || "Signup failed");
+        setMessage(data.error?.message || data.message || "Signup failed");
+        setMessageType("error");
       }
-    } catch (err) {
-      setMessage("An error occurred during signup.");
+    } catch {
+      setMessage("Could not reach the server. Check your connection and try again.");
+      setMessageType("error");
     }
   };
 
@@ -57,11 +63,15 @@ const Signup = () => {
 
         <h1 className={styles.title}>Create an account</h1>
 
-        {message && <div className={styles.message}>{message}</div>}
+        {message && (
+          <div className={`${styles.message} ${styles[`message${messageType}`]}`}>
+            {message}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
-            <label>Full Name</label>
+            <label>Username</label>
             <input
               type="text"
               value={formData.name}
